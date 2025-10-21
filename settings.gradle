@@ -1,0 +1,5 @@
+rootProject.name = 'Socius'
+
+include 'socius-core-modules'
+include 'socius-mvc-app'
+include 'socius-webflux-app'
