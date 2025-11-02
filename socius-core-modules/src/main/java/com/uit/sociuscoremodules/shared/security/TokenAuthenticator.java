@@ -13,7 +13,7 @@ import com.nimbusds.jose.util.ResourceRetriever;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
-import com.uit.sociuscoremodules.shared.constants.CommonConstant;
+import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.exception.BusinessException;
 import com.uit.sociuscoremodules.shared.service.AuthorizationService;
 import java.net.URL;
@@ -77,11 +77,16 @@ public class TokenAuthenticator {
    */
   private JWKSource<SecurityContext> createJwkSource() {
     try {
-      String uri = String.format(CommonConstant.JSON_WEB_KEY_SET_URL, tenantId);
-      ResourceRetriever resourceRetriever = new DefaultResourceRetriever(2000, 2000, 100000);
+      String uri = String.format(SecurityConstant.JSON_WEB_KEY_SET_URL, tenantId);
+      ResourceRetriever resourceRetriever =
+          new DefaultResourceRetriever(
+              SecurityConstant.JWK_CONNECT_TIMEOUT_MILLIS,
+              SecurityConstant.JWK_READ_TIMEOUT_MILLIS,
+              SecurityConstant.JWK_SIZE_LIMIT_BYTES);
 
-      long timeToLiveMillis = TimeUnit.DAYS.toMillis(1); // 24 hours
-      long cacheRefreshTimeoutMillis = TimeUnit.HOURS.toMillis(1); // 1 hour
+      long timeToLiveMillis = TimeUnit.DAYS.toMillis(SecurityConstant.CACHE_TIME_TO_LIVE_DAYS);
+      long cacheRefreshTimeoutMillis =
+          TimeUnit.HOURS.toMillis(SecurityConstant.CACHE_REFRESH_TIMEOUT_HOURS);
 
       return JWKSourceBuilder.create(new URL(uri), resourceRetriever)
           .cache(timeToLiveMillis, cacheRefreshTimeoutMillis)
@@ -113,7 +118,7 @@ public class TokenAuthenticator {
       throw new BadCredentialsException("Invalid token claims");
     }
 
-    String userId = claims.getClaim("oid").toString();
+    String userId = claims.getClaim(SecurityConstant.OID_CLAIM_NAME).toString();
     EmployeeDto user = authorizationService.authorize(userId);
 
     if (user == null) {
@@ -121,7 +126,7 @@ public class TokenAuthenticator {
     }
 
     List<SimpleGrantedAuthority> authorities =
-        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        Collections.singletonList(new SimpleGrantedAuthority(SecurityConstant.DEFAULT_ROLE_USER));
 
     return new UsernamePasswordAuthenticationToken(user, null, authorities);
   }
@@ -168,7 +173,7 @@ public class TokenAuthenticator {
    * @return true if the claims are valid, false otherwise
    */
   private boolean validateClaims(JWTClaimsSet claims) {
-    String expectedIssuer = String.format("https://login.microsoftonline.com/%s/v2.0", tenantId);
+    String expectedIssuer = String.format(SecurityConstant.ISSUER_URI_FORMAT, tenantId);
 
     if (!expectedIssuer.equals(claims.getIssuer())) {
       log.warn("Invalid issuer: expected {}, got {}", expectedIssuer, claims.getIssuer());

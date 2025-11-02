@@ -31,24 +31,20 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<Response> handleBusinessException(BusinessException ex) {
-    String code = ex.getCode();
-    String message = i18nService.getMessage(code, ex.getArgs());
-
-    Response responseBody =
+    Response response =
         Response.builder()
             .success(false)
             .status(ex.getStatus().value())
-            .code(code)
-            .message(message)
+            .code(ex.getCode())
+            .message(i18nService.getMessage(ex.getCode(), ex.getArgs()))
             .data(null)
             .build();
-
     log.warn(
         "Business Exception Handled: status={}, code={}, message={}",
-        responseBody.getStatus(),
-        responseBody.getCode(),
-        responseBody.getMessage());
-    return new ResponseEntity<>(responseBody, ex.getStatus());
+        response.getStatus(),
+        response.getCode(),
+        response.getMessage());
+    return new ResponseEntity<>(response, ex.getStatus());
   }
 
   /**
@@ -59,20 +55,15 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Response> handleUnwantedException(Exception ex) {
-    log.error("An unexpected internal server error occurred", ex);
-
-    String errorCode = MessageConstant.UNEXPECTED_ERROR;
-    String errorMessage = i18nService.getMessage(errorCode);
-
-    Response responseBody =
+    log.error("Unexpected error: {}", ex.getMessage(), ex);
+    Response response =
         Response.builder()
             .success(false)
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .code(errorCode)
-            .message(errorMessage)
+            .code(MessageConstant.E_SYS_001)
+            .message(i18nService.getMessage(MessageConstant.E_SYS_001))
             .data(null)
             .build();
-
-    return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
+    return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

@@ -1,6 +1,7 @@
 package com.uit.sociuscoremodules.employee.persistence;
 
 import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -11,8 +12,37 @@ public interface EmployeeMapper {
   /**
    * Get Employee by ID.
    *
-   * @param id the employee ID
+   * @param clientId the employee ID
    * @return the Employee entity
    */
-  Employee getEmployeeById(@Param("id") String id);
+  Employee findByClientId(@Param("clientId") String clientId);
+
+  /**
+   * Get Employee by User ID.
+   *
+   * @param userId the user ID
+   * @return the Employee entity
+   */
+  Employee findDeletedByUserId(@Param("userId") String userId);
+
+  /**
+   * Create a new employee record.
+   *
+   * @param request the user creation request
+   */
+  void create(@Param("request") EmployeeCreateRequest request);
+
+  /**
+   * Update an existing employee record.
+   *
+   * @param request the user creation request
+   */
+  void update(@Param("request") EmployeeCreateRequest request);
+
+  /**
+   * Deactivate an employee record by client ID.
+   *
+   * @param clientId the client ID of the employee to deactivate
+   */
+  void deactivate(@Param("clientId") String clientId);
 }

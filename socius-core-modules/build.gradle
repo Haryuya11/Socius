@@ -28,11 +28,8 @@ dependencies {
 
     // MapStruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-
     // Lombok
     compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
 
     // DevTools
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -52,6 +49,11 @@ dependencies {
     // Azure Identity
     implementation 'com.azure:azure-identity:1.15.0'
 
+    // Apache Commons Lang
+    implementation 'org.apache.commons:commons-lang3:3.19.0'
+
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.5'
     testImplementation 'org.springframework.modulith:spring-modulith-starter-test'

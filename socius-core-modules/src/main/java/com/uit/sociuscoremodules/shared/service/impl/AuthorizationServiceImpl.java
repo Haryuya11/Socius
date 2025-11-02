@@ -25,7 +25,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
    */
   @Override
   public EmployeeDto authorize(String employeeId) {
-    EmployeeDto employeeDto = employeeRepository.getEmployeeById(employeeId);
+    EmployeeDto employeeDto = employeeRepository.findByClientId(employeeId);
     if (employeeDto == null) {
       log.warn("Employee not found for userId: {}", employeeId);
       return null;

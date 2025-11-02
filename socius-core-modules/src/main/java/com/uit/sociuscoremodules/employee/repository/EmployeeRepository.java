@@ -1,9 +1,9 @@
 package com.uit.sociuscoremodules.employee.repository;
 
 import com.uit.sociuscoremodules.employee.converter.EmployeeConverter;
-import com.uit.sociuscoremodules.employee.domain.Employee;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.employee.persistence.EmployeeMapper;
+import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +15,7 @@ public class EmployeeRepository {
   private final EmployeeMapper employeeMapper;
 
   /** Singleton instance of EmployeeConverter. */
-  private static final EmployeeConverter employeeConverter = EmployeeConverter.INSTANCE;
+  private final EmployeeConverter employeeConverter;
 
   /**
    * Get EmployeeDto by employee ID.
@@ -23,8 +23,44 @@ public class EmployeeRepository {
    * @param employeeId the employee ID
    * @return the corresponding EmployeeDto
    */
-  public EmployeeDto getEmployeeById(String employeeId) {
-    Employee employee = employeeMapper.getEmployeeById(employeeId);
-    return employeeConverter.entityToDto(employee);
+  public EmployeeDto findByClientId(String employeeId) {
+    return employeeConverter.entityToDto(employeeMapper.findByClientId(employeeId));
+  }
+
+  /**
+   * Get EmployeeDto by user ID.
+   *
+   * @param userId the user ID
+   * @return the corresponding EmployeeDto
+   */
+  public EmployeeDto findDeletedByUserId(String userId) {
+    return employeeConverter.entityToDto(employeeMapper.findDeletedByUserId(userId));
+  }
+
+  /**
+   * Create a new employee record.
+   *
+   * @param request the user creation request
+   */
+  public void create(EmployeeCreateRequest request) {
+    employeeMapper.create(request);
+  }
+
+  /**
+   * Update an existing employee record.
+   *
+   * @param request the user creation request
+   */
+  public void update(EmployeeCreateRequest request) {
+    employeeMapper.update(request);
+  }
+
+  /**
+   * Deactivate an employee record by client ID.
+   *
+   * @param clientId the client ID of the employee to deactivate
+   */
+  public void deactivate(String clientId) {
+    employeeMapper.deactivate(clientId);
   }
 }

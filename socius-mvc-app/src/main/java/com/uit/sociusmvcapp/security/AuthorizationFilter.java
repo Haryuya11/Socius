@@ -1,5 +1,6 @@
 package com.uit.sociusmvcapp.security;
 
+import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.security.TokenAuthenticator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -52,14 +53,14 @@ public class AuthorizationFilter extends OncePerRequestFilter {
       return;
     }
 
-    String authHeader = request.getHeader("Authorization");
+    String authHeader = request.getHeader(SecurityConstant.AUTHORIZATION_HEADER);
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    if (authHeader == null || !authHeader.startsWith(SecurityConstant.BEARER_PREFIX)) {
       filterChain.doFilter(request, response);
       return;
     }
 
-    String token = authHeader.substring(7);
+    String token = authHeader.substring(SecurityConstant.BEARER_PREFIX_LENGTH);
     try {
       Authentication authentication = tokenAuthenticator.authenticate(token);
       SecurityContextHolder.getContext().setAuthentication(authentication);

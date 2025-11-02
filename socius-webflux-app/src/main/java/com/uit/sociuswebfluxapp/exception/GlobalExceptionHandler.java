@@ -32,25 +32,20 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(BusinessException.class)
   public Mono<ResponseEntity<Response>> handleBusinessException(BusinessException ex) {
-    String code = ex.getCode();
-    String message = i18nService.getMessage(code, ex.getArgs());
-
-    Response responseBody =
+    Response response =
         Response.builder()
             .success(false)
             .status(ex.getStatus().value())
-            .code(code)
-            .message(message)
+            .code(ex.getCode())
+            .message(i18nService.getMessage(ex.getCode(), ex.getArgs()))
             .data(null)
             .build();
-
     log.warn(
         "Reactive Business Exception Handled: status={}, code={}, message={}",
-        responseBody.getStatus(),
-        responseBody.getCode(),
-        responseBody.getMessage());
-
-    return Mono.just(new ResponseEntity<>(responseBody, ex.getStatus()));
+        response.getStatus(),
+        response.getCode(),
+        response.getMessage());
+    return Mono.just(new ResponseEntity<>(response, ex.getStatus()));
   }
 
   /**
@@ -61,17 +56,15 @@ public class GlobalExceptionHandler {
    */
   @ExceptionHandler(Exception.class)
   public Mono<ResponseEntity<Response>> handleUnwantedException(Exception ex) {
-    log.error("An unexpected internal server error occurred in reactive context", ex);
-
+    log.error("Unexpected error: {}", ex.getMessage(), ex);
     Response responseBody =
         Response.builder()
             .success(false)
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .code(MessageConstant.UNEXPECTED_ERROR)
-            .message(i18nService.getMessage(MessageConstant.UNEXPECTED_ERROR))
+            .code(MessageConstant.E_SYS_001)
+            .message(i18nService.getMessage(MessageConstant.E_SYS_001))
             .data(null)
             .build();
-
     return Mono.just(new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR));
   }
 }
