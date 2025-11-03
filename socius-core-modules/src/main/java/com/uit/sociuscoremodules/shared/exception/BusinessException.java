@@ -27,7 +27,7 @@ public class BusinessException extends RuntimeException {
    * @param args Arguments for the i18n message
    */
   public BusinessException(HttpStatus status, String code, Object... args) {
-    super("");
+    super(code);
     this.status = status;
     this.code = code;
     this.args = args;

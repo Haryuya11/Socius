@@ -2,6 +2,7 @@ package com.uit.sociuscoremodules.shared.config;
 
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
+import com.microsoft.graph.serviceclient.GraphServiceClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,5 +35,16 @@ public class GraphClientConfig {
         .clientSecret(clientSecret)
         .tenantId(tenantId)
         .build();
+  }
+
+  /**
+   * Bean definition for GraphServiceClient used to interact with Microsoft Graph API.
+   *
+   * @param credential the ClientSecretCredential for authentication
+   * @return GraphServiceClient instance
+   */
+  @Bean
+  public GraphServiceClient graphServiceClient(ClientSecretCredential credential) {
+    return new GraphServiceClient(credential);
   }
 }

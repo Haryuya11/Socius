@@ -19,8 +19,8 @@
         <result property="deleteFlag" column="delete_flag"/>
     </resultMap>
 
-
-    <select id="getEmployeeById" resultMap="findAllEmployeeMap">
+    <!-- Get By Id -->
+    <select id="findByClientId" resultMap="findAllEmployeeMap">
         SELECT id,
                client_id,
                user_id,
@@ -35,8 +35,73 @@
                deleted_at,
                delete_flag
         FROM employee
-        WHERE client_id = #{id}
-        and delete_flag = 0
+        WHERE client_id = #{clientId}
     </select>
+
+    <!-- Get By User Id -->
+    <select id="findDeletedByUserId" resultMap="findAllEmployeeMap">
+        SELECT id,
+               client_id,
+               user_id,
+               first_name,
+               last_name,
+               team_code,
+               department_code,
+               role_code,
+               image_url,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM employee
+        WHERE user_id = #{userId}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
+    <!-- Create -->
+    <insert id="create">
+        INSERT INTO employee
+        (client_id,
+         user_id,
+         first_name,
+         last_name,
+         team_code,
+         department_code,
+         role_code,
+         image_url,
+         salary)
+        VALUES (#{request.clientId},
+                #{request.userId},
+                #{request.firstName},
+                #{request.lastName},
+                #{request.teamCode},
+                #{request.departmentCode},
+                #{request.roleCode},
+                #{request.imageUrl},
+                #{request.salary})
+    </insert>
+
+    <!-- Update -->
+    <update id="update">
+        UPDATE employee
+        SET first_name      = #{request.firstName},
+            last_name       = #{request.lastName},
+            team_code       = #{request.teamCode},
+            department_code = #{request.departmentCode},
+            role_code       = #{request.roleCode},
+            image_url       = #{request.imageUrl},
+            updated_at      = CURRENT_TIMESTAMP
+        WHERE client_id = #{request.clientId}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </update>
+
+    <update id="deactivate">
+        UPDATE employee
+        SET delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at  = CURRENT_TIMESTAMP,
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
 
 </mapper>

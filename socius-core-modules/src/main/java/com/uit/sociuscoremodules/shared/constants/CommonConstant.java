@@ -6,7 +6,9 @@ public final class CommonConstant {
   /** Private constructor to prevent instantiation. */
   private CommonConstant() {}
 
-  /** URL template for fetching JSON Web Key Set from Microsoft identity platform. */
-  public static final String JSON_WEB_KEY_SET_URL =
-      "https://login.microsoftonline.com/%s/discovery/v2.0/keys";
+  /** The "@" sign used in email addresses and user principal names. */
+  public static final String AT_SIGN = "@";
+
+  /** Initial number constant set to zero. */
+  public static final Integer INIT_NUMBER = 0;
 }
