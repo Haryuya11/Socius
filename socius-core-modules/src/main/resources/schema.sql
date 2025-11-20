@@ -1,4 +1,4 @@
-CREATE TABLE employee
+CREATE TABLE IF NOT EXISTS employee
 (
     id              SERIAL PRIMARY KEY,
     client_id       VARCHAR(50) UNIQUE NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE employee
     delete_flag     SMALLINT  DEFAULT 0
 );
 
-create table teams
+CREATE TABLE IF NOT EXISTS teams
 (
     id          SERIAL PRIMARY KEY,
     team_code   VARCHAR(10) UNIQUE NOT NULL,
@@ -27,7 +27,7 @@ create table teams
     delete_flag SMALLINT  DEFAULT 0
 );
 
-create table departments
+CREATE TABLE IF NOT EXISTS departments
 (
     id              SERIAL PRIMARY KEY,
     department_code VARCHAR(10) UNIQUE NOT NULL,
@@ -38,7 +38,7 @@ create table departments
     delete_flag     SMALLINT  DEFAULT 0
 );
 
-create table roles
+CREATE TABLE IF NOT EXISTS roles
 (
     id          SERIAL PRIMARY KEY,
     role_code   VARCHAR(10) UNIQUE NOT NULL,
@@ -49,16 +49,27 @@ create table roles
     delete_flag SMALLINT  DEFAULT 0
 );
 
-create table tasks
+CREATE TABLE IF NOT EXISTS tasks
 (
     id            SERIAL PRIMARY KEY,
     receiver_id   SERIAL NOT NULL,
     sender_id     SERIAL NOT NULL,
-    payload       TEXT   NOT NULL,
+    payloadDto    TEXT   NOT NULL,
     status        SMALLINT  DEFAULT 0,
     delivery_type SMALLINT  DEFAULT 0,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at    TIMESTAMP,
     delete_flag   SMALLINT  DEFAULT 0
+);
+
+
+CREATE TABLE IF NOT EXISTS notifications
+(
+    id            BIGSERIAL PRIMARY KEY,
+    receiver_id   VARCHAR(50) NOT NULL,
+    delivery_type SMALLINT    NOT NULL,
+    payload_json  TEXT        NOT NULL,
+    is_read       SMALLINT  DEFAULT 0,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -29,11 +29,17 @@ public class SecurityConfig {
    */
   @Bean
   public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-    http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+    return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .cors(ServerHttpSecurity.CorsSpec::disable)
+        .addFilterAt(reactiveAuthorizationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         .authorizeExchange(
-            exchange -> exchange.pathMatchers("/ws/**").authenticated().anyExchange().permitAll())
-        .addFilterAt(reactiveAuthorizationFilter, SecurityWebFiltersOrder.AUTHENTICATION);
-
-    return http.build();
+            ex ->
+                ex.pathMatchers("/health", "/error", "/favicon.ico")
+                    .permitAll()
+                    .pathMatchers("/ws/**")
+                    .permitAll()
+                    .anyExchange()
+                    .authenticated())
+        .build();
   }
 }

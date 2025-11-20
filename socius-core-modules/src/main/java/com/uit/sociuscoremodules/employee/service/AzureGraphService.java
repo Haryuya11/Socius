@@ -19,9 +19,8 @@ public interface AzureGraphService {
    *
    * @param clientId the client ID of the user to update
    * @param request the user creation request
-   * @return the updated User object
    */
-  User updateUser(String clientId, EmployeeCreateRequest request);
+  void updateUser(String clientId, EmployeeCreateRequest request);
 
   /**
    * Deactivate a user in Azure Graph.
@@ -43,9 +42,8 @@ public interface AzureGraphService {
    *
    * @param clientId the client ID of the user to reactivate
    * @param request the user creation request
-   * @return the reactivated User object
    */
-  User reactivateUser(String clientId, EmployeeCreateRequest request);
+  void reactivateUser(String clientId, EmployeeCreateRequest request);
 
   /**
    * Change the password of a user in Azure Graph.

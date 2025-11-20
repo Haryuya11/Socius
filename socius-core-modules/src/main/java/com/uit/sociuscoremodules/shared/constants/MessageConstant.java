@@ -27,6 +27,9 @@ public final class MessageConstant {
   /** Employee change password error message key. */
   public static final String E_EMP_006 = "E_EMP_006";
 
+  /** Employee is already exists error message key. */
+  public static final String E_EMP_007 = "E_EMP_007";
+
   /** Employee created successfully. */
   public static final String S_EMP_001 = "S_EMP_001";
 
@@ -47,4 +50,9 @@ public final class MessageConstant {
 
   /** Employee not found. */
   public static final String W_EMP_002 = "W_EMP_002";
+
+  /** Failed to publish notification. */
+  public static final String E_NOTIFY_001 = "E_NOTIFY_001";
+
+  public static final String S_NOTIFY_001 = "S_NOTIFY_001";
 }

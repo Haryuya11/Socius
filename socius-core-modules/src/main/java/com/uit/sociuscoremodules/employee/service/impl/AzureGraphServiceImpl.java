@@ -64,13 +64,20 @@ public class AzureGraphServiceImpl extends BaseServiceImpl implements AzureGraph
    *
    * @param clientId the client ID of the user to update
    * @param request the request containing user update details
-   * @return the updated User object
    */
   @Override
-  public User updateUser(String clientId, EmployeeCreateRequest request) {
+  public void updateUser(String clientId, EmployeeCreateRequest request) {
     try {
       User updatedUser = employeeConverter.toGraphUserForUpdate(request);
-      return graphClient.users().byUserId(clientId).patch(updatedUser);
+      graphClient.users().byUserId(clientId).patch(updatedUser);
+      graphClient
+          .users()
+          .byUserId(clientId)
+          .get(
+              r -> {
+                assert r.queryParameters != null;
+                r.queryParameters.select = DEFAULT_USER_FIELDS;
+              });
     } catch (Exception e) {
       log.error(e.getMessage(), e);
       throw badRequest(MessageConstant.E_EMP_002);
@@ -124,18 +131,16 @@ public class AzureGraphServiceImpl extends BaseServiceImpl implements AzureGraph
    *
    * @param clientId the client ID of the user to reactivate
    * @param request the user creation request
-   * @return the reactivated User object
    */
   @Override
-  public User reactivateUser(String clientId, EmployeeCreateRequest request) {
+  public void reactivateUser(String clientId, EmployeeCreateRequest request) {
     try {
       User user = findById(clientId);
       User updatedUser = employeeConverter.toGraphUserForUpdate(request);
       updatedUser.setId(user.getId());
       updatedUser.setAccountEnabled(true);
 
-      return graphClient.users().byUserId(clientId).patch(updatedUser);
-
+      graphClient.users().byUserId(clientId).patch(updatedUser);
     } catch (Exception e) {
       log.error("Failed to reactivate user: {}", e.getMessage(), e);
       throw badRequest(MessageConstant.E_EMP_005);

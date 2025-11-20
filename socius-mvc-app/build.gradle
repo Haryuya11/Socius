@@ -25,12 +25,15 @@ repositories {
 }
 
 dependencies {
-
     implementation project(':socius-core-modules')
 
     // Spring MVC
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Spring AMQP for RabbitMQ
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
     // Spring dotenv
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
