@@ -1,6 +1,6 @@
 package com.uit.sociuswebfluxapp.constants;
 
-/** Constants related to RabbitMQ operations. */
+/** Constants related to WebSocket operations. */
 public final class WebSocketConstant {
 
   /** Private constructor to prevent instantiation. */
