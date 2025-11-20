@@ -3,7 +3,7 @@ package com.uit.sociuscoremodules.notification.persistence;
 import com.uit.sociuscoremodules.notification.domain.Notification;
 import org.apache.ibatis.annotations.Mapper;
 
-/** MyBatis Mapper interface for Employee entity. */
+/** MyBatis Mapper interface for Notification entity. */
 @Mapper
 public interface NotificationMapper {
 

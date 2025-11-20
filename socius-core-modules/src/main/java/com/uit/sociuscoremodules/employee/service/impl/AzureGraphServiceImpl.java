@@ -70,14 +70,6 @@ public class AzureGraphServiceImpl extends BaseServiceImpl implements AzureGraph
     try {
       User updatedUser = employeeConverter.toGraphUserForUpdate(request);
       graphClient.users().byUserId(clientId).patch(updatedUser);
-      graphClient
-          .users()
-          .byUserId(clientId)
-          .get(
-              r -> {
-                assert r.queryParameters != null;
-                r.queryParameters.select = DEFAULT_USER_FIELDS;
-              });
     } catch (Exception e) {
       log.error(e.getMessage(), e);
       throw badRequest(MessageConstant.E_EMP_002);

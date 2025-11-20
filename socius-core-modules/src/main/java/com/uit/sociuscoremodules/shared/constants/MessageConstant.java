@@ -54,5 +54,6 @@ public final class MessageConstant {
   /** Failed to publish notification. */
   public static final String E_NOTIFY_001 = "E_NOTIFY_001";
 
+  /** Successfully retrieved count of unread notifications. */
   public static final String S_NOTIFY_001 = "S_NOTIFY_001";
 }

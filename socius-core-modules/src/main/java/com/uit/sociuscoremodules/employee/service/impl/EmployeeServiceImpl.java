@@ -75,7 +75,7 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
     String clientId =
         (deletedUser == null)
             ? azureGraphService.createUser(request).getId()
-            : request.getClientId();
+            : deletedUser.getClientId();
 
     request.setClientId(clientId);
 

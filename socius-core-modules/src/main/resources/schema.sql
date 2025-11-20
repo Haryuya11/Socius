@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS tasks
     id            SERIAL PRIMARY KEY,
     receiver_id   SERIAL NOT NULL,
     sender_id     SERIAL NOT NULL,
-    payloadDto    TEXT   NOT NULL,
+    payload       TEXT   NOT NULL,
     status        SMALLINT  DEFAULT 0,
     delivery_type SMALLINT  DEFAULT 0,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -27,7 +27,7 @@ public class CommonUtils {
       return OBJECT_MAPPER.writeValueAsString(value);
     } catch (Exception e) {
       log.error("Error serializing notification: {}", e.getMessage(), e);
-      return null;
+      return "";
     }
   }
 
@@ -46,7 +46,7 @@ public class CommonUtils {
     try {
       return OBJECT_MAPPER.readValue(json, clazz);
     } catch (Exception e) {
-      log.error("Error deserializing notification: {}", e.getMessage(), e);
+      log.error("Error deserializing object of type {}: {}", clazz.getName(), e.getMessage(), e);
       return null;
     }
   }
