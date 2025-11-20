@@ -88,15 +88,15 @@ public class NotificationBroadcaster {
    * @param clientId the unique identifier of the client
    */
   private void tryCleanup(String clientId) {
-    Sinks.Many<NotificationDto> sink = userSinks.get(clientId);
-    if (sink == null) {
-      return;
-    }
-    boolean noSubscribers = sink.currentSubscriberCount() == WebSocketConstant.NO_SUBSCRIBERS;
-    boolean removed = noSubscribers && userSinks.remove(clientId, sink);
-    if (removed) {
-      sink.tryEmitComplete();
-      log.debug("Cleaned up sink for clientId={}", clientId);
-    }
+    userSinks.computeIfPresent(
+        clientId,
+        (key, sink) -> {
+          if (sink.currentSubscriberCount() == WebSocketConstant.NO_SUBSCRIBERS) {
+            sink.tryEmitComplete();
+            log.debug("Cleaned up sink for clientId={}", clientId);
+            return null; // Remove the entry
+          }
+          return sink; // Keep the entry
+        });
   }
 }
