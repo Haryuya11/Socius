@@ -133,6 +133,7 @@ public interface EmployeeConverter {
    * Creates the list of identities required for a user to sign in with their email address.
    *
    * @param userId The user's email address.
+   * @param issuer The tenant's issuer domain.
    * @return A list containing the ObjectIdentity for email-based sign-in.
    */
   default List<ObjectIdentity> createEmailIdentity(String userId, String issuer) {

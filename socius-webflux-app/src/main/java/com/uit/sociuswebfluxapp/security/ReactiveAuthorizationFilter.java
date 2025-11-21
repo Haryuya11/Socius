@@ -1,5 +1,7 @@
 package com.uit.sociuswebfluxapp.security;
 
+import com.uit.sociuscoremodules.shared.constants.CommonConstant;
+import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.security.TokenAuthenticator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -34,19 +36,34 @@ public class ReactiveAuthorizationFilter implements WebFilter {
   @Override
   public Mono<Void> filter(@NonNull ServerWebExchange exchange, @NonNull WebFilterChain chain) {
     String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+    String token = null;
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    if (authHeader != null && authHeader.startsWith(SecurityConstant.BEARER_PREFIX)) {
+      token = authHeader.substring(SecurityConstant.BEARER_PREFIX_LENGTH);
+    } else {
+      String query = exchange.getRequest().getURI().getQuery();
+      if (query != null && query.contains(SecurityConstant.START_WITH_TOKEN)) {
+        String[] params = query.split(CommonConstant.AMP_SIGN);
+        for (String param : params) {
+          if (param.startsWith(SecurityConstant.START_WITH_TOKEN)) {
+            token = param.substring(SecurityConstant.TOKEN_INDEX);
+            break;
+          }
+        }
+      }
+    }
+
+    if (token == null) {
       return chain.filter(exchange);
     }
 
-    String token = authHeader.substring(7);
     try {
       Authentication authentication = tokenAuthenticator.authenticate(token);
       return chain
           .filter(exchange)
           .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
     } catch (Exception e) {
-      return Mono.error(e);
+      return chain.filter(exchange);
     }
   }
 }

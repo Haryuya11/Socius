@@ -63,4 +63,14 @@ public class EmployeeRepository {
   public void deactivate(String clientId) {
     employeeMapper.deactivate(clientId);
   }
+
+  /**
+   * Get EmployeeDto by user ID.
+   *
+   * @param userId the user ID
+   * @return the corresponding EmployeeDto
+   */
+  public EmployeeDto findByUserId(String userId) {
+    return employeeConverter.entityToDto(employeeMapper.findByUserId(userId));
+  }
 }

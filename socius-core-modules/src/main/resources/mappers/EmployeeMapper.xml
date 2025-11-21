@@ -36,9 +36,10 @@
                delete_flag
         FROM employee
         WHERE client_id = #{clientId}
+            AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </select>
 
-    <!-- Get By User Id -->
+    <!-- Get Deleted By User Id -->
     <select id="findDeletedByUserId" resultMap="findAllEmployeeMap">
         SELECT id,
                client_id,
@@ -57,6 +58,27 @@
         WHERE user_id = #{userId}
           AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
     </select>
+
+    <!-- Get By User Id -->
+    <select id="findByUserId" resultMap="findAllEmployeeMap">
+        SELECT id,
+               client_id,
+               user_id,
+               first_name,
+               last_name,
+               team_code,
+               department_code,
+               role_code,
+               image_url,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM employee
+        WHERE user_id = #{userId}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
 
     <!-- Create -->
     <insert id="create">
@@ -95,6 +117,7 @@
           AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
         </update>
 
+    <!-- Deactivate -->
     <update id="deactivate">
         UPDATE employee
         SET delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value},

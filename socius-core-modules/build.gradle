@@ -49,6 +49,8 @@ dependencies {
     // Azure Identity
     implementation 'com.azure:azure-identity:1.15.0'
 
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
     // Apache Commons Lang
     implementation 'org.apache.commons:commons-lang3:3.19.0'
 

@@ -45,4 +45,12 @@ public interface EmployeeMapper {
    * @param clientId the client ID of the employee to deactivate
    */
   void deactivate(@Param("clientId") String clientId);
+
+  /**
+   * Find employees by user ID.
+   *
+   * @param userId the user ID
+   * @return list of Employee entities
+   */
+  Employee findByUserId(@Param("userId") String userId);
 }

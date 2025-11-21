@@ -41,4 +41,10 @@ public final class SecurityConstant {
 
   /** Length of the Bearer token prefix. */
   public static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
+
+  /** Query parameter prefix for tokens in URLs. */
+  public static final String START_WITH_TOKEN = "token=";
+
+  /** Index position to extract the token value from the query parameter. */
+  public static final int TOKEN_INDEX = START_WITH_TOKEN.length();
 }
