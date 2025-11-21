@@ -46,7 +46,7 @@ public class ReactiveAuthorizationFilter implements WebFilter {
       if (query != null) {
         MultiValueMap<String, String> queryParams =
             UriComponentsBuilder.newInstance().query(query).build().getQueryParams();
-        token = queryParams.getFirst("token");
+        token = queryParams.getFirst(SecurityConstant.TOKEN_PARAM_NAME);
       }
     }
 

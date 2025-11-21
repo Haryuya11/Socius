@@ -42,6 +42,9 @@ public final class SecurityConstant {
   /** Length of the Bearer token prefix. */
   public static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
 
+  /** Query parameter name for tokens in URLs. */
+  public static final String TOKEN_PARAM_NAME = "token";
+
   /** Query parameter prefix for tokens in URLs. */
   public static final String START_WITH_TOKEN = "token=";
 
