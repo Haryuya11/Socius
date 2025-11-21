@@ -1,6 +1,5 @@
 package com.uit.sociuswebfluxapp.security;
 
-import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.security.TokenAuthenticator;
 import lombok.NonNull;
@@ -9,9 +8,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 /**
@@ -42,14 +43,10 @@ public class ReactiveAuthorizationFilter implements WebFilter {
       token = authHeader.substring(SecurityConstant.BEARER_PREFIX_LENGTH);
     } else {
       String query = exchange.getRequest().getURI().getQuery();
-      if (query != null && query.contains(SecurityConstant.START_WITH_TOKEN)) {
-        String[] params = query.split(CommonConstant.AMP_SIGN);
-        for (String param : params) {
-          if (param.startsWith(SecurityConstant.START_WITH_TOKEN)) {
-            token = param.substring(SecurityConstant.TOKEN_INDEX);
-            break;
-          }
-        }
+      if (query != null) {
+        MultiValueMap<String, String> queryParams =
+            UriComponentsBuilder.newInstance().query(query).build().getQueryParams();
+        token = queryParams.getFirst(SecurityConstant.TOKEN_PARAM_NAME);
       }
     }
 
