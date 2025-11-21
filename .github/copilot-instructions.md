@@ -10,7 +10,7 @@
 - **Spring Boot 3.5.6** - Application framework
 - **Spring Modulith 1.4.3** - Modular monolith architecture
 - **MyBatis 3.0.x** - SQL mapping framework
-- **MapStruct 1.5.5** - Object mapping
+- **MapStruct 1.5.5.Final** - Object mapping
 - **Spring WebFlux** - Reactive programming
 - **Spring MVC** - Traditional web framework
 - **PostgreSQL** - Database
