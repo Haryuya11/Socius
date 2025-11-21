@@ -4,6 +4,7 @@ import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.security.TokenAuthenticator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Mono;
  * ReactiveAuthorizationFilter is a WebFilter that intercepts HTTP requests to perform token-based
  * authentication and set the security context in a reactive environment.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ReactiveAuthorizationFilter implements WebFilter {
@@ -60,6 +62,10 @@ public class ReactiveAuthorizationFilter implements WebFilter {
           .filter(exchange)
           .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
     } catch (Exception e) {
+      log.warn(
+          "Authentication failed for request to {}: {}",
+          exchange.getRequest().getPath(),
+          e.getMessage());
       return chain.filter(exchange);
     }
   }

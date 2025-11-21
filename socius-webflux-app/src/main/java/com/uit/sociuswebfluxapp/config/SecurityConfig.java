@@ -36,6 +36,8 @@ public class SecurityConfig {
             ex ->
                 ex.pathMatchers("/health", "/error", "/favicon.ico")
                     .permitAll()
+                    // WebSocket endpoint allows anonymous connections at security level,
+                    // but authentication is enforced at the handler level via token query parameter
                     .pathMatchers("/ws/**")
                     .permitAll()
                     .anyExchange()

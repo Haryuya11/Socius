@@ -8,7 +8,7 @@
             keyProperty="id"
             keyColumn="id">
         INSERT INTO notifications
-            (receiver_id, delivery_type, payload_json)
+            (receiver_id, delivery_type, payload)
         VALUES (#{receiverId}, #{deliveryType}, #{payload})
     </insert>
 

@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS notifications
     id            BIGSERIAL PRIMARY KEY,
     receiver_id   VARCHAR(50) NOT NULL,
     delivery_type SMALLINT    NOT NULL,
-    payload_json  TEXT        NOT NULL,
+    payload       TEXT        NOT NULL,
     is_read       SMALLINT  DEFAULT 0,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
