@@ -1,15 +1,8 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.6' apply false
-    id 'io.spring.dependency-management' version '1.1.7'
-    id 'com.diffplug.spotless' version '8.0.0'
-}
-
-ext {
-    set('springModulithVersion', "1.4.3")
-    set('mybatisVersion', "3.0.3")
-    set('mapstructVersion', "1.5.5.Final")
-    set('springDotenvVersion', "4.0.0")
+    alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.spotless)
 }
 
 allprojects {
@@ -23,27 +16,7 @@ subprojects {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'com.diffplug.spotless'
-    apply plugin: 'checkstyle' // Plugin Checkstyle
-
-    spotless {
-        java {
-            target 'src/**/*.java'
-            googleJavaFormat()
-            importOrder()
-            removeUnusedImports()
-            trimTrailingWhitespace()
-            endWithNewline()
-        }
-    }
-
-    checkstyle {
-        toolVersion = '12.1.0'
-        configFile = rootProject.file('config/checkstyle/google_checks.xml')
-        maxWarnings = 0
-        configProperties = [
-                'org.checkstyle.google.suppressionfilter.config': rootProject.file('config/checkstyle/checkstyle-suppressions.xml').absolutePath
-        ]
-    }
+    apply plugin: 'checkstyle'
 
     group = 'com.uit'
     version = '1.0-SNAPSHOT'
@@ -58,16 +31,58 @@ subprojects {
         compileOnly {
             extendsFrom annotationProcessor
         }
+        developmentOnly
+        runtimeClasspath {
+            extendsFrom developmentOnly
+        }
+        configureEach {
+            exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        }
     }
 
+    // Centralized dependency management
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.modulith:spring-modulith-bom:${springModulithVersion}"
+            mavenBom "org.springframework.modulith:spring-modulith-bom:${libs.versions.springModulith.get()}"
         }
+    }
+
+    // Common dependencies for all subprojects
+    dependencies {
+        compileOnly libs.lombok
+        annotationProcessor libs.lombok
+
+        developmentOnly libs.spring.boot.devtools
+
+        testImplementation libs.bundles.testing.common
+    }
+
+    spotless {
+        java {
+            target 'src/**/*.java'
+            googleJavaFormat()
+            importOrder()
+            removeUnusedImports()
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+    }
+
+    checkstyle {
+        toolVersion = libs.versions.checkstyle.get()
+        configFile = rootProject.file('config/checkstyle/google_checks.xml')
+        maxWarnings = 0
+        configProperties = [
+                'org.checkstyle.google.suppressionfilter.config':
+                        rootProject.file('config/checkstyle/checkstyle-suppressions.xml').absolutePath
+        ]
     }
 
     tasks.named('test') {
         useJUnitPlatform()
+        // Performance tuning
+        maxHeapSize = '1G'
+        jvmArgs = ['-XX:+UseParallelGC']
     }
 
     tasks.named("build") {

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Employee domain model representing an employee entity. It map to the employee table in the
+ * Employee domain model representing an employee entity. It maps to the employee table in the
  * database.
  */
 @Getter

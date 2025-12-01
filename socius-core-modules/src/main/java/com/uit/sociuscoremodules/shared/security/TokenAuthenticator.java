@@ -77,7 +77,7 @@ public class TokenAuthenticator {
    */
   private JWKSource<SecurityContext> createJwkSource() {
     try {
-      String uri = String.format(SecurityConstant.JSON_WEB_KEY_SET_URL, tenantId);
+      String uri = String.format(SecurityConstant.JSON_WEB_KEY_SET_URL, tenantId, tenantId);
       ResourceRetriever resourceRetriever =
           new DefaultResourceRetriever(
               SecurityConstant.JWK_CONNECT_TIMEOUT_MILLIS,
@@ -173,7 +173,7 @@ public class TokenAuthenticator {
    * @return true if the claims are valid, false otherwise
    */
   private boolean validateClaims(JWTClaimsSet claims) {
-    String expectedIssuer = String.format(SecurityConstant.ISSUER_URI_FORMAT, tenantId);
+    String expectedIssuer = String.format(SecurityConstant.ISSUER_URI_FORMAT, tenantId, tenantId);
 
     if (!expectedIssuer.equals(claims.getIssuer())) {
       log.warn("Invalid issuer: expected {}, got {}", expectedIssuer, claims.getIssuer());
