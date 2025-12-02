@@ -54,7 +54,9 @@ public interface EmployeeConverter {
   @Mapping(target = "accountEnabled", constant = "true")
   @Mapping(target = "passwordProfile", expression = "java(createDefaultPasswordProfile())")
   @Mapping(target = "passwordPolicies", constant = "DisablePasswordExpiration")
-  @Mapping(target = "identities", ignore = true)
+  @Mapping(
+      target = "identities",
+      expression = "java(createEmailIdentity(request.getUserId(), issuer))")
   @Mapping(target = "mail", ignore = true)
   User toGraphUser(EmployeeCreateRequest request, String issuer);
 

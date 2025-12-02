@@ -9,7 +9,7 @@ public final class CommonConstant {
   /** The "@" sign used in email addresses and user principal names. */
   public static final String AT_SIGN = "@";
 
-  /** The "&" (ampersand) sign used for concatenation in query strings and parameters. */
+  /** The ampersand (&) sign used for concatenation in query strings and parameters. */
   public static final String AMP_SIGN = "&";
 
   /** The forward slash character used in URLs and file paths. */

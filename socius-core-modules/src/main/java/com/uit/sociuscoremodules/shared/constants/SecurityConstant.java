@@ -22,10 +22,10 @@ public final class SecurityConstant {
 
   /** URL template for fetching JSON Web Key Set from Microsoft identity platform. */
   public static final String JSON_WEB_KEY_SET_URL =
-      "https://login.microsoftonline.com/%s/discovery/v2.0/keys";
+      "https://%s.ciamlogin.com/%s/discovery/v2.0/keys";
 
   /** Issuer URI template for validating JWT tokens from Microsoft identity platform. */
-  public static final String ISSUER_URI_FORMAT = "https://login.microsoftonline.com/%s/v2.0";
+  public static final String ISSUER_URI_FORMAT = "https://%s.ciamlogin.com/%s/v2.0";
 
   /** Claim name for the Object ID in JWT tokens. */
   public static final String OID_CLAIM_NAME = "oid";

@@ -19,7 +19,7 @@
         <result property="deleteFlag" column="delete_flag"/>
     </resultMap>
 
-    <!-- Get By Id -->
+    <!-- Get By id -->
     <select id="findByClientId" resultMap="findAllEmployeeMap">
         SELECT id,
                client_id,
@@ -39,7 +39,7 @@
             AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </select>
 
-    <!-- Get Deleted By User Id -->
+    <!-- Get Deleted By User id -->
     <select id="findDeletedByUserId" resultMap="findAllEmployeeMap">
         SELECT id,
                client_id,
@@ -59,7 +59,7 @@
           AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
     </select>
 
-    <!-- Get By User Id -->
+    <!-- Get By User id -->
     <select id="findByUserId" resultMap="findAllEmployeeMap">
         SELECT id,
                client_id,

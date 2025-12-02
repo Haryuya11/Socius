@@ -1,49 +1,13 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.6'
-    id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com.uit'
-version = '0.0.1-SNAPSHOT'
 description = 'socius-mvc-app'
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
+    // Core module
     implementation project(':socius-core-modules')
 
-    // Spring MVC
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // Spring AMQP for RabbitMQ
-    implementation 'org.springframework.boot:spring-boot-starter-amqp'
-
-    // Spring dotenv
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
-
-    compileOnly 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
+    // MVC specific
+    implementation libs.bundles.spring.mvc
 }
