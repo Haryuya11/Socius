@@ -11,5 +11,9 @@ dependencies {
     // MVC specific
     implementation libs.bundles.spring.mvc
 
+    // Log4j2 for logging
     implementation libs.spring.boot.starter.log4j2
+
+    // Actuator for monitoring and management
+    implementation libs.spring.boot.starter.actuator
 }

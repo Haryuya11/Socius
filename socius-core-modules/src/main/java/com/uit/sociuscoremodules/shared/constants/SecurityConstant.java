@@ -74,5 +74,13 @@ public final class SecurityConstant {
 
   /** Public endpoints that do not require authentication. */
   public static final List<String> PUBLIC_ENDPOINTS =
-      List.of("/health", "/ping", "/favicon.ico", "/robots.txt", "/error");
+      List.of(
+          "/health",
+          "/ping",
+          "/favicon.ico",
+          "/robots.txt",
+          "/error",
+          "/actuator/health",
+          "/actuator/health/**",
+          "/actuator/info");
 }
