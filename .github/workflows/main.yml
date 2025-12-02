@@ -137,9 +137,8 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./artifacts/*.jar"
+          source: "artifacts/*.jar"
           target: /tmp/socius-deploy
-          strip_components: 1
           overwrite: true
 
       - name: Execute Deployment
@@ -165,8 +164,8 @@ jobs:
             cd "$JAR_DIR/backups" && ls -t | tail -n +6 | xargs -I {} sudo rm -rf "{}"
 
             # 2. Move new JARs
-            sudo mv /tmp/socius-deploy/socius-mvc-app-*.jar "$JAR_DIR/socius-mvc-app.jar"
-            sudo mv /tmp/socius-deploy/socius-webflux-app-*.jar "$JAR_DIR/socius-webflux-app.jar"
+            sudo mv /tmp/socius-deploy/artifacts/socius-mvc-app-*.jar "$JAR_DIR/socius-mvc-app.jar"
+            sudo mv /tmp/socius-deploy/artifacts/socius-webflux-app-*.jar "$JAR_DIR/socius-webflux-app.jar"
 
             # 3. Set Permissions
             sudo chown azureuser:azureuser "$JAR_DIR"/*.jar
@@ -178,7 +177,6 @@ jobs:
               echo "Restarting $svc..."
               if ! sudo systemctl restart "$svc"; then
                  echo "❌ Failed to restart $svc. Rolling back..."
-                 # Simple rollback strategy
                  sudo cp "$BACKUP_DIR/socius-mvc-app.jar" "$JAR_DIR/"
                  sudo cp "$BACKUP_DIR/socius-webflux-app.jar" "$JAR_DIR/"
                  sudo systemctl restart socius-mvc.service
