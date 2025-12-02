@@ -1,5 +1,7 @@
 package com.uit.sociuscoremodules.shared.constants;
 
+import java.util.List;
+
 /** Constants related to authentication, authorization, and security configurations. */
 public final class SecurityConstant {
 
@@ -50,4 +52,27 @@ public final class SecurityConstant {
 
   /** Index position to extract the token value from the query parameter. */
   public static final int TOKEN_INDEX = START_WITH_TOKEN.length();
+
+  /** Allowed origin patterns for CORS requests. */
+  public static final List<String> CORS_ALLOWED_ORIGIN_PATTERNS = List.of("*");
+
+  /** Allowed HTTP methods in CORS requests. */
+  public static final List<String> CORS_ALLOWED_METHODS =
+      List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH");
+
+  /** Allowed headers in CORS requests. */
+  public static final List<String> CORS_ALLOWED_HEADERS = List.of("*");
+
+  /** Whether to allow credentials (cookies, authorization headers, etc.) in CORS requests. */
+  public static final boolean CORS_ALLOW_CREDENTIALS = true;
+
+  /** Max age (in seconds) for CORS preflight response caching. */
+  public static final Long MAX_AGE = 3600L; // 1 hour
+
+  /** Wildcard pattern to match all paths. */
+  public static final String ALL_PATHS = "/**";
+
+  /** Public endpoints that do not require authentication. */
+  public static final List<String> PUBLIC_ENDPOINTS =
+      List.of("/health", "/ping", "/favicon.ico", "/robots.txt", "/error");
 }

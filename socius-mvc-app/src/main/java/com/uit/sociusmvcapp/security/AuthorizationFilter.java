@@ -46,6 +46,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     // Bỏ qua filter cho các endpoint công khai
     if (requestUri.equals("/health")
+        || requestUri.equals("/ping")
         || requestUri.equals("/favicon.ico")
         || requestUri.equals("/robots.txt")
         || requestUri.equals("/error")) {

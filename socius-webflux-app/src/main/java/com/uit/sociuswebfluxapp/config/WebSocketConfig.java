@@ -31,8 +31,8 @@ public class WebSocketConfig {
   @Bean
   public HandlerMapping webSocketMapping() {
     Map<String, Object> map = new HashMap<>();
-    map.put("/ws/notifications", notificationHandler);
-    map.put("/ws/notifications/**", notificationHandler);
+    map.put(WebSocketConstant.NOTIFICATION_DESTINATION_PREFIX, notificationHandler);
+    map.put(WebSocketConstant.NOTIFICATION_WEBSOCKET_PATH, notificationHandler);
 
     SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
     mapping.setUrlMap(map);
