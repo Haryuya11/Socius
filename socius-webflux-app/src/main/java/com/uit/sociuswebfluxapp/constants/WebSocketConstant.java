@@ -2,7 +2,7 @@ package com.uit.sociuswebfluxapp.constants;
 
 import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 
-/** Constants related to RabbitMQ operations. */
+/** Constants related to WebSocket operations. */
 public final class WebSocketConstant {
 
   /** Private constructor to prevent instantiation. */
