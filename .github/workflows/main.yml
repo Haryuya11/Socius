@@ -16,10 +16,12 @@ on:
       confirm:
         description: 'Type "deploy" to confirm'
         required: true
+
 env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.caching=true"
   JAR_DIR: /opt/socius
   LOG_DIR: /var/log/socius
+
 jobs:
   validate:
     name: Validate Input
@@ -32,6 +34,7 @@ jobs:
             exit 1
           fi
           echo "✅ Deployment confirmed by ${{ github.actor }}"
+
   pre-check:
     name: Pre-Deployment Checks
     runs-on: ubuntu-latest
@@ -49,59 +52,72 @@ jobs:
           script: |
             set -euo pipefail
             echo "Checking Server Status..."
+            
             # 1. Check Disk Space (Min 1GB)
             AVAILABLE=$(df "$JAR_DIR" | tail -1 | awk '{print $4}')
             if [ "$AVAILABLE" -lt 1048576 ]; then
               echo "❌ Insufficient disk space"
               exit 1
             fi
+            
             # 2. Check Java Version
             if ! java -version 2>&1 | grep -q "17\."; then
               echo "❌ Java 17 required"
               exit 1
             fi
+            
             echo "✅ Server ready"
+
   build:
     name: Build Applications
     runs-on: ubuntu-latest
     needs: pre-check
-    outputs:
-      mvc-jar: ${{ steps.find-jars.outputs.mvc_jar }}
-      webflux-jar: ${{ steps.find-jars.outputs.webflux_jar }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
           cache: "gradle"
+
       - name: Build with Gradle
         run: |
           chmod +x gradlew
           ./gradlew clean bootJar -x test --parallel --build-cache
-      - name: Find JARs
-        id: find-jars
+
+      - name: Prepare JARs for Upload
         run: |
+          # Create a clean artifacts directory
+          mkdir -p ./upload-artifacts
+          
+          # Find and copy JARs (excluding *-plain.jar)
           MVC_JAR=$(find socius-mvc-app/build/libs -name '*.jar' ! -name '*-plain.jar' -type f | head -1)
           WEBFLUX_JAR=$(find socius-webflux-app/build/libs -name '*.jar' ! -name '*-plain.jar' -type f | head -1)
+          
           if [[ -z "$MVC_JAR" || -z "$WEBFLUX_JAR" ]]; then
             echo "❌ JAR files not found"
             exit 1
           fi
-          echo "mvc_jar=$MVC_JAR" >> $GITHUB_OUTPUT
-          echo "webflux_jar=$WEBFLUX_JAR" >> $GITHUB_OUTPUT
+          
+          # Copy with original names to upload directory
+          cp "$MVC_JAR" ./upload-artifacts/
+          cp "$WEBFLUX_JAR" ./upload-artifacts/
+          
+          echo "✅ JARs ready for upload:"
+          ls -lh ./upload-artifacts/
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: application-jars
-          path: |
-            ${{ steps.find-jars.outputs.mvc_jar }}
-            ${{ steps.find-jars.outputs.webflux_jar }}
+          path: ./upload-artifacts/*.jar
           retention-days: 1
+
   deploy:
     name: Deploy to Azure VM
     runs-on: ubuntu-latest
@@ -127,7 +143,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./artifacts/*.jar"
+          source: "artifacts/*.jar"
           target: "/tmp/socius-deploy"
           strip_components: 1
           overwrite: true
@@ -156,7 +172,7 @@ jobs:
             sudo cp "$JAR_DIR"/*.jar "$BACKUP_DIR/" 2>/dev/null || true
             
             # Cleanup old backups (Keep last 5)
-            cd "$JAR_DIR/backups" && ls -t | tail -n +6 | xargs -I {} sudo rm -rf "{}" || true
+            cd "$JAR_DIR/backups" && ls -t | tail -n +6 | xargs -I {} sudo rm -rf "{}" 2>/dev/null || true
             
             # 2. Move new JARs
             sudo mv /tmp/socius-deploy/*.jar "$JAR_DIR/" || {
@@ -167,8 +183,12 @@ jobs:
             
             # Rename to standard names
             cd "$JAR_DIR"
-            sudo mv socius-mvc-app-*.jar socius-mvc-app.jar 2>/dev/null || true
-            sudo mv socius-webflux-app-*.jar socius-webflux-app.jar 2>/dev/null || true
+            for jar in socius-mvc-app-*.jar; do
+              [[ -f "$jar" ]] && sudo mv "$jar" socius-mvc-app.jar
+            done
+            for jar in socius-webflux-app-*.jar; do
+              [[ -f "$jar" ]] && sudo mv "$jar" socius-webflux-app.jar
+            done
             
             # 3. Set Permissions
             sudo chown azureuser:azureuser "$JAR_DIR"/*.jar
