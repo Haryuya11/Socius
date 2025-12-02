@@ -44,7 +44,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     String requestUri = request.getRequestURI();
 
-    // Bỏ qua filter cho các endpoint công khai
+    // Skip filter for public endpoints
     if (requestUri.equals("/health")
         || requestUri.equals("/ping")
         || requestUri.equals("/favicon.ico")
