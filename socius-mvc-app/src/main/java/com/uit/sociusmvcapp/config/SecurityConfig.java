@@ -1,8 +1,8 @@
 package com.uit.sociusmvcapp.config;
 
+import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.security.TokenAuthenticator;
 import com.uit.sociusmvcapp.security.AuthorizationFilter;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,9 +47,9 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authz ->
                 authz
-                    .requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .requestMatchers(HttpMethod.OPTIONS, SecurityConstant.ALL_PATHS)
                     .permitAll()
-                    .requestMatchers("/health", "/error", "/favicon.ico")
+                    .requestMatchers(SecurityConstant.PUBLIC_ENDPOINTS.toArray(String[]::new))
                     .permitAll()
                     .anyRequest()
                     .authenticated())
@@ -66,11 +66,11 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOriginPatterns(List.of("*"));
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-    configuration.setAllowedHeaders(List.of("*"));
-    configuration.setAllowCredentials(true);
-    configuration.setMaxAge(3600L);
+    configuration.setAllowedOriginPatterns(SecurityConstant.CORS_ALLOWED_ORIGIN_PATTERNS);
+    configuration.setAllowedMethods(SecurityConstant.CORS_ALLOWED_METHODS);
+    configuration.setAllowedHeaders(SecurityConstant.CORS_ALLOWED_HEADERS);
+    configuration.setAllowCredentials(SecurityConstant.CORS_ALLOW_CREDENTIALS);
+    configuration.setMaxAge(SecurityConstant.MAX_AGE);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);

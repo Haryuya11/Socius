@@ -13,6 +13,7 @@ import com.nimbusds.jose.util.ResourceRetriever;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.exception.BusinessException;
 import com.uit.sociuscoremodules.shared.service.AuthorizationService;
@@ -23,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -159,7 +161,7 @@ public class TokenAuthenticator {
       return false;
     }
 
-    JWK jwk = jwks.get(0);
+    JWK jwk = jwks.get(CommonConstant.INIT_INDEX);
     RSAPublicKey publicKey = jwk.toRSAKey().toRSAPublicKey();
     JWSVerifier verifier = new RSASSAVerifier(publicKey);
 
@@ -193,11 +195,10 @@ public class TokenAuthenticator {
     }
 
     String subject = claims.getSubject();
-    if (subject == null || subject.isEmpty()) {
+    if (StringUtils.isEmpty(subject)) {
       log.warn("Missing or empty subject claim");
       return false;
     }
-
     return true;
   }
 }

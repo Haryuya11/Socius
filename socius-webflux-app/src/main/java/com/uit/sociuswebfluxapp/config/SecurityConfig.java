@@ -1,5 +1,7 @@
 package com.uit.sociuswebfluxapp.config;
 
+import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
+import com.uit.sociuswebfluxapp.constants.WebSocketConstant;
 import com.uit.sociuswebfluxapp.security.ReactiveAuthorizationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,9 +36,9 @@ public class SecurityConfig {
         .addFilterAt(reactiveAuthorizationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         .authorizeExchange(
             ex ->
-                ex.pathMatchers("/health", "/error", "/favicon.ico")
+                ex.pathMatchers(SecurityConstant.PUBLIC_ENDPOINTS.toArray(String[]::new))
                     .permitAll()
-                    .pathMatchers("/ws/**")
+                    .pathMatchers(WebSocketConstant.WEBSOCKET_WILDCARD_PATH)
                     .permitAll()
                     .anyExchange()
                     .authenticated())

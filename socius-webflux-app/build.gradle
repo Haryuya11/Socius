@@ -11,6 +11,8 @@ dependencies {
     // WebFlux specific
     implementation libs.bundles.spring.webflux
 
+    implementation libs.spring.boot.starter.log4j2
+
     // WebFlux test support
     testImplementation libs.reactor.test
 }

@@ -103,7 +103,7 @@ public interface EmployeeConverter {
       return null;
     }
     return userId.contains(CommonConstant.AT_SIGN)
-        ? userId.substring(CommonConstant.INIT_NUMBER, userId.indexOf(CommonConstant.AT_SIGN))
+        ? userId.substring(CommonConstant.INIT_INDEX, userId.indexOf(CommonConstant.AT_SIGN))
         : userId;
   }
 

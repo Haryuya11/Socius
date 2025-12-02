@@ -1,6 +1,8 @@
 package com.uit.sociuswebfluxapp.constants;
 
-/** Constants related to RabbitMQ operations. */
+import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
+
+/** Constants related to WebSocket operations. */
 public final class WebSocketConstant {
 
   /** Private constructor to prevent instantiation. */
@@ -17,4 +19,14 @@ public final class WebSocketConstant {
 
   /** Order for the WebSocket handler mapping. */
   public static final int WEBSOCKET_HANDLER_ORDER = -1;
+
+  /** Prefix for notification WebSocket destinations. */
+  public static final String NOTIFICATION_DESTINATION_PREFIX = "/ws/notifications";
+
+  /** WebSocket path for notifications, allowing all paths under the destination prefix. */
+  public static final String NOTIFICATION_WEBSOCKET_PATH =
+      NOTIFICATION_DESTINATION_PREFIX + SecurityConstant.ALL_PATHS;
+
+  /** WebSocket path pattern for general WebSocket connections. */
+  public static final String WEBSOCKET_WILDCARD_PATH = "/ws/**";
 }
