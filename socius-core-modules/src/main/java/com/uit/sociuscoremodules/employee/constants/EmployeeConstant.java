@@ -10,4 +10,7 @@ public final class EmployeeConstant {
 
   /** Sign-in type for email address identities. */
   public static final String SIGN_IN_TYPE_EMAIL_ADDRESS = "emailAddress";
+
+  /** Key for client ID. */
+  public static final String CLIENT_ID = "clientId";
 }

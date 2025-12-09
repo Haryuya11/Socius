@@ -1,6 +1,7 @@
 package com.uit.sociuscoremodules.employee.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,13 +21,14 @@ public class Employee {
   private String userId;
   private String firstName;
   private String lastName;
-  private String teamCode;
-  private String departmentCode;
-  private String roleCode;
+  private String systemRole;
   private String imageUrl;
   private Long salary;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
   private LocalDateTime deletedAt;
   private Short deleteFlag;
+
+  private List<EmployeeDepartment> departments;
+  private List<EmployeeTeam> teams;
 }

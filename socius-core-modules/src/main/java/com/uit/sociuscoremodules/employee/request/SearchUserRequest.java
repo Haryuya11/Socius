@@ -5,17 +5,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Request object for creating a new user. */
+/** Request object for searching users based on various criteria. */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmployeeCreateRequest {
+public class SearchUserRequest {
   private String clientId;
   private String userId;
   private String firstName;
   private String lastName;
   private String systemRole;
-  private Long salary;
-  private String imageUrl;
 }

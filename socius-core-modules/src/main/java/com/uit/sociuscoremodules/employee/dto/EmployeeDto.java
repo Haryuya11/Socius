@@ -1,5 +1,6 @@
 package com.uit.sociuscoremodules.employee.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,9 +16,10 @@ public class EmployeeDto {
   private String userId;
   private String firstName;
   private String lastName;
-  private String teamCode;
-  private String departmentCode;
-  private String roleCode;
+  private String systemRole;
   private Long salary;
   private String imageUrl;
+
+  private List<EmployeeDepartmentDto> departments;
+  private List<EmployeeTeamDto> teams;
 }

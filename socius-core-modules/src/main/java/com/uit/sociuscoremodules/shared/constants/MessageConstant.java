@@ -45,6 +45,12 @@ public final class MessageConstant {
   /** Employee change password successfully. */
   public static final String S_EMP_005 = "S_EMP_005";
 
+  /** Employee profile retrieved successfully. */
+  public static final String S_EMP_006 = "S_EMP_006";
+
+  /** Employees list reactivated successfully. */
+  public static final String S_EMP_007 = "S_EMP_007";
+
   /** Employee with the same ID already exists. */
   public static final String W_EMP_001 = "W_EMP_001";
 

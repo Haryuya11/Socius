@@ -2,6 +2,9 @@ package com.uit.sociuscoremodules.employee.persistence;
 
 import com.uit.sociuscoremodules.employee.domain.Employee;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
+import com.uit.sociuscoremodules.employee.request.SearchUserRequest;
+import com.uit.sociuscoremodules.shared.request.SortRequest;
+import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -47,10 +50,40 @@ public interface EmployeeMapper {
   void deactivate(@Param("clientId") String clientId);
 
   /**
+   * Reactivate an employee record by client ID.
+   *
+   * @param request the user reactivation request
+   */
+  void reactivate(@Param("request") EmployeeCreateRequest request);
+
+  /**
    * Find employees by user ID.
    *
    * @param userId the user ID
    * @return list of Employee entities
    */
   Employee findByUserId(@Param("userId") String userId);
+
+  /**
+   * Search for employees based on criteria, sorting, pagination.
+   *
+   * @param criteria the search criteria
+   * @param sorts the sorting options
+   * @param limit the maximum number of records to return
+   * @param offset the starting point for records to return
+   * @return list of Employee entities matching the search criteria
+   */
+  List<Employee> search(
+      @Param("criteria") SearchUserRequest criteria,
+      @Param("sorts") List<SortRequest> sorts,
+      @Param("limit") int limit,
+      @Param("offset") int offset);
+
+  /**
+   * Count employees based on search criteria.
+   *
+   * @param criteria the search criteria
+   * @return the count of employees matching the criteria
+   */
+  int count(@Param("criteria") SearchUserRequest criteria);
 }
