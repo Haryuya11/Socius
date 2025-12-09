@@ -1,21 +1,24 @@
-package com.uit.sociuscoremodules.employee.request;
+package com.uit.sociuscoremodules.employee.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Request object for creating a new user. */
+/** Employee Search Data Transfer Object (DTO) for searching employee information. */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmployeeCreateRequest {
+public class SearchEmployeeDto {
   private String clientId;
   private String userId;
   private String firstName;
   private String lastName;
   private String systemRole;
-  private Long salary;
   private String imageUrl;
+
+  List<EmployeeDepartmentDto> departments;
+  List<EmployeeTeamDto> teams;
 }

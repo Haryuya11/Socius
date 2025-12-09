@@ -1,7 +1,7 @@
 package com.uit.sociuscoremodules.shared.service.impl;
 
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
-import com.uit.sociuscoremodules.employee.enums.RoleEnums;
+import com.uit.sociuscoremodules.employee.enums.SystemRoleEnums;
 import com.uit.sociuscoremodules.employee.repository.EmployeeRepository;
 import com.uit.sociuscoremodules.shared.service.AuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AuthorizationServiceImpl implements AuthorizationService {
+public class AuthorizationServiceImpl extends BaseServiceImpl implements AuthorizationService {
 
   /** Repository for accessing employee data. */
   private final EmployeeRepository employeeRepository;
@@ -31,9 +31,9 @@ public class AuthorizationServiceImpl implements AuthorizationService {
       return null;
     }
 
-    String roleCode = employeeDto.getRoleCode();
+    String roleCode = employeeDto.getSystemRole();
     if (!isValidCode(roleCode)) {
-      throw new IllegalArgumentException("Invalid role code: " + roleCode);
+      throw badRequest("Invalid role code: " + roleCode);
     }
 
     return employeeDto;
@@ -46,8 +46,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
    * @return true if valid, false otherwise
    */
   private boolean isValidCode(String roleCode) {
-    return RoleEnums.ADMIN.getRoleCode().equals(roleCode)
-        || RoleEnums.STAFF.getRoleCode().equals(roleCode)
-        || RoleEnums.CUSTOMER.getRoleCode().equals(roleCode);
+    return SystemRoleEnums.SYS_ADMIN.getRoleCode().equals(roleCode)
+        || SystemRoleEnums.USER.getRoleCode().equals(roleCode);
   }
 }

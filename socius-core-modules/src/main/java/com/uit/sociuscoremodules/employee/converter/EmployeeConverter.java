@@ -5,13 +5,19 @@ import com.microsoft.graph.models.PasswordProfile;
 import com.microsoft.graph.models.User;
 import com.uit.sociuscoremodules.employee.constants.EmployeeConstant;
 import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.domain.EmployeeDepartment;
+import com.uit.sociuscoremodules.employee.domain.EmployeeTeam;
+import com.uit.sociuscoremodules.employee.dto.EmployeeDepartmentDto;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeTeamDto;
+import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
 import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import java.util.Collections;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 
 /** Converter for Employee entity, DTO, and Microsoft Graph User objects. */
@@ -32,7 +38,31 @@ public interface EmployeeConverter {
    * @param employees the list of Employee entities
    * @return the corresponding list of EmployeeDtos
    */
-  List<EmployeeDto> entityToDto(List<Employee> employees);
+  List<EmployeeDto> entitiesToDtos(List<Employee> employees);
+
+  /**
+   * Converts an EmployeeDepartment entity to an EmployeeDepartmentDto.
+   *
+   * @param department the EmployeeDepartment entity
+   * @return the corresponding EmployeeDepartmentDto
+   */
+  EmployeeDepartmentDto departmentToDto(EmployeeDepartment department);
+
+  /**
+   * Converts an EmployeeTeam entity to an EmployeeTeamDto.
+   *
+   * @param team the EmployeeTeam entity
+   * @return the corresponding EmployeeTeamDto
+   */
+  EmployeeTeamDto teamToDto(EmployeeTeam team);
+
+  /**
+   * Converts a list of Employee entities to a list of SearchEmployeeDtos.
+   *
+   * @param employees the list of Employee entities
+   * @return the corresponding list of SearchEmployeeDtos
+   */
+  List<SearchEmployeeDto> entitiesToSearchDtos(List<Employee> employees);
 
   /**
    * Converts a UserCreateRequest to a Microsoft Graph User object. This method requires the
@@ -49,15 +79,13 @@ public interface EmployeeConverter {
       target = "userPrincipalName",
       expression = "java(buildUserPrincipalName(request.getUserId(), issuer))")
   @Mapping(target = "mailNickname", expression = "java(extractMailNickname(request.getUserId()))")
-  //  @Mapping(target = "mail", expression = "java(request.getUserId())")
-  @Mapping(target = "department", expression = "java(request.getDepartmentCode())")
   @Mapping(target = "accountEnabled", constant = "true")
   @Mapping(target = "passwordProfile", expression = "java(createDefaultPasswordProfile())")
   @Mapping(target = "passwordPolicies", constant = "DisablePasswordExpiration")
   @Mapping(
       target = "identities",
       expression = "java(createEmailIdentity(request.getUserId(), issuer))")
-  @Mapping(target = "mail", ignore = true)
+  @Mapping(target = "mail", expression = "java(request.getUserId())")
   User toGraphUser(EmployeeCreateRequest request, String issuer);
 
   /**
@@ -72,7 +100,6 @@ public interface EmployeeConverter {
   @Mapping(target = "displayName", expression = "java(buildDisplayName(request))")
   @Mapping(target = "givenName", expression = "java(request.getFirstName())")
   @Mapping(target = "surname", expression = "java(request.getLastName())")
-  @Mapping(target = "department", expression = "java(request.getDepartmentCode())")
   User toGraphUserForUpdate(EmployeeCreateRequest request);
 
   // --- Helper Default Methods ---
@@ -83,6 +110,7 @@ public interface EmployeeConverter {
    * @param request The EmployeeCreateRequest containing first and last names.
    * @return The constructed display name.
    */
+  @Named("buildDisplayName")
   default String buildDisplayName(EmployeeCreateRequest request) {
     if (request == null) {
       return "";
@@ -98,6 +126,7 @@ public interface EmployeeConverter {
    * @param userId The user's email address.
    * @return The mail nickname (part before '@').
    */
+  @Named("extractMailNickname")
   default String extractMailNickname(String userId) {
     if (userId == null || userId.isEmpty()) {
       return null;
@@ -114,6 +143,7 @@ public interface EmployeeConverter {
    * @param issuer The tenant's issuer domain.
    * @return The constructed user principal name.
    */
+  @Named("buildUserPrincipalName")
   default String buildUserPrincipalName(String userId, String issuer) {
     String username = extractMailNickname(userId);
     return username + CommonConstant.AT_SIGN + issuer;
@@ -124,6 +154,7 @@ public interface EmployeeConverter {
    *
    * @return A PasswordProfile object with default settings.
    */
+  @Named("createDefaultPasswordProfile")
   default PasswordProfile createDefaultPasswordProfile() {
     PasswordProfile pp = new PasswordProfile();
     pp.setPassword(EmployeeConstant.DEFAULT_PASSWORD);
@@ -138,6 +169,7 @@ public interface EmployeeConverter {
    * @param issuer The tenant's issuer domain.
    * @return A list containing the ObjectIdentity for email-based sign-in.
    */
+  @Named("createEmailIdentity")
   default List<ObjectIdentity> createEmailIdentity(String userId, String issuer) {
     if (userId == null || userId.isEmpty()) {
       return Collections.emptyList();

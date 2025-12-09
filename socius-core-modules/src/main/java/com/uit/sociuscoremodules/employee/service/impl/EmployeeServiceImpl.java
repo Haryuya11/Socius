@@ -1,9 +1,12 @@
 package com.uit.sociuscoremodules.employee.service.impl;
 
+import com.uit.sociuscoremodules.employee.constants.EmployeeConstant;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.repository.EmployeeRepository;
 import com.uit.sociuscoremodules.employee.request.ChangePasswordRequest;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
+import com.uit.sociuscoremodules.employee.request.SearchUserRequest;
 import com.uit.sociuscoremodules.employee.service.AzureGraphService;
 import com.uit.sociuscoremodules.employee.service.EmployeeService;
 import com.uit.sociuscoremodules.notification.converter.NotificationConverter;
@@ -13,10 +16,15 @@ import com.uit.sociuscoremodules.notification.dto.PayloadDto;
 import com.uit.sociuscoremodules.notification.repository.NotificationRepository;
 import com.uit.sociuscoremodules.notification.request.NotificationCreateRequest;
 import com.uit.sociuscoremodules.notification.service.NotificationPublisher;
+import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import com.uit.sociuscoremodules.shared.constants.MessageConstant;
+import com.uit.sociuscoremodules.shared.request.PaginationSearchRequest;
+import com.uit.sociuscoremodules.shared.response.PageResponse;
 import com.uit.sociuscoremodules.shared.security.UserContentProvider;
 import com.uit.sociuscoremodules.shared.service.impl.BaseServiceImpl;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -62,7 +70,7 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
    * @param request the request containing user creation details
    */
   @Override
-  public void createUserProfile(EmployeeCreateRequest request) {
+  public Map<String, String> createUserProfile(EmployeeCreateRequest request) {
 
     EmployeeDto existingUser = employeeRepository.findByUserId(request.getUserId());
     if (existingUser != null) {
@@ -82,7 +90,8 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
     if (deletedUser == null) {
       employeeRepository.create(request);
     } else {
-      employeeRepository.update(request);
+      azureGraphService.reactivateUser(clientId, request);
+      employeeRepository.reactivate(request);
     }
 
     sendNotification(
@@ -91,6 +100,8 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
         String.format(
             "Account for %s %s has been created.", request.getLastName(), request.getFirstName()),
         null);
+
+    return Map.of(EmployeeConstant.CLIENT_ID, clientId);
   }
 
   /**
@@ -205,5 +216,44 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
    */
   private PayloadDto buildPayload(String title, String content, String linkUrl) {
     return PayloadDto.builder().title(title).content(content).linkUrl(linkUrl).build();
+  }
+
+  /**
+   * Search for employees based on given criteria with pagination.
+   *
+   * @param request the pagination search request containing search criteria
+   * @return a paginated response of EmployeeDto matching the search criteria
+   */
+  @Override
+  public PageResponse<SearchEmployeeDto> search(
+      PaginationSearchRequest<SearchUserRequest> request) {
+    SearchUserRequest criteria = request.getCondition();
+
+    int total = employeeRepository.count(criteria);
+    if (total == CommonConstant.INIT_INDEX) {
+      log.info("No employees found matching the search criteria.");
+      return PageResponse.empty();
+    }
+
+    int limit = request.getPageRequest().getPageSize();
+    int offset = (request.getPageRequest().getPageNumber() - 1) * limit;
+    List<SearchEmployeeDto> result =
+        employeeRepository.search(criteria, request.getSortRequests(), limit, offset);
+    return PageResponse.of(result, total, offset, limit);
+  }
+
+  /**
+   * Find an employee by ID.
+   *
+   * @param id the employee ID
+   * @return the corresponding EmployeeDto
+   */
+  @Override
+  public EmployeeDto findById(String id) {
+    EmployeeDto employee = employeeRepository.findByClientId(id);
+    if (employee == null) {
+      throw notFound(MessageConstant.W_EMP_002);
+    }
+    return employee;
   }
 }

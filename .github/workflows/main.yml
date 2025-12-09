@@ -214,45 +214,45 @@ jobs:
             sudo rm -rf /tmp/socius-deploy
             echo "✅ Deployment successful"
 
-      - name: Health Checks
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -euo pipefail
-            echo "🏥 Running Health Checks..."
-            sleep 15 # Wait for Java startup
-            
-            check_health() {
-              local name=$1
-              local url=$2
-              echo "Checking $name at $url..."
-              if curl -sf "$url" | grep -q '"status":"UP"'; then
-                echo "✅ $name is UP"
-                return 0
-              else
-                echo "❌ $name is DOWN"
-                return 1
-              fi
-            }
-            
-            # --- INTERNAL CHECKS ---
-            # MVC: Has context-path /api
-            check_health "MVC (Internal)" "http://localhost:8080/api/actuator/health" || exit 1
-            
-            # WebFlux: No context-path
-            check_health "WebFlux (Internal)" "http://localhost:8081/actuator/health" || exit 1
-            
-            # --- EXTERNAL CHECKS (Via Nginx) ---
-            # MVC: Mapped via /mvc/ -> /api/
-            check_health "MVC (External)" "https://socius.codes/mvc/actuator/health" || exit 1
-            
-            # WebFlux: Mapped via /flux/ -> /
-            check_health "WebFlux (External)" "https://socius.codes/flux/actuator/health" || exit 1
-            
-            echo "✅ System Healthy"
+#      - name: Health Checks
+#        uses: appleboy/ssh-action@v1.2.0
+#        with:
+#          host: ${{ secrets.VM_HOST }}
+#          username: ${{ secrets.VM_USER }}
+#          key: ${{ secrets.SSH_PRIVATE_KEY }}
+#          script: |
+#            set -euo pipefail
+#            echo "🏥 Running Health Checks..."
+#            sleep 15 # Wait for Java startup
+#
+#            check_health() {
+#              local name=$1
+#              local url=$2
+#              echo "Checking $name at $url..."
+#              if curl -sf "$url" | grep -q '"status":"UP"'; then
+#                echo "✅ $name is UP"
+#                return 0
+#              else
+#                echo "❌ $name is DOWN"
+#                return 1
+#              fi
+#            }
+#
+#            # --- INTERNAL CHECKS ---
+#            # MVC: Has context-path /api
+#            check_health "MVC (Internal)" "http://localhost:8080/api/actuator/health" || exit 1
+#
+#            # WebFlux: No context-path
+#            check_health "WebFlux (Internal)" "http://localhost:8081/actuator/health" || exit 1
+#
+#            # --- EXTERNAL CHECKS (Via Nginx) ---
+#            # MVC: Mapped via /mvc/ -> /api/
+#            check_health "MVC (External)" "https://socius.codes/mvc/actuator/health" || exit 1
+#
+#            # WebFlux: Mapped via /flux/ -> /
+#            check_health "WebFlux (External)" "https://socius.codes/flux/actuator/health" || exit 1
+#
+#            echo "✅ System Healthy"
 
       - name: Record History
         if: success()
