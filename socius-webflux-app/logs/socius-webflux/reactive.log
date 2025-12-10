@@ -1,0 +1,8 @@
+2025-12-11 01:01:57.323 [Test worker] DEBUG org.springframework.web.reactive.handler.SimpleUrlHandlerMapping - Patterns [/ws/notifications/**, /ws/notifications] in 'webSocketMapping'
+2025-12-11 01:01:57.694 [Test worker] DEBUG org.springframework.web.reactive.handler.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**] in 'resourceHandlerMapping'
+2025-12-11 01:01:58.250 [Test worker] DEBUG org.springframework.web.reactive.result.method.annotation.ControllerMethodResolver - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 @ExceptionHandler
+2025-12-11 01:01:58.319 [Test worker] DEBUG org.springframework.web.server.adapter.HttpWebHandlerAdapter - enableLoggingRequestDetails='false': form data and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-12-11 01:15:08.518 [Test worker] DEBUG org.springframework.web.reactive.handler.SimpleUrlHandlerMapping - Patterns [/ws/notifications/**, /ws/notifications] in 'webSocketMapping'
+2025-12-11 01:15:08.734 [Test worker] DEBUG org.springframework.web.reactive.handler.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**] in 'resourceHandlerMapping'
+2025-12-11 01:15:09.060 [Test worker] DEBUG org.springframework.web.reactive.result.method.annotation.ControllerMethodResolver - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 @ExceptionHandler
+2025-12-11 01:15:09.111 [Test worker] DEBUG org.springframework.web.server.adapter.HttpWebHandlerAdapter - enableLoggingRequestDetails='false': form data and headers will be masked to prevent unsafe logging of potentially sensitive data

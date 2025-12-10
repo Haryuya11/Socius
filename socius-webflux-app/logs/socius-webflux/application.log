@@ -1,0 +1,108 @@
+2025-12-11 01:01:48.546 [Test worker] INFO  org.springframework.test.context.support.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests]: SociusWebfluxAppApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-12-11 01:01:48.890 [Test worker] INFO  org.springframework.boot.test.context.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.uit.sociuswebfluxapp.SociusWebfluxAppApplication for test class com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests
+2025-12-11 01:01:49.904 [Test worker] INFO  com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - Starting SociusWebfluxAppApplicationTests using Java 17.0.12 with PID 13552 (started by dotha in D:\Study_space\Cong_nghe_web_ung_dung\Socius\socius-webflux-app)
+2025-12-11 01:01:49.905 [Test worker] DEBUG com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - Running with Spring Boot v3.5.6, Spring v6.2.11
+2025-12-11 01:01:49.911 [Test worker] INFO  com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - The following 1 profile is active: "test"
+2025-12-11 01:01:53.230 [Test worker] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-12-11 01:01:56.122 [Test worker] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1fec9d33
+2025-12-11 01:01:56.124 [Test worker] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-12-11 01:01:57.636 [Test worker] INFO  org.springframework.validation.beanvalidation.OptionalValidatorFactoryBean - Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Bean Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
+2025-12-11 01:01:58.039 [Test worker] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-11 01:01:59.469 [Test worker] INFO  org.springframework.boot.web.embedded.netty.NettyWebServer - Netty started on port 64630 (http)
+2025-12-11 01:01:59.474 [Test worker] INFO  org.springframework.amqp.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-12-11 01:01:59.483 [Test worker] INFO  org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: no further information
+2025-12-11 01:01:59.494 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  org.springframework.amqp.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-12-11 01:01:59.498 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: no further information
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2261) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2234) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2214) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936) [spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1489) [spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1328) [spring-rabbit-3.2.7.jar:3.2.7]
+	at java.base/java.lang.Thread.run(Thread.java:842) [?:?]
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[?:?]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[?:?]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547) ~[?:?]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602) ~[?:?]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[?:?]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.connect(SSLSocketImpl.java:304) ~[?:?]
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61) ~[amqp-client-5.25.0.jar:5.25.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249) ~[amqp-client-5.25.0.jar:5.25.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198) ~[amqp-client-5.25.0.jar:5.25.0]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	... 12 more
+2025-12-11 01:01:59.509 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  org.springframework.amqp.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-12-11 01:01:59.530 [Test worker] INFO  org.springframework.scheduling.config.TaskSchedulerRouter - No TaskScheduler/ScheduledExecutorService bean found for scheduled processing
+2025-12-11 01:01:59.539 [Test worker] INFO  com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - Started SociusWebfluxAppApplicationTests in 10.37 seconds (process running for 14.444)
+2025-12-11 01:02:00.592 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-12-11 01:02:00.593 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-12-11 01:02:00.594 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.netty.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-11 01:02:00.596 [netty-shutdown] INFO  org.springframework.boot.web.embedded.netty.GracefulShutdown - Graceful shutdown complete
+2025-12-11 01:02:02.682 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-12-11 01:02:02.927 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-12-11 01:14:57.197 [Test worker] INFO  org.springframework.test.context.support.AnnotationConfigContextLoaderUtils - Could not detect default configuration classes for test class [com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests]: SociusWebfluxAppApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2025-12-11 01:14:57.552 [Test worker] INFO  org.springframework.boot.test.context.SpringBootTestContextBootstrapper - Found @SpringBootConfiguration com.uit.sociuswebfluxapp.SociusWebfluxAppApplication for test class com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests
+2025-12-11 01:14:59.476 [Test worker] INFO  com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - Starting SociusWebfluxAppApplicationTests using Java 17.0.12 with PID 6504 (started by dotha in D:\Study_space\Cong_nghe_web_ung_dung\Socius\socius-webflux-app)
+2025-12-11 01:14:59.478 [Test worker] DEBUG com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - Running with Spring Boot v3.5.6, Spring v6.2.11
+2025-12-11 01:14:59.479 [Test worker] INFO  com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - The following 1 profile is active: "test"
+2025-12-11 01:15:03.937 [Test worker] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-12-11 01:15:06.931 [Test worker] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5ca8c904
+2025-12-11 01:15:06.936 [Test worker] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-12-11 01:15:08.700 [Test worker] INFO  org.springframework.validation.beanvalidation.OptionalValidatorFactoryBean - Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Bean Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
+2025-12-11 01:15:08.957 [Test worker] INFO  org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver - Exposing 1 endpoint beneath base path '/actuator'
+2025-12-11 01:15:10.446 [Test worker] INFO  org.springframework.boot.web.embedded.netty.NettyWebServer - Netty started on port 53155 (http)
+2025-12-11 01:15:10.452 [Test worker] INFO  org.springframework.amqp.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-12-11 01:15:10.469 [Test worker] INFO  org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Broker not available; cannot force queue declarations during start: java.net.ConnectException: Connection refused: no further information
+2025-12-11 01:15:10.484 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  org.springframework.amqp.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-12-11 01:15:10.488 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] ERROR org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Failed to check/redeclare auto-delete queue(s).
+org.springframework.amqp.AmqpConnectException: java.net.ConnectException: Connection refused: no further information
+	at org.springframework.amqp.rabbit.support.RabbitExceptionTranslator.convertRabbitAccessException(RabbitExceptionTranslator.java:61) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:632) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.CachingConnectionFactory.createConnection(CachingConnectionFactory.java:726) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.ConnectionFactoryUtils.createConnection(ConnectionFactoryUtils.java:257) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.doExecute(RabbitTemplate.java:2261) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2234) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitTemplate.execute(RabbitTemplate.java:2214) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueInfo(RabbitAdmin.java:467) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.core.RabbitAdmin.getQueueProperties(RabbitAdmin.java:451) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.attemptDeclarations(AbstractMessageListenerContainer.java:1972) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer.redeclareElementsIfNecessary(AbstractMessageListenerContainer.java:1936) [spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.initialize(SimpleMessageListenerContainer.java:1489) [spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer$AsyncMessageProcessingConsumer.run(SimpleMessageListenerContainer.java:1328) [spring-rabbit-3.2.7.jar:3.2.7]
+	at java.base/java.lang.Thread.run(Thread.java:842) [?:?]
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[?:?]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[?:?]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:547) ~[?:?]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:602) ~[?:?]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[?:?]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.connect(SSLSocketImpl.java:304) ~[?:?]
+	at com.rabbitmq.client.impl.SocketFrameHandlerFactory.create(SocketFrameHandlerFactory.java:61) ~[amqp-client-5.25.0.jar:5.25.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1249) ~[amqp-client-5.25.0.jar:5.25.0]
+	at com.rabbitmq.client.ConnectionFactory.newConnection(ConnectionFactory.java:1198) ~[amqp-client-5.25.0.jar:5.25.0]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connectAddresses(AbstractConnectionFactory.java:678) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.connect(AbstractConnectionFactory.java:647) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	at org.springframework.amqp.rabbit.connection.AbstractConnectionFactory.createBareConnection(AbstractConnectionFactory.java:593) ~[spring-rabbit-3.2.7.jar:3.2.7]
+	... 12 more
+2025-12-11 01:15:10.504 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1] INFO  org.springframework.amqp.rabbit.connection.CachingConnectionFactory - Attempting to connect to: [localhost:5672]
+2025-12-11 01:15:10.534 [Test worker] INFO  org.springframework.scheduling.config.TaskSchedulerRouter - No TaskScheduler/ScheduledExecutorService bean found for scheduled processing
+2025-12-11 01:15:10.548 [Test worker] INFO  com.uit.sociuswebfluxapp.SociusWebfluxAppApplicationTests - Started SociusWebfluxAppApplicationTests in 12.42 seconds (process running for 17.121)
+2025-12-11 01:15:11.546 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Waiting for workers to finish.
+2025-12-11 01:15:11.547 [org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-2] INFO  org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer - Successfully waited for workers to finish.
+2025-12-11 01:15:11.550 [SpringApplicationShutdownHook] INFO  org.springframework.boot.web.embedded.netty.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-11 01:15:11.556 [netty-shutdown] INFO  org.springframework.boot.web.embedded.netty.GracefulShutdown - Graceful shutdown complete
+2025-12-11 01:15:13.643 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-12-11 01:15:13.891 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

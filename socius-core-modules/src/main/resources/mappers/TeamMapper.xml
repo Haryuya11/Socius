@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociuscoremodules.team.persistence.TeamMapper">
+
+    <resultMap id="teamResultMap" type="com.uit.sociuscoremodules.team.domain.Team">
+        <id property="id" column="id"/>
+        <result property="teamCode" column="team_code"/>
+        <result property="teamName" column="team_name"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <!-- Find team by ID -->
+    <select id="findById" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               department_code,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM teams
+        WHERE id = #{id}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Find team by team code -->
+    <select id="findByTeamCode" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               department_code,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM teams
+        WHERE team_code = #{teamCode}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Find team by team code including soft deleted teams -->
+    <select id="findByTeamCodeIncludeDeleted" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               department_code,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM teams
+        WHERE team_code = #{teamCode}
+    </select>
+
+    <!-- Find all teams with filters, sorting, and pagination -->
+    <select id="findAllWithFilters" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               department_code,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM teams
+        WHERE delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <if test="filter.teamCode != null and filter.teamCode != ''">
+            AND team_code = #{filter.teamCode}
+        </if>
+        <if test="filter.teamName != null and filter.teamName != ''">
+            AND team_name ILIKE '%' || #{filter.teamName} || '%'
+        </if>
+        <if test="filter.search != null and filter.search != ''">
+            AND (team_code ILIKE '%' || #{filter.search} || '%' 
+                OR team_name ILIKE '%' || #{filter.search} || '%')
+        </if>
+        <if test="filter.sortBy != null and filter.sortBy != ''">
+            ORDER BY ${filter.sortBy} ${filter.sortOrder}
+        </if>
+        <if test="filter.size != null and filter.size > 0">
+            LIMIT #{filter.size} OFFSET #{filter.offset}
+        </if>
+    </select>
+
+    <!-- Count teams with filters -->
+    <select id="countWithFilters" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM teams
+        WHERE delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <if test="filter.teamCode != null and filter.teamCode != ''">
+            AND team_code = #{filter.teamCode}
+        </if>
+        <if test="filter.teamName != null and filter.teamName != ''">
+            AND team_name ILIKE '%' || #{filter.teamName} || '%'
+        </if>
+        <if test="filter.search != null and filter.search != ''">
+            AND (team_code ILIKE '%' || #{filter.search} || '%' 
+                OR team_name ILIKE '%' || #{filter.search} || '%')
+        </if>
+    </select>
+
+    <!-- Insert a new team -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="team.id">
+        INSERT INTO teams (team_code, team_name, department_code, created_at, updated_at, delete_flag)
+        VALUES (#{team.teamCode}, 
+                #{team.teamName},
+                #{team.departmentCode}, 
+                #{team.createdAt}, 
+                #{team.updatedAt}, 
+                #{team.deleteFlag})
+    </insert>
+
+    <!-- Update an existing team -->
+    <update id="update">
+        UPDATE teams
+        SET team_name = #{team.teamName},
+            department_code = #{team.departmentCode},
+            updated_at = #{team.updatedAt}
+        WHERE id = #{team.id}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Soft delete a team -->
+    <update id="softDelete">
+        UPDATE teams
+        SET delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- Reactivate a soft deleted team -->
+    <update id="reactivateTeam">
+        UPDATE teams
+        SET team_name = #{teamName},
+            department_code = #{departmentCode},
+            updated_at = #{updatedAt},
+            deleted_at = NULL,
+            delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        WHERE id = #{id}
+    </update>
+
+    <!-- Check if team code exists -->
+    <select id="existsByTeamCode" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM teams
+            WHERE team_code = #{teamCode}
+              AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+</mapper>

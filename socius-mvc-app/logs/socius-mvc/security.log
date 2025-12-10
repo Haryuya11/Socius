@@ -1,0 +1,110 @@
+2025-12-11 00:15:04.278 [restartedMain] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 00:15:04.505 [restartedMain] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 00:16:12.273 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 00:16:14.262 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams
+2025-12-11 00:16:35.732 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 00:16:36.239 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams
+2025-12-11 00:21:29.407 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM005
+2025-12-11 00:21:40.737 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM005
+2025-12-11 00:21:41.241 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM005
+2025-12-11 00:21:42.039 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /error
+2025-12-11 00:21:42.040 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /error
+2025-12-11 00:21:42.061 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.authentication.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2025-12-11 00:22:22.060 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/TEAM002
+2025-12-11 00:22:22.665 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams/TEAM002
+2025-12-11 00:26:05.499 [http-nio-8080-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Securing PUT /teams/TEAM001
+2025-12-11 00:26:18.422 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing PUT /teams/TEAM001
+2025-12-11 00:26:18.979 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Secured PUT /teams/TEAM001
+2025-12-11 00:26:27.658 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Securing PATCH /teams/TEAM001
+2025-12-11 00:26:28.203 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Secured PATCH /teams/TEAM001
+2025-12-11 00:28:00.729 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 00:28:09.048 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 00:28:09.591 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams/TEAM001/employees
+2025-12-11 00:28:25.279 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 00:28:25.866 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams/TEAM001/employees
+2025-12-11 01:00:01.654 [Test worker] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 01:00:01.843 [Test worker] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 01:01:35.776 [Test worker] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 01:01:35.999 [Test worker] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 01:02:23.155 [restartedMain] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 01:02:23.244 [restartedMain] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 01:03:04.222 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 01:03:37.560 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 01:03:38.179 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams
+2025-12-11 01:03:51.728 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 01:03:52.226 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams
+2025-12-11 01:04:18.648 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/TEAM002
+2025-12-11 01:04:27.989 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/TEAM002
+2025-12-11 01:04:28.490 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams/TEAM002
+2025-12-11 01:06:39.273 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Securing PUT /teams/TEAM001
+2025-12-11 01:06:39.807 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Secured PUT /teams/TEAM001
+2025-12-11 01:06:51.862 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing PATCH /teams/TEAM001
+2025-12-11 01:06:52.384 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured PATCH /teams/TEAM001
+2025-12-11 01:09:07.130 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM005
+2025-12-11 01:09:07.654 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM005
+2025-12-11 01:14:42.823 [Test worker] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 01:14:43.022 [Test worker] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 01:16:24.306 [restartedMain] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 01:16:24.393 [restartedMain] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 01:16:42.657 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:16:55.057 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:16:55.702 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:17:37.120 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:17:37.642 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:17:59.960 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:18:00.461 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:18:15.586 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:18:16.116 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:18:25.098 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:18:25.597 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:19:08.111 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:19:08.636 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:21:38.709 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 01:21:48.090 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 01:21:48.627 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams/TEAM001/employees
+2025-12-11 01:21:57.468 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 01:21:58.021 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams/TEAM001/employees
+2025-12-11 01:24:27.739 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/{teamCode}/employees
+2025-12-11 01:24:36.625 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/{teamCode}/employees
+2025-12-11 01:24:37.154 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams/{teamCode}/employees
+2025-12-11 01:24:59.863 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/{teamCode}/employees
+2025-12-11 01:25:00.374 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams/{teamCode}/employees
+2025-12-11 01:25:40.215 [http-nio-8080-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/TEAM002/employees
+2025-12-11 01:25:40.731 [http-nio-8080-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams/TEAM002/employees
+2025-12-11 01:27:36.531 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams/TEAM001/employees
+2025-12-11 01:27:37.052 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams/TEAM001/employees
+2025-12-11 01:40:30.441 [restartedMain] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 01:40:30.553 [restartedMain] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 01:42:17.572 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:42:19.566 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:42:31.907 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:42:32.457 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:42:38.107 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams
+2025-12-11 01:42:38.707 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams
+2025-12-11 01:49:21.887 [http-nio-8080-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Securing GET /teams/TEAM002/employees
+2025-12-11 01:49:22.537 [http-nio-8080-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Secured GET /teams/TEAM002/employees
+2025-12-11 01:51:29.379 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:51:30.130 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:52:07.078 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006
+2025-12-11 01:52:07.711 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM006
+2025-12-11 01:53:20.929 [http-nio-8080-exec-5] DEBUG org.springframework.security.web.FilterChainProxy - Securing PUT /teams/TEAM001/team-lead?newTeamLeadUserId=22520625@gm.uit.edu.vn
+2025-12-11 01:53:28.905 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing PUT /teams/TEAM001/team-lead?newTeamLeadUserId=22520625@gm.uit.edu.vn
+2025-12-11 01:53:29.539 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Secured PUT /teams/TEAM001/team-lead?newTeamLeadUserId=22520625@gm.uit.edu.vn
+2025-12-11 01:56:05.720 [http-nio-8080-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Securing PUT /teams/TEAM001/lead?newLeadClientId=dcc0c4e0-9482-4975-a02f-15b5e55c4e4a
+2025-12-11 01:56:06.335 [http-nio-8080-exec-4] DEBUG org.springframework.security.web.FilterChainProxy - Secured PUT /teams/TEAM001/lead?newLeadClientId=dcc0c4e0-9482-4975-a02f-15b5e55c4e4a
+2025-12-11 01:57:01.322 [http-nio-8080-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 01:57:01.885 [http-nio-8080-exec-9] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams
+2025-12-11 01:57:54.728 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:57:55.394 [http-nio-8080-exec-10] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:59:14.962 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:59:15.593 [http-nio-8080-exec-1] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:59:26.226 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 01:59:26.847 [http-nio-8080-exec-8] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM006/employees/6309fa4c-994d-4ffe-bdd1-2e3459aaa964
+2025-12-11 02:11:40.941 [restartedMain] DEBUG org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration$DefaultPasswordEncoderAuthenticationManagerBuilder - No authenticationProviders and no parentAuthenticationManager defined. Returning null.
+2025-12-11 02:11:41.080 [restartedMain] DEBUG org.springframework.security.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthorizationFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-12-11 02:11:43.635 [http-nio-8080-exec-2] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006
+2025-12-11 02:12:20.840 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Securing DELETE /teams/TEAM006
+2025-12-11 02:12:21.500 [http-nio-8080-exec-3] DEBUG org.springframework.security.web.FilterChainProxy - Secured DELETE /teams/TEAM006
+2025-12-11 02:13:43.189 [http-nio-8080-exec-6] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 02:13:51.874 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Securing POST /teams
+2025-12-11 02:13:52.503 [http-nio-8080-exec-7] DEBUG org.springframework.security.web.FilterChainProxy - Secured POST /teams

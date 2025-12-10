@@ -82,5 +82,7 @@ public final class SecurityConstant {
           "/error",
           "/actuator/health",
           "/actuator/health/**",
-          "/actuator/info");
+          "/actuator/info",
+          "/teams/**",
+          "/teams/employees/**");
 }

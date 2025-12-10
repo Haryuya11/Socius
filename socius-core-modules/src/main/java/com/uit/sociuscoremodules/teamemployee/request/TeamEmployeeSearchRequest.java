@@ -1,0 +1,48 @@
+package com.uit.sociuscoremodules.teamemployee.request;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/** Request object for searching employees in a team. */
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class TeamEmployeeSearchRequest {
+  private String teamCode;
+  private String userId; // email
+  private String firstName;
+  private String lastName;
+  private String roleCode;
+  private String sortBy;
+  private String sortOrder;
+  private Integer page;
+  private Integer size;
+
+  /** Get the sort field with default value. */
+  public String getSortBy() {
+    return sortBy != null && !sortBy.isEmpty() ? sortBy : "first_name";
+  }
+
+  /** Get the sort order with default value. */
+  public String getSortOrder() {
+    return sortOrder != null && sortOrder.equalsIgnoreCase("desc") ? "DESC" : "ASC";
+  }
+
+  /** Get the page number with default value. */
+  public Integer getPage() {
+    return page != null && page > 0 ? page : 1;
+  }
+
+  /** Get the page size with default value. */
+  public Integer getSize() {
+    return size != null && size > 0 ? size : 10;
+  }
+
+  /** Get the offset for pagination. */
+  public Integer getOffset() {
+    return (getPage() - 1) * getSize();
+  }
+}
