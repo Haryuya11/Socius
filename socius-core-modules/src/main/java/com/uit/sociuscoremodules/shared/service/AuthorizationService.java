@@ -1,6 +1,6 @@
 package com.uit.sociuscoremodules.shared.service;
 
-import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 
 /** Service interface for user authorization. */
 public interface AuthorizationService {
@@ -11,5 +11,5 @@ public interface AuthorizationService {
    * @param userId the user id
    * @return the employee dto
    */
-  EmployeeDto authorize(String userId);
+  EmployeeProfileDto authorize(String userId);
 }

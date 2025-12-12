@@ -1,6 +1,7 @@
 package com.uit.sociuscoremodules.employee.service;
 
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.request.ChangePasswordRequest;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
@@ -17,7 +18,7 @@ public interface EmployeeService {
    *
    * @return EmployeeDto representing the employee profile
    */
-  EmployeeDto employeeProfile();
+  EmployeeProfileDto employeeProfile();
 
   /**
    * Create a new user profile.
@@ -44,10 +45,9 @@ public interface EmployeeService {
   /**
    * Change the password of a user.
    *
-   * @param clientId the client ID of the user whose password is to be changed
    * @param request the request containing password change details
    */
-  void changeUserPassword(String clientId, ChangePasswordRequest request);
+  void changeUserPassword(ChangePasswordRequest request);
 
   /**
    * Search for employees based on given criteria with pagination.

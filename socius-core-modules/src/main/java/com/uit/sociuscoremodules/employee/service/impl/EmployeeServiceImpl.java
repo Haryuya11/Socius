@@ -2,6 +2,7 @@ package com.uit.sociuscoremodules.employee.service.impl;
 
 import com.uit.sociuscoremodules.employee.constants.EmployeeConstant;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.repository.EmployeeRepository;
 import com.uit.sociuscoremodules.employee.request.ChangePasswordRequest;
@@ -60,7 +61,7 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
    * @return EmployeeDto representing the employee profile
    */
   @Override
-  public EmployeeDto employeeProfile() {
+  public EmployeeProfileDto employeeProfile() {
     return userContentProvider.getUserContent();
   }
 
@@ -150,19 +151,14 @@ public class EmployeeServiceImpl extends BaseServiceImpl implements EmployeeServ
   /**
    * Change the password of a user.
    *
-   * @param clientId the client ID of the user whose password is to be changed
    * @param request the request containing password change details
    */
   @Override
-  public void changeUserPassword(String clientId, ChangePasswordRequest request) {
+  public void changeUserPassword(ChangePasswordRequest request) {
+    String clientId = userContentProvider.getUserContent().getClientId();
     if (!request.getNewPassword().equals(request.getConfirmPassword())) {
       log.info("New password and confirm password do not match for clientId: {}", clientId);
       throw badRequest(MessageConstant.E_EMP_006);
-    }
-
-    EmployeeDto user = employeeRepository.findByClientId(clientId);
-    if (user == null) {
-      throw notFound(MessageConstant.W_EMP_002);
     }
     azureGraphService.changeUserPassword(clientId, request);
   }

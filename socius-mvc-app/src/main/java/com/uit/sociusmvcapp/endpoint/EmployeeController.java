@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.endpoint;
 
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.request.ChangePasswordRequest;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
@@ -11,6 +12,7 @@ import com.uit.sociuscoremodules.shared.request.PaginationSearchRequest;
 import com.uit.sociuscoremodules.shared.response.PageResponse;
 import com.uit.sociuscoremodules.shared.response.Response;
 import com.uit.sociuscoremodules.shared.service.I18nService;
+import com.uit.sociusmvcapp.constants.ApiParams;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** EmployeeController handles HTTP requests related to employee operations. */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/employees")
+@RequestMapping(ApiParams.EMPLOYEES)
 public class EmployeeController {
 
   /** I18nService for internationalization messages. */
@@ -41,9 +43,9 @@ public class EmployeeController {
    *
    * @return ResponseEntity containing the employee profile
    */
-  @GetMapping("/profile")
+  @GetMapping(ApiParams.PROFILE)
   public ResponseEntity<Response> getProfile() {
-    EmployeeDto employee = employeeService.employeeProfile();
+    EmployeeProfileDto employee = employeeService.employeeProfile();
     Response response =
         Response.builder()
             .success(true)
@@ -82,7 +84,7 @@ public class EmployeeController {
    * @param clientId the client ID of the employee to update
    * @return ResponseEntity indicating the result of the operation
    */
-  @PutMapping("/{clientId}")
+  @PutMapping(ApiParams.CLIENT_ID_PARAM)
   public ResponseEntity<Response> update(
       @RequestBody EmployeeCreateRequest request, @PathVariable String clientId) {
     employeeService.updateUserProfile(request, clientId);
@@ -102,7 +104,7 @@ public class EmployeeController {
    * @param clientId the client ID of the employee to deactivate
    * @return ResponseEntity indicating the result of the operation
    */
-  @DeleteMapping("/{clientId}")
+  @DeleteMapping(ApiParams.CLIENT_ID_PARAM)
   public ResponseEntity<Response> deactivate(@PathVariable String clientId) {
     employeeService.deactivateUserProfile(clientId);
     Response response =
@@ -119,13 +121,11 @@ public class EmployeeController {
    * Change the password of an employee.
    *
    * @param request the password change request
-   * @param clientId the client ID of the employee whose password is to be changed
    * @return ResponseEntity indicating the result of the operation
    */
-  @PutMapping("/change-password/{clientId}")
-  public ResponseEntity<Response> changePassword(
-      @RequestBody ChangePasswordRequest request, @PathVariable String clientId) {
-    employeeService.changeUserPassword(clientId, request);
+  @PutMapping(ApiParams.CHANGE_PASSWORD)
+  public ResponseEntity<Response> changePassword(@RequestBody ChangePasswordRequest request) {
+    employeeService.changeUserPassword(request);
 
     Response response =
         Response.builder()
@@ -143,7 +143,7 @@ public class EmployeeController {
    * @param clientId the client ID of the employee to find
    * @return ResponseEntity containing the employee data
    */
-  @GetMapping("/{clientId}")
+  @GetMapping(ApiParams.CLIENT_ID_PARAM)
   public ResponseEntity<Response> findById(@PathVariable String clientId) {
     EmployeeDto employee = employeeService.findById(clientId);
     Response response =
@@ -163,7 +163,7 @@ public class EmployeeController {
    * @param request the pagination search request containing search criteria
    * @return ResponseEntity containing paginated employee data
    */
-  @GetMapping
+  @PostMapping(ApiParams.SEARCH)
   public ResponseEntity<Response> search(
       @RequestBody PaginationSearchRequest<SearchUserRequest> request) {
     PageResponse<SearchEmployeeDto> employees = employeeService.search(request);

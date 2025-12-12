@@ -1,6 +1,6 @@
 package com.uit.sociuscoremodules.shared.service.impl;
 
-import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.employee.enums.SystemRoleEnums;
 import com.uit.sociuscoremodules.employee.repository.EmployeeRepository;
 import com.uit.sociuscoremodules.shared.service.AuthorizationService;
@@ -24,8 +24,8 @@ public class AuthorizationServiceImpl extends BaseServiceImpl implements Authori
    * @return EmployeeDto if authorized, null otherwise
    */
   @Override
-  public EmployeeDto authorize(String employeeId) {
-    EmployeeDto employeeDto = employeeRepository.findByClientId(employeeId);
+  public EmployeeProfileDto authorize(String employeeId) {
+    EmployeeProfileDto employeeDto = employeeRepository.getProfileByClientId(employeeId);
     if (employeeDto == null) {
       log.warn("Employee not found for userId: {}", employeeId);
       return null;
