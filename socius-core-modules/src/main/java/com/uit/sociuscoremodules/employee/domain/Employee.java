@@ -2,6 +2,7 @@ package com.uit.sociuscoremodules.employee.domain;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,4 +32,5 @@ public class Employee {
 
   private List<EmployeeDepartment> departments;
   private List<EmployeeTeam> teams;
+  private Set<Permission> permissions;
 }

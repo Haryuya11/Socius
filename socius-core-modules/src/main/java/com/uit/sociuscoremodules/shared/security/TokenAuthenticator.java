@@ -12,7 +12,7 @@ import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jose.util.ResourceRetriever;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import com.uit.sociuscoremodules.shared.constants.SecurityConstant;
 import com.uit.sociuscoremodules.shared.exception.BusinessException;
@@ -121,7 +121,7 @@ public class TokenAuthenticator {
     }
 
     String userId = claims.getClaim(SecurityConstant.OID_CLAIM_NAME).toString();
-    EmployeeDto user = authorizationService.authorize(userId);
+    EmployeeProfileDto user = authorizationService.authorize(userId);
 
     if (user == null) {
       throw new UsernameNotFoundException("User not found in system for oid: " + userId);

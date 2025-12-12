@@ -9,6 +9,7 @@ import com.uit.sociuscoremodules.employee.domain.EmployeeDepartment;
 import com.uit.sociuscoremodules.employee.domain.EmployeeTeam;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDepartmentDto;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.employee.dto.EmployeeTeamDto;
 import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
@@ -39,6 +40,14 @@ public interface EmployeeConverter {
    * @return the corresponding list of EmployeeDtos
    */
   List<EmployeeDto> entitiesToDtos(List<Employee> employees);
+
+  /**
+   * Converts an Employee entity to an EmployeeProfileDto.
+   *
+   * @param employee the Employee entity
+   * @return the corresponding EmployeeProfileDto
+   */
+  EmployeeProfileDto entityToProfileDto(Employee employee);
 
   /**
    * Converts an EmployeeDepartment entity to an EmployeeDepartmentDto.
@@ -101,6 +110,22 @@ public interface EmployeeConverter {
   @Mapping(target = "givenName", expression = "java(request.getFirstName())")
   @Mapping(target = "surname", expression = "java(request.getLastName())")
   User toGraphUserForUpdate(EmployeeCreateRequest request);
+
+  /**
+   * Converts an EmployeeCreateRequest to an Employee entity.
+   *
+   * @param request The DTO containing the user creation details.
+   * @return An Employee entity populated with the request data.
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "deleteFlag", ignore = true)
+  @Mapping(target = "departments", ignore = true)
+  @Mapping(target = "teams", ignore = true)
+  @Mapping(target = "permissions", ignore = true)
+  Employee createRequestToEntity(EmployeeCreateRequest request);
 
   // --- Helper Default Methods ---
 

@@ -1,12 +1,16 @@
 package com.uit.sociuscoremodules.employee.repository;
 
 import com.uit.sociuscoremodules.employee.converter.EmployeeConverter;
+import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.domain.Permission;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
+import com.uit.sociuscoremodules.employee.dto.EmployeeProfileDto;
 import com.uit.sociuscoremodules.employee.dto.SearchEmployeeDto;
 import com.uit.sociuscoremodules.employee.persistence.EmployeeMapper;
 import com.uit.sociuscoremodules.employee.request.EmployeeCreateRequest;
 import com.uit.sociuscoremodules.employee.request.SearchUserRequest;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -32,6 +36,25 @@ public class EmployeeRepository {
   }
 
   /**
+   * Get EmployeeProfileDto by employee ID.
+   *
+   * @param employeeId the employee ID
+   * @return the corresponding EmployeeProfileDto
+   */
+  public EmployeeProfileDto getProfileByClientId(String employeeId) {
+    Employee employee = employeeMapper.findByClientId(employeeId);
+
+    if (employee == null) {
+      return null;
+    }
+
+    List<Permission> permissions = employeeMapper.findPermissionsByClientId(employeeId);
+    employee.setPermissions(new HashSet<>(permissions));
+
+    return employeeConverter.entityToProfileDto(employee);
+  }
+
+  /**
    * Get EmployeeDto by user ID.
    *
    * @param userId the user ID
@@ -47,7 +70,7 @@ public class EmployeeRepository {
    * @param request the user creation request
    */
   public void create(EmployeeCreateRequest request) {
-    employeeMapper.create(request);
+    employeeMapper.create(employeeConverter.createRequestToEntity(request));
   }
 
   /**
@@ -56,7 +79,7 @@ public class EmployeeRepository {
    * @param request the user creation request
    */
   public void update(EmployeeCreateRequest request) {
-    employeeMapper.update(request);
+    employeeMapper.update(employeeConverter.createRequestToEntity(request));
   }
 
   /**
@@ -74,7 +97,7 @@ public class EmployeeRepository {
    * @param request the user reactivation request
    */
   public void reactivate(EmployeeCreateRequest request) {
-    employeeMapper.reactivate(request);
+    employeeMapper.reactivate(employeeConverter.createRequestToEntity(request));
   }
 
   /**
