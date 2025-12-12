@@ -61,7 +61,7 @@ public final class MessageConstant {
 
   /** Successfully retrieved count of unread notifications. */
   public static final String S_NOTIFY_001 = "S_NOTIFY_001";
-
+  
   /** Successfully retrieved roles list. */
   public static final String S_ROLE_001 = "S_ROLE_001";
 
@@ -120,4 +120,72 @@ public final class MessageConstant {
 
   /** Department not found. */
   public static final String W_DEP_001 = "W_DEP_001";
+  
+  // ================= TEAM MODULE =================
+  /** Team not found. */
+  public static final String E_TEAM_001 = "E_TEAM_001";
+
+  /** Team with this code already exists. */
+  public static final String E_TEAM_002 = "E_TEAM_002";
+
+  /** Team code is required. */
+  public static final String E_TEAM_003 = "E_TEAM_003";
+
+  /** Team name is required. */
+  public static final String E_TEAM_004 = "E_TEAM_004";
+
+  /** Team lead is required. */
+  public static final String E_TEAM_005 = "E_TEAM_005";
+
+  /** Team already has a team lead. */
+  public static final String E_TEAM_006 = "E_TEAM_006";
+
+  /** Cannot delete team that has employees. */
+  public static final String E_TEAM_007 = "E_TEAM_007";
+
+  /** Invalid sort field provided. */
+  public static final String E_TEAM_008 = "E_TEAM_008";
+
+  /** Team created successfully. */
+  public static final String S_TEAM_001 = "S_TEAM_001";
+
+  /** Team retrieved successfully. */
+  public static final String S_TEAM_002 = "S_TEAM_002";
+
+  /** Teams list retrieved successfully. */
+  public static final String S_TEAM_003 = "S_TEAM_003";
+
+  /** Team updated successfully. */
+  public static final String S_TEAM_004 = "S_TEAM_004";
+
+  /** Team deleted successfully. */
+  public static final String S_TEAM_005 = "S_TEAM_005";
+
+  // ================= TEAM EMPLOYEE MODULE =================
+  /** Employee is already in the team. */
+  public static final String E_TEAM_EMP_001 = "E_TEAM_EMP_001";
+
+  /** Employee is not in the team. */
+  public static final String E_TEAM_EMP_002 = "E_TEAM_EMP_002";
+
+  /** Cannot remove team lead. */
+  public static final String E_TEAM_EMP_003 = "E_TEAM_EMP_003";
+
+  /** Employee not found (Team Context). */
+  public static final String E_TEAM_EMP_004 = "E_TEAM_EMP_004";
+
+  /** Employee added to team successfully. */
+  public static final String S_TEAM_EMP_001 = "S_TEAM_EMP_001";
+
+  /** Employee removed from team successfully. */
+  public static final String S_TEAM_EMP_002 = "S_TEAM_EMP_002";
+
+  /** Team lead changed successfully. */
+  public static final String S_TEAM_EMP_003 = "S_TEAM_EMP_003";
+
+  /** Team employees retrieved successfully. */
+  public static final String S_TEAM_EMP_004 = "S_TEAM_EMP_004";
+
+  /** Team employees batch add result. */
+  public static final String S_TEAM_EMP_005 = "S_TEAM_EMP_005";
 }
