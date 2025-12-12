@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociuscoremodules.department.persistence.DepartmentMapper">
+
+    <resultMap id="findAllDepartmentMap" type="com.uit.sociuscoremodules.department.domain.Department">
+        <id property="id" column="id"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="departmentName" column="department_name"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <resultMap id="findAllEmployeesMap" type="com.uit.sociuscoremodules.department.domain.DepartmentEmployees">
+        <id property="id" column="id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="isPrimary" column="is_primary"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <!-- Get By department code -->
+    <select id="findByDepartmentCode" resultMap="findAllDepartmentMap">
+        SELECT id,
+               department_code,
+               department_name,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM departments
+        WHERE department_code = #{departmentCode}
+    </select>
+
+    <!-- Create -->
+    <insert id="create">
+        INSERT INTO departments (department_code,
+                                department_name)
+        VALUES (#{request.departmentCode},
+                #{request.departmentName})
+    </insert>
+
+    <!-- Update -->
+    <update id="update">
+        UPDATE departments
+        SET department_name = #{request.departmentName},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE department_code = #{request.departmentCode}
+            AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Deactivate -->
+    <update id="deactivate">
+        UPDATE departments
+        SET deleted_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP,
+            delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
+        WHERE department_code = #{departmentCode}
+        AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Activate -->
+    <update id="activate">
+        UPDATE departments
+        SET deleted_at = NULL,
+            updated_at = CURRENT_TIMESTAMP,
+            delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        WHERE department_code = #{departmentCode}
+        AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
+    </update>
+
+    <!-- Get All Departments -->
+    <select id="getAllDepartments" resultMap="findAllDepartmentMap">
+        SELECT id,
+               department_code,
+               department_name,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM departments
+    </select>
+
+    <!-- Get All Employees By Department Code -->
+    <select id="getEmployeesByDepartmentCode" resultMap="findAllEmployeesMap">
+        SELECT id,
+                employee_id,
+                role_code,
+                department_code,
+                is_primary,
+                created_at,
+                updated_at,
+                deleted_at,
+                delete_flag
+        FROM department_employees
+        WHERE department_code = #{departmentCode}
+        AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Count Employees By Department Code -->
+    <select id="countEmployeesByDepartmentCode" resultType="int">
+        SELECT COUNT(*)
+        FROM department_employees
+        WHERE department_code = #{departmentCode}
+    </select>
+
+    <!-- Add Employee to Department -->
+    <insert id="addEmployeeToDepartment">
+        INSERT INTO department_employees (department_code,
+                                          employee_id,
+                                          role_code,
+                                          is_primary)
+        VALUES (#{departmentCode},
+                #{request.employeeId},
+                #{request.roleCode},
+                #{request.isPrimary})
+    </insert>
+
+    <!-- Remove Employee from Department -->
+    <update id="removeEmployeeFromDepartment">
+        UPDATE department_employees
+        SET delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE department_code = #{departmentCode}
+        AND employee_id = #{employeeId}
+        AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Change Employee Role in Department -->
+    <update id="changeEmployeeRoleInDepartment">
+        UPDATE department_employees
+        SET role_code = #{newRoleCode}
+        WHERE department_code = #{departmentCode}
+        AND employee_id = #{employeeId}
+    </update>
+
+</mapper>
