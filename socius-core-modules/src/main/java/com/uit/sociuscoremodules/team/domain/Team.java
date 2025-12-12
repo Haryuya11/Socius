@@ -1,6 +1,8 @@
 package com.uit.sociuscoremodules.team.domain;
 
+import com.uit.sociuscoremodules.employee.domain.Employee;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,4 +24,5 @@ public class Team {
   private LocalDateTime updatedAt;
   private LocalDateTime deletedAt;
   private Short deleteFlag;
+  private List<Employee> members;
 }

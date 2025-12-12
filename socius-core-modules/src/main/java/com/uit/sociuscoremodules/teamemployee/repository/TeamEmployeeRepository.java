@@ -1,6 +1,8 @@
 package com.uit.sociuscoremodules.teamemployee.repository;
 
+import com.uit.sociuscoremodules.employee.converter.EmployeeConverter;
 import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import com.uit.sociuscoremodules.teamemployee.converter.TeamEmployeeConverter;
 import com.uit.sociuscoremodules.teamemployee.domain.TeamEmployee;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Repository;
 public class TeamEmployeeRepository {
   private final TeamEmployeeMapper teamEmployeeMapper;
   private final TeamEmployeeConverter teamEmployeeConverter;
+  private final EmployeeConverter employeeConverter;
 
   /**
    * Find team-employee relationship by team code and employee ID.
@@ -46,8 +49,8 @@ public class TeamEmployeeRepository {
    * @param teamCode the team code
    * @return the Employee entity
    */
-  public Employee findTeamLeadByTeamCode(String teamCode) {
-    return teamEmployeeMapper.findTeamLeadByTeamCode(teamCode);
+  public EmployeeDto findTeamLeadByTeamCode(String teamCode) {
+    return employeeConverter.entityToDto(teamEmployeeMapper.findTeamLeadByTeamCode(teamCode));
   }
 
   /**

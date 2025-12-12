@@ -41,14 +41,13 @@ public class TeamController {
    */
   @PostMapping
   public ResponseEntity<Response> createTeam(@Valid @RequestBody TeamCreateRequest request) {
-    TeamDto team = teamService.createTeam(request);
+    teamService.createTeam(request);
     Response response =
         Response.builder()
             .success(true)
             .status(HttpStatus.CREATED.value())
             .code(MessageConstant.S_TEAM_001)
             .message(i18nService.getMessage(MessageConstant.S_TEAM_001))
-            .data(team)
             .build();
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
@@ -61,7 +60,7 @@ public class TeamController {
    * @param request the search request containing condition, pagination, and sorting
    * @return ResponseEntity containing the list of teams and pagination info
    */
-  @GetMapping
+  @PostMapping("/search")
   public ResponseEntity<Response> searchTeams(
       @RequestBody PaginationSearchRequest<TeamSearchRequest> request) {
 

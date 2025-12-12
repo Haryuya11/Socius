@@ -1,6 +1,7 @@
 package com.uit.sociuscoremodules.teamemployee.service;
 
 import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.shared.request.PaginationSearchRequest;
 import com.uit.sociuscoremodules.shared.response.PageResponse;
 import com.uit.sociuscoremodules.teamemployee.domain.TeamEmployee;
@@ -76,7 +77,7 @@ public interface TeamEmployeeService {
    * @param teamCode the team code
    * @return the Employee entity
    */
-  Employee getTeamLeadByTeamCode(String teamCode);
+  EmployeeDto getTeamLeadByTeamCode(String teamCode);
 
   /**
    * Search employees in a team with filters, sorting, and pagination.

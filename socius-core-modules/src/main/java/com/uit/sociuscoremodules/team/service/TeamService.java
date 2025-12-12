@@ -15,17 +15,8 @@ public interface TeamService {
    * Create a new team with a team lead.
    *
    * @param request the request containing team creation details
-   * @return the created TeamDto
    */
-  TeamDto createTeam(TeamCreateRequest request);
-
-  /**
-   * Get team by ID.
-   *
-   * @param id the team ID
-   * @return the TeamDto
-   */
-  TeamDto getTeamById(Integer id);
+  void createTeam(TeamCreateRequest request);
 
   /**
    * Get team by team code.

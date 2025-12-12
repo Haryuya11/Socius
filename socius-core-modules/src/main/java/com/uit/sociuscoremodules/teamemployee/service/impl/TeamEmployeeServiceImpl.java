@@ -1,6 +1,7 @@
 package com.uit.sociuscoremodules.teamemployee.service.impl;
 
 import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.employee.persistence.EmployeeMapper;
 import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import com.uit.sociuscoremodules.shared.constants.MessageConstant;
@@ -126,7 +127,7 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
     }
 
     // Remove leadership from old leader
-    Employee currentLead = teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
+    EmployeeDto currentLead = teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
     if (currentLead != null && !currentLead.getClientId().equals(newLeadClientId)) {
       teamEmployeeRepository.updateLeadershipStatus(teamCode, currentLead.getClientId(), false);
     }
@@ -150,7 +151,7 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
 
   /** Get the team lead of a team. */
   @Override
-  public Employee getTeamLeadByTeamCode(String teamCode) {
+  public EmployeeDto getTeamLeadByTeamCode(String teamCode) {
     validateTeamExists(teamCode);
     return teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
   }

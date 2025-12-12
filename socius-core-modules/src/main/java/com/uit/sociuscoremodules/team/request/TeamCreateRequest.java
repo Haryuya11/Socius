@@ -19,8 +19,6 @@ public class TeamCreateRequest {
   @NotBlank(message = "Team name is required")
   private String teamName;
 
+  @NotBlank(message = "Department code is required")
   private String departmentCode;
-
-  @NotBlank(message = "Team lead client ID is required")
-  private String teamLeadClientId;
 }

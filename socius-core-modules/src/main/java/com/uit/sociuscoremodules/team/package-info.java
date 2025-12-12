@@ -15,4 +15,9 @@
  *   <li>service - Business logic layer
  * </ul>
  */
+@ApplicationModule(
+    displayName = "Employee Team Management",
+    allowedDependencies = {"shared, team, employee"})
 package com.uit.sociuscoremodules.team;
+
+import org.springframework.modulith.ApplicationModule;

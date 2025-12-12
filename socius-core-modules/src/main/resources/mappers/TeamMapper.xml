@@ -14,18 +14,59 @@
         <result property="deleteFlag" column="delete_flag"/>
     </resultMap>
 
-    <!-- Find team by ID -->
-    <select id="findById" resultMap="teamResultMap">
-        SELECT * FROM teams
-        WHERE id = #{id}
-          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
-    </select>
+    <resultMap id="employeeResultMap" type="com.uit.sociuscoremodules.employee.domain.Employee">
+        <id property="id" column="emp_id"/>
+        <result property="clientId" column="client_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="firstName" column="first_name"/>
+        <result property="lastName" column="last_name"/>
+        <result property="systemRole" column="system_role"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="salary" column="salary"/>
+        <result property="createdAt" column="emp_created_at"/>
+        <result property="updatedAt" column="emp_updated_at"/>
+        <result property="deletedAt" column="emp_deleted_at"/>
+        <result property="deleteFlag" column="emp_delete_flag"/>
+    </resultMap>
+
+    <resultMap id="teamWithEmployeesResultMap" type="com.uit.sociuscoremodules.team.domain.Team">
+        <id property="id" column="id"/>
+        <result property="teamCode" column="team_code"/>
+        <result property="teamName" column="team_name"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+        <collection property="members" resultMap="employeeResultMap"/>
+    </resultMap>
 
     <!-- Find team by team code -->
-    <select id="findByTeamCode" resultMap="teamResultMap">
-        SELECT * FROM teams
-        WHERE team_code = #{teamCode}
-          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    <select id="findByTeamCode" resultMap="teamWithEmployeesResultMap">
+        SELECT t.id,
+               t.team_code,
+               t.team_name,
+               t.department_code,
+               t.created_at,
+               t.updated_at,
+               t.deleted_at,
+               t.delete_flag,
+               e.id          AS emp_id,
+               e.client_id,
+               e.user_id,
+               e.first_name,
+               e.last_name,
+               e.system_role,
+               e.image_url,
+               e.salary,
+               e.created_at  AS emp_created_at,
+               e.updated_at  AS emp_updated_at,
+               e.deleted_at  AS emp_deleted_at,
+               e.delete_flag AS emp_delete_flag
+        FROM teams t
+        <include refid="joinEmployee"/>
+        WHERE t.team_code = #{teamCode}
+          AND t.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </select>
 
     <!-- Find team by team code including soft deleted teams -->
@@ -105,12 +146,12 @@
     <!-- Insert a new team -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="team.id">
         INSERT INTO teams (team_code, team_name, department_code, created_at, updated_at, delete_flag)
-        VALUES (#{team.teamCode}, 
+        VALUES (#{team.teamCode},
                 #{team.teamName},
-                #{team.departmentCode}, 
-                #{team.createdAt}, 
-                #{team.updatedAt}, 
-                #{team.deleteFlag})
+                #{team.departmentCode},
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP,
+                ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value})
     </insert>
 
     <!-- Update an existing team -->
@@ -118,7 +159,7 @@
         UPDATE teams
         SET team_name = #{team.teamName},
             department_code = #{team.departmentCode},
-            updated_at = #{team.updatedAt}
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = #{team.id}
           AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </update>
@@ -128,7 +169,7 @@
         UPDATE teams
         SET delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value},
             deleted_at = CURRENT_TIMESTAMP
-        WHERE id = #{id}
+        WHERE id = #{teamCode}
     </update>
 
     <!-- Reactivate a soft deleted team -->
@@ -136,10 +177,10 @@
         UPDATE teams
         SET team_name = #{teamName},
             department_code = #{departmentCode},
-            updated_at = #{updatedAt},
+            updated_at = CURRENT_TIMESTAMP,
             deleted_at = NULL,
             delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
-        WHERE id = #{id}
+        WHERE team_code = #{teamCode}
     </update>
 
     <!-- Check if team code exists -->
@@ -151,5 +192,26 @@
               AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
         )
     </select>
+
+    <select id="findDeletedByTeamCode" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag,
+               department_code
+        FROM teams
+        WHERE team_code = #{teamCode}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
+    <sql id="joinEmployee">
+        LEFT JOIN team_employees te ON t.team_code = te.team_code
+            AND te.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        LEFT JOIN employees e ON te.employee_id = e.client_id
+            AND e.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </sql>
 
 </mapper>

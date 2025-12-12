@@ -1,12 +1,16 @@
 package com.uit.sociuscoremodules.team.repository;
 
-import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.employee.converter.EmployeeConverter;
+import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import com.uit.sociuscoremodules.team.converter.TeamConverter;
 import com.uit.sociuscoremodules.team.domain.Team;
 import com.uit.sociuscoremodules.team.dto.SearchTeamDto;
+import com.uit.sociuscoremodules.team.dto.TeamDto;
 import com.uit.sociuscoremodules.team.persistence.TeamMapper;
+import com.uit.sociuscoremodules.team.request.TeamCreateRequest;
 import com.uit.sociuscoremodules.team.request.TeamSearchRequest;
+import com.uit.sociuscoremodules.team.request.TeamUpdateRequest;
 import com.uit.sociuscoremodules.teamemployee.repository.TeamEmployeeRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,16 +23,7 @@ public class TeamRepository {
   private final TeamMapper teamMapper;
   private final TeamEmployeeRepository teamEmployeeRepository;
   private final TeamConverter teamConverter;
-
-  /**
-   * Find team by ID.
-   *
-   * @param id the team ID
-   * @return the Team entity
-   */
-  public Team findById(Integer id) {
-    return teamMapper.findById(id);
-  }
+  private final EmployeeConverter employeeConverter;
 
   /**
    * Find team by team code.
@@ -36,27 +31,17 @@ public class TeamRepository {
    * @param teamCode the team code
    * @return the Team entity
    */
-  public Team findByTeamCode(String teamCode) {
-    return teamMapper.findByTeamCode(teamCode);
-  }
-
-  /**
-   * Find all teams with filters, sorting, and pagination.
-   *
-   * @param teamCode the team code
-   * @return the Team entity
-   */
-  public Team findByTeamCodeIncludeDeleted(String teamCode) {
-    return teamMapper.findByTeamCodeIncludeDeleted(teamCode);
+  public TeamDto findByTeamCode(String teamCode) {
+    return teamConverter.entityToDto(teamMapper.findByTeamCode(teamCode));
   }
 
   /**
    * Insert a new team.
    *
-   * @param team the Team entity to insert
+   * @param request the TeamCreateRequest
    */
-  public void insert(Team team) {
-    teamMapper.insert(team);
+  public void insert(TeamCreateRequest request) {
+    teamMapper.insert(teamConverter.createRequestToEntity(request));
   }
 
   /**
@@ -64,17 +49,17 @@ public class TeamRepository {
    *
    * @param team the Team entity to update
    */
-  public void update(Team team) {
-    teamMapper.update(team);
+  public void update(TeamUpdateRequest team) {
+    teamMapper.update(teamConverter.updateRequestToEntity(team));
   }
 
   /**
    * Soft delete a team by ID.
    *
-   * @param id the team ID
+   * @param teamCode the team code
    */
-  public void softDelete(Integer id) {
-    teamMapper.softDelete(id);
+  public void softDelete(String teamCode) {
+    teamMapper.softDelete(teamCode);
   }
 
   /**
@@ -92,8 +77,8 @@ public class TeamRepository {
    *
    * @param team the team to reactivate
    */
-  public void reactivateTeam(Team team) {
-    teamMapper.reactivateTeam(team);
+  public void reactivateTeam(TeamCreateRequest team) {
+    teamMapper.reactivateTeam(teamConverter.createRequestToEntity(team));
   }
 
   /**
@@ -102,18 +87,9 @@ public class TeamRepository {
    * @param teamCode the team code
    * @return list of Employee entities
    */
-  public List<Employee> findEmployeesByTeamCode(String teamCode) {
-    return teamEmployeeRepository.findEmployeesByTeamCode(teamCode);
-  }
-
-  /**
-   * Find team lead of a team.
-   *
-   * @param teamCode the team code
-   * @return the Employee entity
-   */
-  public Employee findTeamLeadByTeamCode(String teamCode) {
-    return teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
+  public List<EmployeeDto> findEmployeesByTeamCode(String teamCode) {
+    return employeeConverter.entitiesToDtos(
+        teamEmployeeRepository.findEmployeesByTeamCode(teamCode));
   }
 
   /**
@@ -139,5 +115,15 @@ public class TeamRepository {
       TeamSearchRequest criteria, List<SortRequest> sortRequests, int limit, int offset) {
     List<Team> teams = teamMapper.search(criteria, sortRequests, limit, offset);
     return teamConverter.entitiesToSearchDtos(teams);
+  }
+
+  /**
+   * Find deleted team by team code.
+   *
+   * @param teamCode the team code
+   * @return the TeamDto
+   */
+  public TeamDto findDeletedByTeamCode(String teamCode) {
+    return teamConverter.entityToDto(teamMapper.findDeletedByTeamCode(teamCode));
   }
 }

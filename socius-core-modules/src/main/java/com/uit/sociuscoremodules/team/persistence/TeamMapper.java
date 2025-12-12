@@ -12,23 +12,12 @@ import org.apache.ibatis.annotations.Param;
 public interface TeamMapper {
 
   /**
-   * Find team by ID.
-   *
-   * @param id the team ID
-   * @return the Team entity
-   */
-  Team findById(@Param("id") Integer id);
-
-  /**
    * Find team by team code.
    *
    * @param teamCode the team code
    * @return the Team entity
    */
   Team findByTeamCode(@Param("teamCode") String teamCode);
-
-  /** Find team by team code including soft deleted ones. Needed for reactivation logic. */
-  Team findByTeamCodeIncludeDeleted(@Param("teamCode") String teamCode);
 
   /**
    * Search teams based on criteria, sorting, pagination.
@@ -68,11 +57,11 @@ public interface TeamMapper {
   void update(@Param("team") Team team);
 
   /**
-   * Soft delete a team by ID.
+   * Soft delete a team by team code.
    *
-   * @param id the team ID
+   * @param teamCode the team code
    */
-  void softDelete(@Param("id") Integer id);
+  void softDelete(@Param("teamCode") String teamCode);
 
   /**
    * Reactivate a soft deleted team.
@@ -88,4 +77,12 @@ public interface TeamMapper {
    * @return true if exists, false otherwise
    */
   Boolean existsByTeamCode(@Param("teamCode") String teamCode);
+
+  /**
+   * Find deleted team by team code.
+   *
+   * @param teamCode the team code
+   * @return the deleted Team entity
+   */
+  Team findDeletedByTeamCode(@Param("teamCode") String teamCode);
 }
