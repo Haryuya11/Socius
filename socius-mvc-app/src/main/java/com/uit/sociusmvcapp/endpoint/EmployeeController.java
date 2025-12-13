@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 /** EmployeeController handles HTTP requests related to employee operations. */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(ApiParams.EMPLOYEES)
+@RequestMapping(ApiParams.EMPLOYEES_PREFIX)
 public class EmployeeController {
 
   /** I18nService for internationalization messages. */

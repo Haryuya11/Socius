@@ -1,4 +1,4 @@
-package com.uit.sociuscoremodules.employee.enums;
+package com.uit.sociuscoremodules.role.enums;
 
 import lombok.Getter;
 
