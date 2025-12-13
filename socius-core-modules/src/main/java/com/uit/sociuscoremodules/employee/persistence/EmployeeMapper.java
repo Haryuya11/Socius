@@ -88,10 +88,16 @@ public interface EmployeeMapper {
   int count(@Param("criteria") SearchUserRequest criteria);
 
   /**
-   * Find permissions grouped by scope (system/department/team) for a client.
+   * Retrieves raw permission data for a client. This method returns unprocessed permission records
+   * from the database. The actual grouping by scope (system/department/team) is performed by {@link
+   * com.uit.sociuscoremodules.employee.repository.EmployeeRepository#groupPermissionsByScope}.
+   *
+   * <p>Each PermissionQueryDto contains: role type, role code, role name, scope code, permission
+   * code, permission name, resource, action, and description.
    *
    * @param clientId the client ID
-   * @return list of maps containing role and permission information
+   * @return list of PermissionQueryDto containing raw permission data with role and scope
+   *     information
    */
   List<PermissionQueryDto> findPermissionsByClientIdGrouped(@Param("clientId") String clientId);
 }
