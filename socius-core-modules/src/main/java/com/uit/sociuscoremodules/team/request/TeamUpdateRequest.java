@@ -15,4 +15,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TeamUpdateRequest {
   private String teamName;
+  private String departmentCode;
 }

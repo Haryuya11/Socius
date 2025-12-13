@@ -12,11 +12,11 @@ import com.uit.sociuscoremodules.team.request.TeamUpdateRequest;
 public interface TeamService {
 
   /**
-   * Create a new team with a team lead.
+   * Create a new team.
    *
    * @param request the request containing team creation details
    */
-  void createTeam(TeamCreateRequest request);
+  void create(TeamCreateRequest request);
 
   /**
    * Get team by team code.

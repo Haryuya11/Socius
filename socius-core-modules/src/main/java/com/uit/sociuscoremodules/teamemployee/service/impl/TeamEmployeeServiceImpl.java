@@ -1,21 +1,19 @@
 package com.uit.sociuscoremodules.teamemployee.service.impl;
 
-import com.uit.sociuscoremodules.employee.domain.Employee;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
-import com.uit.sociuscoremodules.employee.persistence.EmployeeMapper;
+import com.uit.sociuscoremodules.employee.repository.EmployeeRepository;
 import com.uit.sociuscoremodules.shared.constants.CommonConstant;
 import com.uit.sociuscoremodules.shared.constants.MessageConstant;
-import com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums;
 import com.uit.sociuscoremodules.shared.request.PaginationSearchRequest;
 import com.uit.sociuscoremodules.shared.response.PageResponse;
 import com.uit.sociuscoremodules.shared.service.I18nService;
 import com.uit.sociuscoremodules.shared.service.impl.BaseServiceImpl;
-import com.uit.sociuscoremodules.team.domain.Team;
-import com.uit.sociuscoremodules.team.persistence.TeamMapper;
+import com.uit.sociuscoremodules.team.dto.TeamDto;
+import com.uit.sociuscoremodules.team.repository.TeamRepository;
 import com.uit.sociuscoremodules.teamemployee.converter.TeamEmployeeConverter;
-import com.uit.sociuscoremodules.teamemployee.domain.TeamEmployee;
+import com.uit.sociuscoremodules.teamemployee.dto.BatchErrorDto;
 import com.uit.sociuscoremodules.teamemployee.dto.SearchTeamEmployeeDto;
-import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeBatchResult;
+import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeBatchResultDto;
 import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeDto;
 import com.uit.sociuscoremodules.teamemployee.enums.TeamRoleEnums;
 import com.uit.sociuscoremodules.teamemployee.repository.TeamEmployeeRepository;
@@ -23,7 +21,6 @@ import com.uit.sociuscoremodules.teamemployee.request.SearchTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeAddRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeBatchAddRequest;
 import com.uit.sociuscoremodules.teamemployee.service.TeamEmployeeService;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -37,131 +34,103 @@ import org.springframework.stereotype.Service;
 public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmployeeService {
 
   private final TeamEmployeeRepository teamEmployeeRepository;
-  private final TeamMapper teamMapper;
-  private final EmployeeMapper employeeMapper;
+  private final TeamRepository teamRepository;
+  private final EmployeeRepository employeeRepository;
   private final TeamEmployeeConverter teamEmployeeConverter;
   private final I18nService i18nService;
 
   // ========================= TEAM EMPLOYEE SERVICE MAIN METHODS =========================
 
-  /** Add an employee to a team with specified role and leadership status. */
-  @Override
-  public TeamEmployee addEmployeeToTeam(
-      String teamCode, String employeeId, String roleCode, Boolean isLeader) {
-
-    // Note: We don't return 'Team' here because this method signature is fixed in Interface
-    // to return TeamEmployee entity only.
-    validateTeamExists(teamCode);
-    validateEmployeeExists(employeeId);
-    validateEmployeeNotActiveInTeam(teamCode, employeeId);
-
-    // Check if there's a soft-deleted record to reactivate
-    TeamEmployee softDeletedRecord =
-        teamEmployeeRepository.findSoftDeletedByTeamCodeAndEmployeeId(teamCode, employeeId);
-
-    if (softDeletedRecord != null) {
-      return reactivateEmployeeInTeam(teamCode, employeeId, roleCode, isLeader);
-    }
-
-    // Create new record
-    return createNewTeamEmployee(teamCode, employeeId, roleCode, isLeader);
-  }
-
-  /** Add an employee to a team using request object. */
   @Override
   public TeamEmployeeDto addEmployeeToTeam(String teamCode, TeamEmployeeAddRequest request) {
-    Team team = validateTeamExists(teamCode);
-    return processAddEmployeeToTeam(team, request);
+    validateTeamExists(teamCode);
+    validateEmployeeExists(request.getEmployeeId());
+    validateEmployeeNotActiveInTeam(teamCode, request.getEmployeeId());
+
+    if (request.getRoleCode() == null || request.getRoleCode().isEmpty()) {
+      request.setRoleCode(determineRoleCode(request.getIsLeader()));
+    }
+
+    TeamEmployeeDto softDeleted =
+        teamEmployeeRepository.findSoftDeletedByTeamCodeAndEmployeeId(
+            teamCode, request.getEmployeeId());
+
+    if (softDeleted != null) {
+      return reactivateEmployee(teamCode, request);
+    }
+
+    return createNewTeamEmployee(teamCode, request);
   }
 
-  /** Add multiple employees to a team in batch. */
   @Override
-  public TeamEmployeeBatchResult addEmployeesToTeam(
+  public TeamEmployeeBatchResultDto addEmployeesToTeam(
       String teamCode, TeamEmployeeBatchAddRequest request) {
-
-    // Validate team once for the whole batch
-    Team team = validateTeamExists(teamCode);
+    validateTeamExists(teamCode);
 
     List<TeamEmployeeDto> successful = new ArrayList<>();
-    List<TeamEmployeeBatchResult.BatchError> failed = new ArrayList<>();
+    List<BatchErrorDto> failed = new ArrayList<>();
 
     for (TeamEmployeeAddRequest employeeRequest : request.getEmployees()) {
       try {
-        TeamEmployeeDto dto = processAddEmployeeToTeam(team, employeeRequest);
-        successful.add(dto);
+        TeamEmployeeDto result = addEmployeeToTeam(teamCode, employeeRequest);
+        successful.add(result);
       } catch (Exception e) {
         String errorMessage = i18nService.getMessage(e.getMessage());
-        // If message is same as code (translation missing), keep original or handle fallback if
-        // needed
         failed.add(buildBatchError(employeeRequest.getEmployeeId(), errorMessage));
       }
     }
 
-    return TeamEmployeeBatchResult.builder().successful(successful).failed(failed).build();
+    return TeamEmployeeBatchResultDto.builder().successful(successful).failed(failed).build();
   }
 
-  /** Remove an employee from a team (soft delete). */
   @Override
   public void removeEmployeeFromTeam(String teamCode, String employeeId) {
     validateTeamExists(teamCode);
-
-    TeamEmployee teamEmployee =
-        teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, employeeId);
-    if (teamEmployee == null) {
-      throw badRequest(MessageConstant.E_TEAM_EMP_002);
-    }
+    validateEmployeeExistsInTeam(teamCode, employeeId);
 
     teamEmployeeRepository.softDelete(teamCode, employeeId);
   }
 
-  /** Change the team lead to a different employee. */
   @Override
-  public TeamEmployeeDto changeTeamLead(String teamCode, String newLeadClientId) {
-    final Team team = validateTeamExists(teamCode);
-    final Employee newLeader = validateEmployeeExists(newLeadClientId);
-
-    TeamEmployee newLeaderTeamEmployee =
-        teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, newLeadClientId);
-    if (newLeaderTeamEmployee == null) {
-      throw badRequest(MessageConstant.E_TEAM_EMP_002);
-    }
-
-    // Remove leadership from old leader
-    EmployeeDto currentLead = teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
-    if (currentLead != null && !currentLead.getClientId().equals(newLeadClientId)) {
-      teamEmployeeRepository.updateLeadershipStatus(teamCode, currentLead.getClientId(), false);
-    }
-
-    // Assign leadership to new leader
-    teamEmployeeRepository.updateLeadershipStatus(teamCode, newLeadClientId, true);
-
-    TeamEmployee updatedTeamEmployee =
-        teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, newLeadClientId);
-
-    // Re-use the existing newLeader employee object and team object
-    return buildTeamEmployeeDto(updatedTeamEmployee, newLeader, team);
-  }
-
-  /** Get all employees in a team. */
-  @Override
-  public List<Employee> getEmployeesByTeamCode(String teamCode) {
+  public TeamEmployeeDto changeTeamLead(String teamCode, String newLeadEmployeeId) {
     validateTeamExists(teamCode);
-    return teamEmployeeRepository.findEmployeesByTeamCode(teamCode);
+    validateEmployeeExists(newLeadEmployeeId);
+    validateEmployeeExistsInTeam(teamCode, newLeadEmployeeId);
+
+    TeamEmployeeDto currentLead = teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
+    if (currentLead != null && !currentLead.getEmployeeId().equals(newLeadEmployeeId)) {
+      teamEmployeeRepository.updateLeadershipStatus(teamCode, currentLead.getEmployeeId(), false);
+      teamEmployeeRepository.updateRoleCode(
+          teamCode, currentLead.getEmployeeId(), TeamRoleEnums.EMPLOYEE.getRoleCode());
+    }
+
+    teamEmployeeRepository.updateLeadershipStatus(teamCode, newLeadEmployeeId, true);
+    teamEmployeeRepository.updateRoleCode(
+        teamCode, newLeadEmployeeId, TeamRoleEnums.TEAM_LEAD.getRoleCode());
+
+    return teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, newLeadEmployeeId);
   }
 
-  /** Get the team lead of a team. */
+  @Override
+  public List<EmployeeDto> getEmployeesByTeamCode(String teamCode) {
+    validateTeamExists(teamCode);
+
+    List<TeamEmployeeDto> teamEmployees = teamEmployeeRepository.findEmployeesByTeamCode(teamCode);
+
+    return teamEmployeeConverter.toEmployeeDtos(teamEmployees);
+  }
+
   @Override
   public EmployeeDto getTeamLeadByTeamCode(String teamCode) {
     validateTeamExists(teamCode);
-    return teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
+
+    TeamEmployeeDto teamLead = teamEmployeeRepository.findTeamLeadByTeamCode(teamCode);
+    return teamLead != null ? teamEmployeeConverter.toEmployeeDto(teamLead) : null;
   }
 
-  /** Search employees in a team with filters. */
   @Override
   public PageResponse<SearchTeamEmployeeDto> searchEmployeesInTeam(
       String teamCode, PaginationSearchRequest<SearchTeamEmployeeRequest> request) {
-    log.info("Searching employees in team {} with request: {}", teamCode, request);
-
     validateTeamExists(teamCode);
 
     SearchTeamEmployeeRequest criteria = request.getCondition();
@@ -184,44 +153,34 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
     return PageResponse.of(result, total, offset, limit);
   }
 
-  // ========================= HELPER METHODS =========================
+  // ========================= VALIDATION METHODS =========================
 
-  /**
-   * Helper to process add employee logic and return DTO with full info. This reuses the main
-   * addEmployeeToTeam logic but enriches the result.
-   */
-  private TeamEmployeeDto processAddEmployeeToTeam(Team team, TeamEmployeeAddRequest request) {
-    String roleCode = determineRoleCode(request);
-
-    // Call the main logic to add/reactivate record in DB
-    TeamEmployee teamEmployee =
-        addEmployeeToTeam(
-            team.getTeamCode(), request.getEmployeeId(), roleCode, request.getIsLeader());
-
-    // Build complete DTO using Team info (for departmentCode)
-    return buildTeamEmployeeDto(teamEmployee, request.getEmployeeId(), team);
-  }
-
-  private Team validateTeamExists(String teamCode) {
-    Team team = teamMapper.findByTeamCode(teamCode);
+  private void validateTeamExists(String teamCode) {
+    TeamDto team = teamRepository.findByTeamCode(teamCode);
     if (team == null) {
       throw notFound(MessageConstant.E_TEAM_001);
     }
-    return team;
   }
 
-  private Employee validateEmployeeExists(String employeeId) {
-    Employee employee = employeeMapper.findByClientId(employeeId);
+  private void validateEmployeeExists(String employeeId) {
+    EmployeeDto employee = employeeRepository.findByClientId(employeeId);
     if (employee == null) {
       throw notFound(MessageConstant.W_EMP_002);
     }
-    return employee;
   }
 
   private void validateEmployeeNotActiveInTeam(String teamCode, String employeeId) {
     if (Boolean.TRUE.equals(
         teamEmployeeRepository.existsByTeamCodeAndEmployeeId(teamCode, employeeId))) {
       throw badRequest(MessageConstant.E_TEAM_EMP_001);
+    }
+  }
+
+  private void validateEmployeeExistsInTeam(String teamCode, String employeeId) {
+    TeamEmployeeDto teamEmployee =
+        teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, employeeId);
+    if (teamEmployee == null) {
+      throw badRequest(MessageConstant.E_TEAM_EMP_002);
     }
   }
 
@@ -232,61 +191,31 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
     }
   }
 
-  private TeamEmployee reactivateEmployeeInTeam(
-      String teamCode, String employeeId, String roleCode, Boolean isLeader) {
-    validateTeamLeadConstraint(teamCode, isLeader);
-    teamEmployeeRepository.reactivate(teamCode, employeeId, roleCode, isLeader);
-    return teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, employeeId);
+  // ========================= HELPER METHODS =========================
+
+  private TeamEmployeeDto createNewTeamEmployee(String teamCode, TeamEmployeeAddRequest request) {
+    validateTeamLeadConstraint(teamCode, request.getIsLeader());
+
+    teamEmployeeRepository.insert(teamCode, request);
+    return teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, request.getEmployeeId());
   }
 
-  private TeamEmployee createNewTeamEmployee(
-      String teamCode, String employeeId, String roleCode, Boolean isLeader) {
+  private TeamEmployeeDto reactivateEmployee(String teamCode, TeamEmployeeAddRequest request) {
+    validateTeamLeadConstraint(teamCode, request.getIsLeader());
 
-    validateTeamLeadConstraint(teamCode, isLeader);
-
-    // Using Lombok Builder Pattern
-    TeamEmployee teamEmployee =
-        TeamEmployee.builder()
-            .teamCode(teamCode)
-            .employeeId(employeeId)
-            .roleCode(roleCode)
-            .isLeader(isLeader)
-            .createdAt(LocalDateTime.now())
-            .updatedAt(LocalDateTime.now())
-            .deleteFlag(DeleteFlagEnums.NOT_DELETED.getValue().shortValue())
-            .build();
-
-    teamEmployeeRepository.insert(teamEmployee);
-    return teamEmployee;
+    teamEmployeeRepository.reactivate(teamCode, request);
+    return teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, request.getEmployeeId());
   }
 
-  private String determineRoleCode(TeamEmployeeAddRequest request) {
-    if (request.getRoleCode() != null && !request.getRoleCode().isEmpty()) {
-      return request.getRoleCode();
-    }
-    return Boolean.TRUE.equals(request.getIsLeader())
+  private String determineRoleCode(Boolean isLeader) {
+    return Boolean.TRUE.equals(isLeader)
         ? TeamRoleEnums.TEAM_LEAD.getRoleCode()
         : TeamRoleEnums.EMPLOYEE.getRoleCode();
   }
 
-  private TeamEmployeeDto buildTeamEmployeeDto(
-      TeamEmployee teamEmployee, String clientId, Team team) {
-    Employee employee = validateEmployeeExists(clientId);
-    return buildTeamEmployeeDto(teamEmployee, employee, team);
-  }
-
-  private TeamEmployeeDto buildTeamEmployeeDto(
-      TeamEmployee teamEmployee, Employee employee, Team team) {
-    return teamEmployeeConverter.toDto(teamEmployee, employee, team);
-  }
-
-  private TeamEmployeeDto buildTeamEmployeeDto(TeamEmployee teamEmployee, Employee employee) {
-    return teamEmployeeConverter.entityToDto(teamEmployee);
-  }
-
-  private TeamEmployeeBatchResult.BatchError buildBatchError(String clientId, String errorMessage) {
-    return TeamEmployeeBatchResult.BatchError.builder()
-        .clientId(clientId)
+  private BatchErrorDto buildBatchError(String employeeId, String errorMessage) {
+    return BatchErrorDto.builder()
+        .clientId(employeeId)
         .errorCode(MessageConstant.S_TEAM_EMP_001)
         .errorMessage(errorMessage)
         .build();

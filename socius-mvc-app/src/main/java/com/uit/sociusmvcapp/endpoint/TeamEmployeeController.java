@@ -6,7 +6,7 @@ import com.uit.sociuscoremodules.shared.response.PageResponse;
 import com.uit.sociuscoremodules.shared.response.Response;
 import com.uit.sociuscoremodules.shared.service.I18nService;
 import com.uit.sociuscoremodules.teamemployee.dto.SearchTeamEmployeeDto;
-import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeBatchResult;
+import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeBatchResultDto;
 import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeDto;
 import com.uit.sociuscoremodules.teamemployee.request.SearchTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeBatchAddRequest;
@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -50,7 +49,7 @@ public class TeamEmployeeController {
   public ResponseEntity<Response> addEmployeesToTeam(
       @PathVariable String teamCode, @RequestBody TeamEmployeeBatchAddRequest request) {
 
-    TeamEmployeeBatchResult result = teamEmployeeService.addEmployeesToTeam(teamCode, request);
+    TeamEmployeeBatchResultDto result = teamEmployeeService.addEmployeesToTeam(teamCode, request);
 
     // the flag to check is 100% successful
     boolean success = result.getFailed().isEmpty();
@@ -128,13 +127,13 @@ public class TeamEmployeeController {
   /**
    * Search employees in a team.
    *
-   * <p>GET /api/teams/{teamCode}/employees
+   * <p>POST /api/teams/{teamCode}/employees/search
    *
    * @param teamCode the team code
    * @param request the search request containing condition, pagination, and sorting
    * @return ResponseEntity containing the list of employees and pagination info
    */
-  @GetMapping("/{teamCode}/employees")
+  @PostMapping("/{teamCode}/employees/search")
   public ResponseEntity<Response> searchEmployeesInTeam(
       @PathVariable String teamCode,
       @RequestBody PaginationSearchRequest<SearchTeamEmployeeRequest> request) {

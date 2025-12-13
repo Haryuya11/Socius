@@ -1,6 +1,5 @@
 package com.uit.sociuscoremodules.team.repository;
 
-import com.uit.sociuscoremodules.employee.converter.EmployeeConverter;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import com.uit.sociuscoremodules.team.converter.TeamConverter;
@@ -11,6 +10,7 @@ import com.uit.sociuscoremodules.team.persistence.TeamMapper;
 import com.uit.sociuscoremodules.team.request.TeamCreateRequest;
 import com.uit.sociuscoremodules.team.request.TeamSearchRequest;
 import com.uit.sociuscoremodules.team.request.TeamUpdateRequest;
+import com.uit.sociuscoremodules.teamemployee.converter.TeamEmployeeConverter;
 import com.uit.sociuscoremodules.teamemployee.repository.TeamEmployeeRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,38 +23,51 @@ public class TeamRepository {
   private final TeamMapper teamMapper;
   private final TeamEmployeeRepository teamEmployeeRepository;
   private final TeamConverter teamConverter;
-  private final EmployeeConverter employeeConverter;
+  private final TeamEmployeeConverter teamEmployeeConverter;
 
   /**
    * Find team by team code.
    *
    * @param teamCode the team code
-   * @return the Team entity
+   * @return TeamDto
    */
   public TeamDto findByTeamCode(String teamCode) {
-    return teamConverter.entityToDto(teamMapper.findByTeamCode(teamCode));
+    Team team = teamMapper.findByTeamCode(teamCode);
+    return team != null ? teamConverter.entityToDto(team) : null;
+  }
+
+  /**
+   * Find deleted team by team code.
+   *
+   * @param teamCode the team code
+   * @return TeamDto
+   */
+  public TeamDto findDeletedByTeamCode(String teamCode) {
+    Team team = teamMapper.findDeletedByTeamCode(teamCode);
+    return team != null ? teamConverter.entityToDto(team) : null;
   }
 
   /**
    * Insert a new team.
    *
-   * @param request the TeamCreateRequest
+   * @param request the team creation request
    */
   public void insert(TeamCreateRequest request) {
     teamMapper.insert(teamConverter.createRequestToEntity(request));
   }
 
   /**
-   * Update an existing team.
+   * Update team information.
    *
-   * @param team the Team entity to update
+   * @param teamCode the team code
+   * @param request the team update request
    */
-  public void update(TeamUpdateRequest team) {
-    teamMapper.update(teamConverter.updateRequestToEntity(team));
+  public void update(String teamCode, TeamUpdateRequest request) {
+    teamMapper.update(teamCode, teamConverter.updateRequestToEntity(request));
   }
 
   /**
-   * Soft delete a team by ID.
+   * Soft delete a team.
    *
    * @param teamCode the team code
    */
@@ -63,7 +76,7 @@ public class TeamRepository {
   }
 
   /**
-   * Check if team code exists.
+   * Check if team exists by team code.
    *
    * @param teamCode the team code
    * @return true if exists, false otherwise
@@ -73,57 +86,47 @@ public class TeamRepository {
   }
 
   /**
-   * Reactivate a soft deleted team.
+   * Reactivate a soft-deleted team.
    *
-   * @param team the team to reactivate
+   * @param request the team creation request
    */
-  public void reactivateTeam(TeamCreateRequest team) {
-    teamMapper.reactivateTeam(teamConverter.createRequestToEntity(team));
+  public void reactivateTeam(TeamCreateRequest request) {
+    teamMapper.reactivateTeam(teamConverter.createRequestToEntity(request));
   }
 
   /**
    * Find all employees in a team.
    *
    * @param teamCode the team code
-   * @return list of Employee entities
+   * @return list of EmployeeDto
    */
   public List<EmployeeDto> findEmployeesByTeamCode(String teamCode) {
-    return employeeConverter.entitiesToDtos(
+    return teamEmployeeConverter.toEmployeeDtos(
         teamEmployeeRepository.findEmployeesByTeamCode(teamCode));
   }
 
   /**
-   * Count teams based on given criteria.
+   * Count teams based on search criteria.
    *
    * @param criteria the search criteria
-   * @return the count of teams matching the criteria
+   * @return count of teams
    */
   public int count(TeamSearchRequest criteria) {
     return teamMapper.count(criteria);
   }
 
   /**
-   * Search for teams based on given criteria.
+   * Search teams with pagination and sorting.
    *
    * @param criteria the search criteria
-   * @param sortRequests the sorting requests
-   * @param limit the maximum number of records to return
-   * @param offset the starting point for records to return
-   * @return List of TeamDto
+   * @param sortRequests the sorting options
+   * @param limit the page size
+   * @param offset the offset
+   * @return list of SearchTeamDto
    */
   public List<SearchTeamDto> search(
       TeamSearchRequest criteria, List<SortRequest> sortRequests, int limit, int offset) {
     List<Team> teams = teamMapper.search(criteria, sortRequests, limit, offset);
     return teamConverter.entitiesToSearchDtos(teams);
-  }
-
-  /**
-   * Find deleted team by team code.
-   *
-   * @param teamCode the team code
-   * @return the TeamDto
-   */
-  public TeamDto findDeletedByTeamCode(String teamCode) {
-    return teamConverter.entityToDto(teamMapper.findDeletedByTeamCode(teamCode));
   }
 }

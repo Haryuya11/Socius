@@ -1,15 +1,12 @@
 package com.uit.sociuscoremodules.teamemployee.repository;
 
-import com.uit.sociuscoremodules.employee.converter.EmployeeConverter;
-import com.uit.sociuscoremodules.employee.domain.Employee;
-import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import com.uit.sociuscoremodules.teamemployee.converter.TeamEmployeeConverter;
-import com.uit.sociuscoremodules.teamemployee.domain.TeamEmployee;
 import com.uit.sociuscoremodules.teamemployee.dto.SearchTeamEmployeeDto;
 import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeDto;
 import com.uit.sociuscoremodules.teamemployee.persistence.TeamEmployeeMapper;
 import com.uit.sociuscoremodules.teamemployee.request.SearchTeamEmployeeRequest;
+import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeAddRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -20,26 +17,26 @@ import org.springframework.stereotype.Repository;
 public class TeamEmployeeRepository {
   private final TeamEmployeeMapper teamEmployeeMapper;
   private final TeamEmployeeConverter teamEmployeeConverter;
-  private final EmployeeConverter employeeConverter;
 
   /**
-   * Find team-employee relationship by team code and employee ID.
+   * Find TeamEmployee by team code and employee ID.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID (user_id)
-   * @return the TeamEmployee entity
+   * @param employeeId the employee ID (client_id)
+   * @return the corresponding TeamEmployeeDto
    */
-  public TeamEmployee findByTeamCodeAndEmployeeId(String teamCode, String employeeId) {
-    return teamEmployeeMapper.findByTeamCodeAndEmployeeId(teamCode, employeeId);
+  public TeamEmployeeDto findByTeamCodeAndEmployeeId(String teamCode, String employeeId) {
+    return teamEmployeeConverter.entityToDto(
+        teamEmployeeMapper.findByTeamCodeAndEmployeeId(teamCode, employeeId));
   }
 
   /**
    * Find all employees in a team.
    *
    * @param teamCode the team code
-   * @return list of Employee entities
+   * @return list of TeamEmployeeDto
    */
-  public List<Employee> findEmployeesByTeamCode(String teamCode) {
+  public List<TeamEmployeeDto> findEmployeesByTeamCode(String teamCode) {
     return teamEmployeeMapper.findEmployeesByTeamCode(teamCode);
   }
 
@@ -49,17 +46,18 @@ public class TeamEmployeeRepository {
    * @param teamCode the team code
    * @return the Employee entity
    */
-  public EmployeeDto findTeamLeadByTeamCode(String teamCode) {
-    return employeeConverter.entityToDto(teamEmployeeMapper.findTeamLeadByTeamCode(teamCode));
+  public TeamEmployeeDto findTeamLeadByTeamCode(String teamCode) {
+    return teamEmployeeConverter.entityToDto(teamEmployeeMapper.findTeamLeadByTeamCode(teamCode));
   }
 
   /**
-   * Add an employee to a team.
+   * Insert a new team member.
    *
-   * @param teamEmployee the TeamEmployee entity
+   * @param teamCode the team code
+   * @param request the TeamEmployeeAddRequest
    */
-  public void insert(TeamEmployee teamEmployee) {
-    teamEmployeeMapper.insert(teamEmployee);
+  public void insert(String teamCode, TeamEmployeeAddRequest request) {
+    teamEmployeeMapper.insert(teamEmployeeConverter.toEntity(teamCode, request));
   }
 
   /**
@@ -84,26 +82,26 @@ public class TeamEmployeeRepository {
   }
 
   /**
-   * Find soft-deleted team-employee relationship.
+   * Find soft-deleted TeamEmployee by team code and employee ID.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID (user_id)
-   * @return the soft-deleted TeamEmployee entity or null
+   * @param employeeId the employee ID
+   * @return the corresponding TeamEmployeeDto
    */
-  public TeamEmployee findSoftDeletedByTeamCodeAndEmployeeId(String teamCode, String employeeId) {
-    return teamEmployeeMapper.findSoftDeletedByTeamCodeAndEmployeeId(teamCode, employeeId);
+  public TeamEmployeeDto findSoftDeletedByTeamCodeAndEmployeeId(
+      String teamCode, String employeeId) {
+    return teamEmployeeConverter.entityToDto(
+        teamEmployeeMapper.findSoftDeletedByTeamCodeAndEmployeeId(teamCode, employeeId));
   }
 
   /**
    * Reactivate soft-deleted team-employee relationship.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID
-   * @param roleCode the role code
-   * @param isLeader the leadership status
+   * @param request the request containing details
    */
-  public void reactivate(String teamCode, String employeeId, String roleCode, Boolean isLeader) {
-    teamEmployeeMapper.reactivate(teamCode, employeeId, roleCode, isLeader);
+  public void reactivate(String teamCode, TeamEmployeeAddRequest request) {
+    teamEmployeeMapper.reactivate(teamEmployeeConverter.toEntity(teamCode, request));
   }
 
   /**
@@ -148,16 +146,28 @@ public class TeamEmployeeRepository {
   }
 
   /**
-   * Search employees in a team with filters, sorting, and pagination.
+   * Search with pagination.
    *
    * @param criteria the search criteria
    * @param sortRequests the sorting requests
-   * @param limit the maximum number of records to return
-   * @param offset the starting point for records to return
+   * @param limit limit
+   * @param offset offset
+   * @return List of SearchTeamEmployeeDto
    */
   public List<SearchTeamEmployeeDto> search(
       SearchTeamEmployeeRequest criteria, List<SortRequest> sortRequests, int limit, int offset) {
-    List<TeamEmployeeDto> dtos = teamEmployeeMapper.search(criteria, sortRequests, limit, offset);
-    return teamEmployeeConverter.dtosToSearchDtos(dtos);
+    return teamEmployeeConverter.dtosToSearchDtos(
+        teamEmployeeMapper.search(criteria, sortRequests, limit, offset));
+  }
+
+  /**
+   * Update role code for an employee in a team.
+   *
+   * @param teamCode the team code
+   * @param employeeId the employee ID
+   * @param roleCode the role code
+   */
+  public void updateRoleCode(String teamCode, String employeeId, String roleCode) {
+    teamEmployeeMapper.updateRoleCode(teamCode, employeeId, roleCode);
   }
 }

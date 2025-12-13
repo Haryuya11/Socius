@@ -25,4 +25,5 @@ public class Team {
   private LocalDateTime deletedAt;
   private Short deleteFlag;
   private List<Employee> members;
+  private Employee teamLead;
 }

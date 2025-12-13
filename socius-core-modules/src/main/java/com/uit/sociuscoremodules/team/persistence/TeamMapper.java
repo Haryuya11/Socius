@@ -52,9 +52,10 @@ public interface TeamMapper {
   /**
    * Update an existing team.
    *
-   * @param team the Team entity to update
+   * @param teamCode the team code to identify the record
+   * @param team the Team entity containing update data
    */
-  void update(@Param("team") Team team);
+  void update(@Param("teamCode") String teamCode, @Param("team") Team team);
 
   /**
    * Soft delete a team by team code.
@@ -68,7 +69,7 @@ public interface TeamMapper {
    *
    * @param team the team to reactivate
    */
-  void reactivateTeam(Team team);
+  void reactivateTeam(@Param("team") Team team);
 
   /**
    * Check if team code exists.

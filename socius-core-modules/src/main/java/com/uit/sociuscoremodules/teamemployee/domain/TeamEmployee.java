@@ -1,5 +1,7 @@
 package com.uit.sociuscoremodules.teamemployee.domain;
 
+import com.uit.sociuscoremodules.employee.domain.Employee;
+import com.uit.sociuscoremodules.team.domain.Team;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,10 +20,12 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TeamEmployee {
   private Integer id;
-  private String employeeId; // employee's user_id from employees table
-  private String teamCode; // team's team_code from teams table
+  private String employeeId;
+  private String teamCode;
   private String roleCode;
   private Boolean isLeader;
+  private Employee employeeInfo;
+  private Team teamInfo;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
   private LocalDateTime deletedAt;

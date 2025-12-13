@@ -13,19 +13,7 @@ import lombok.Setter;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamEmployeeBatchResult {
+public class TeamEmployeeBatchResultDto {
   private List<TeamEmployeeDto> successful;
-  private List<BatchError> failed;
-
-  /** Error details for failed batch operations. */
-  @Getter
-  @Setter
-  @Builder
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public static class BatchError {
-    private String clientId;
-    private String errorCode;
-    private String errorMessage;
-  }
+  private List<BatchErrorDto> failed;
 }

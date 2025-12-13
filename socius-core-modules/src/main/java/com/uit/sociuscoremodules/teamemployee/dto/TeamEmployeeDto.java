@@ -17,7 +17,6 @@ public class TeamEmployeeDto {
   private String employeeId;
   private String roleCode;
   private Boolean isLeader;
-  private String userId;
   private String firstName;
   private String lastName;
   private String imageUrl;

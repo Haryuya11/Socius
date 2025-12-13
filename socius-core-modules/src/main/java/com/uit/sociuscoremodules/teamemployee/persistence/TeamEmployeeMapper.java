@@ -1,6 +1,5 @@
 package com.uit.sociuscoremodules.teamemployee.persistence;
 
-import com.uit.sociuscoremodules.employee.domain.Employee;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import com.uit.sociuscoremodules.teamemployee.domain.TeamEmployee;
 import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeDto;
@@ -34,20 +33,20 @@ public interface TeamEmployeeMapper {
       @Param("teamCode") String teamCode, @Param("employeeId") String employeeId);
 
   /**
-   * Find all employees in a team.
+   * Find all team-employee relationships in a team.
    *
    * @param teamCode the team code
-   * @return list of Employee entities
+   * @return list of TeamEmployeeDto
    */
-  List<Employee> findEmployeesByTeamCode(@Param("teamCode") String teamCode);
+  List<TeamEmployeeDto> findEmployeesByTeamCode(@Param("teamCode") String teamCode);
 
   /**
-   * Find team lead of a team.
+   * Find team lead team-employee relationship.
    *
    * @param teamCode the team code
-   * @return the Employee entity
+   * @return the TeamEmployee entity
    */
-  Employee findTeamLeadByTeamCode(@Param("teamCode") String teamCode);
+  TeamEmployee findTeamLeadByTeamCode(@Param("teamCode") String teamCode);
 
   /**
    * Insert a new team-employee relationship.
@@ -69,6 +68,18 @@ public interface TeamEmployeeMapper {
       @Param("isLeader") Boolean isLeader);
 
   /**
+   * Update role code for an employee in a team.
+   *
+   * @param teamCode the team code
+   * @param employeeId the employee ID
+   * @param roleCode the new role code
+   */
+  void updateRoleCode(
+      @Param("teamCode") String teamCode,
+      @Param("employeeId") String employeeId,
+      @Param("roleCode") String roleCode);
+
+  /**
    * Soft delete team-employee relationship.
    *
    * @param teamCode the team code
@@ -79,16 +90,9 @@ public interface TeamEmployeeMapper {
   /**
    * Reactivate soft-deleted team-employee relationship.
    *
-   * @param teamCode the team code
-   * @param employeeId the employee ID
-   * @param roleCode the role code
-   * @param isLeader the leadership status
+   * @param teamEmployee the TeamEmployee entity to reactivate
    */
-  void reactivate(
-      @Param("teamCode") String teamCode,
-      @Param("employeeId") String employeeId,
-      @Param("roleCode") String roleCode,
-      @Param("isLeader") Boolean isLeader);
+  void reactivate(@Param("teamEmployee") TeamEmployee teamEmployee);
 
   /**
    * Check if employee is already in team.

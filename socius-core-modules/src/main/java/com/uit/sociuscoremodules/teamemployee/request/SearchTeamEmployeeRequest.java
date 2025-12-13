@@ -15,8 +15,8 @@ import lombok.ToString;
 public class SearchTeamEmployeeRequest {
   private String teamCode;
   private String employeeId;
-  private String userId; // email
   private String firstName;
   private String lastName;
   private String roleCode;
+  private Boolean isLeader;
 }

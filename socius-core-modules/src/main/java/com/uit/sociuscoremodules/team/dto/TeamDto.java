@@ -1,6 +1,5 @@
 package com.uit.sociuscoremodules.team.dto;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +16,4 @@ public class TeamDto {
   private String teamCode;
   private String teamName;
   private String departmentCode;
-  //  private TeamMemberDto teamLead;
-  private List<TeamMemberDto> members;
 }

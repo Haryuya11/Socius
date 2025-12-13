@@ -23,7 +23,6 @@ public interface TeamConverter {
    * @param team the Team entity
    * @return the corresponding TeamDto
    */
-  @Mapping(target = "members", source = "members")
   TeamDto entityToDto(Team team);
 
   /**
@@ -32,7 +31,16 @@ public interface TeamConverter {
    * @param teams the list of Team entities
    * @return the corresponding list of TeamDtos
    */
-  List<TeamDto> entityToDto(List<Team> teams);
+  List<TeamDto> entitiesToDtos(List<Team> teams);
+
+  /**
+   * Converts a Team entity to SearchTeamDto.
+   *
+   * @param team the Team entity
+   * @return the corresponding SearchTeamDto
+   */
+  @Mapping(target = "teamLead", source = "teamLead", qualifiedByName = "convertTeamLead")
+  SearchTeamDto entityToSearchDto(Team team);
 
   /**
    * Converts a list of Team entities to a list of SearchTeamDto.
@@ -53,7 +61,7 @@ public interface TeamConverter {
   @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
   @Mapping(target = "deletedAt", ignore = true)
   @Mapping(target = "deleteFlag", constant = "0")
-  Team requestToEntity(TeamCreateRequest request);
+  Team createRequestToEntity(TeamCreateRequest request);
 
   /**
    * Converts a TeamUpdateRequest to a Team entity.
@@ -63,25 +71,11 @@ public interface TeamConverter {
    */
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "teamCode", ignore = true)
-  @Mapping(target = "departmentCode", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "deletedAt", ignore = true)
   @Mapping(target = "deleteFlag", ignore = true)
   Team updateRequestToEntity(TeamUpdateRequest teamUpdateRequest);
-
-  /**
-   * Converts a TeamCreateRequest to a Team entity for creation.
-   *
-   * @param team the TeamCreateRequest
-   * @return the corresponding Team entity
-   */
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "updatedAt", ignore = true)
-  @Mapping(target = "deletedAt", ignore = true)
-  @Mapping(target = "deleteFlag", ignore = true)
-  Team createRequestToEntity(TeamCreateRequest team);
 
   /**
    * Converts an Employee entity to a TeamMemberDto.
@@ -91,6 +85,26 @@ public interface TeamConverter {
    */
   @Named("convertMembers")
   default TeamMemberDto convertMembers(Employee employee) {
+    if (employee == null) {
+      return null;
+    }
+    return TeamMemberDto.builder()
+        .clientId(employee.getClientId())
+        .userId(employee.getUserId())
+        .firstName(employee.getFirstName())
+        .lastName(employee.getLastName())
+        .imageUrl(employee.getImageUrl())
+        .build();
+  }
+
+  /**
+   * Converts an Employee entity to a TeamMemberDto for team lead.
+   *
+   * @param employee the Employee entity
+   * @return the corresponding TeamMemberDto
+   */
+  @Named("convertTeamLead")
+  default TeamMemberDto convertTeamLead(Employee employee) {
     if (employee == null) {
       return null;
     }
