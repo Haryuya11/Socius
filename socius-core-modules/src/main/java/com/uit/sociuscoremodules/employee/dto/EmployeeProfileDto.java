@@ -1,6 +1,5 @@
 package com.uit.sociuscoremodules.employee.dto;
 
-import com.uit.sociuscoremodules.employee.domain.ScopedPermissionDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
