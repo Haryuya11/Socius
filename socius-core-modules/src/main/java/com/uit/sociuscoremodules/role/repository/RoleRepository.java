@@ -1,6 +1,6 @@
 package com.uit.sociuscoremodules.role.repository;
 
-import com.uit.sociuscoremodules.employee.constants.RoleConstants;
+import com.uit.sociuscoremodules.role.constants.RoleConstants;
 import com.uit.sociuscoremodules.role.converter.RoleConverter;
 import com.uit.sociuscoremodules.role.dto.PermissionDto;
 import com.uit.sociuscoremodules.role.dto.PermissionQueryDto;
