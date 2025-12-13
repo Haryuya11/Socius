@@ -1,18 +1,20 @@
 package com.uit.sociuscoremodules.employee.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Data Transfer Object for Permission information. */
+/** Data Transfer Object for querying permissions based on various criteria. */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class PermissionDto {
+public class PermissionQueryDto {
+  private String roleType;
+  private String roleCode;
+  private String roleName;
+  private String scopeCode;
   private String permissionCode;
   private String permissionName;
   private String resource;

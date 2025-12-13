@@ -1,7 +1,7 @@
 package com.uit.sociuscoremodules.employee.persistence;
 
 import com.uit.sociuscoremodules.employee.domain.Employee;
-import com.uit.sociuscoremodules.employee.domain.Permission;
+import com.uit.sociuscoremodules.employee.dto.PermissionQueryDto;
 import com.uit.sociuscoremodules.employee.request.SearchUserRequest;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import java.util.List;
@@ -88,10 +88,10 @@ public interface EmployeeMapper {
   int count(@Param("criteria") SearchUserRequest criteria);
 
   /**
-   * Find permissions by client ID.
+   * Find permissions grouped by scope (system/department/team) for a client.
    *
    * @param clientId the client ID
-   * @return list of Permission entities
+   * @return list of maps containing role and permission information
    */
-  List<Permission> findPermissionsByClientId(@Param("clientId") String clientId);
+  List<PermissionQueryDto> findPermissionsByClientIdGrouped(@Param("clientId") String clientId);
 }

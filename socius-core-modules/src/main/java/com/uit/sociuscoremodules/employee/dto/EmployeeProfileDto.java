@@ -1,7 +1,7 @@
 package com.uit.sociuscoremodules.employee.dto;
 
+import com.uit.sociuscoremodules.employee.domain.ScopedPermissionDto;
 import java.util.List;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,5 +23,5 @@ public class EmployeeProfileDto {
 
   private List<EmployeeDepartmentDto> departments;
   private List<EmployeeTeamDto> teams;
-  private Set<PermissionDto> permissions;
+  private List<ScopedPermissionDto> permissions;
 }
