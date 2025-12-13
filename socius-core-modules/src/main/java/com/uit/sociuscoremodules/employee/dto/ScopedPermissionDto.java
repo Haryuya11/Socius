@@ -1,6 +1,5 @@
-package com.uit.sociuscoremodules.employee.domain;
+package com.uit.sociuscoremodules.employee.dto;
 
-import com.uit.sociuscoremodules.employee.dto.PermissionDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,9 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * ScopedPermissionDto domain model representing permissions scoped to a specific role or context.
- */
+/** Data Transfer Object (DTO) representing permissions scoped to a specific role or context. */
 @Getter
 @Setter
 @AllArgsConstructor
