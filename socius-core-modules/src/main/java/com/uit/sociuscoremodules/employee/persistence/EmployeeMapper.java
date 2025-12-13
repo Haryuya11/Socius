@@ -1,7 +1,7 @@
 package com.uit.sociuscoremodules.employee.persistence;
 
 import com.uit.sociuscoremodules.employee.domain.Employee;
-import com.uit.sociuscoremodules.employee.domain.Permission;
+import com.uit.sociuscoremodules.employee.dto.PermissionQueryDto;
 import com.uit.sociuscoremodules.employee.request.SearchUserRequest;
 import com.uit.sociuscoremodules.shared.request.SortRequest;
 import java.util.List;
@@ -88,10 +88,16 @@ public interface EmployeeMapper {
   int count(@Param("criteria") SearchUserRequest criteria);
 
   /**
-   * Find permissions by client ID.
+   * Retrieves raw permission data for a client. This method returns unprocessed permission records
+   * from the database. The actual grouping by scope (system/department/team) is performed by {@link
+   * com.uit.sociuscoremodules.employee.repository.EmployeeRepository#groupPermissionsByScope}.
+   *
+   * <p>Each PermissionQueryDto contains: role type, role code, role name, scope code, permission
+   * code, permission name, resource, action, and description.
    *
    * @param clientId the client ID
-   * @return list of Permission entities
+   * @return list of PermissionQueryDto containing raw permission data with role and scope
+   *     information
    */
-  List<Permission> findPermissionsByClientId(@Param("clientId") String clientId);
+  List<PermissionQueryDto> findPermissionsByClientIdGrouped(@Param("clientId") String clientId);
 }
