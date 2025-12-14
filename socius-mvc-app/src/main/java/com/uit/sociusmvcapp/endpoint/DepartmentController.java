@@ -1,9 +1,12 @@
 package com.uit.sociusmvcapp.endpoint;
 
 import com.uit.sociuscoremodules.department.dto.DepartmentDto;
+import com.uit.sociuscoremodules.department.dto.DepartmentEmployeeBatchResultDto;
 import com.uit.sociuscoremodules.department.dto.DepartmentEmployeesDto;
 import com.uit.sociuscoremodules.department.request.DepartmentCreateRequest;
+import com.uit.sociuscoremodules.department.request.EmployeeAddManyRequest;
 import com.uit.sociuscoremodules.department.request.EmployeeAddRequest;
+import com.uit.sociuscoremodules.department.request.TransferEmployeeRequest;
 import com.uit.sociuscoremodules.department.service.DepartmentService;
 import com.uit.sociuscoremodules.employee.dto.EmployeeDto;
 import com.uit.sociuscoremodules.shared.constants.MessageConstant;
@@ -14,7 +17,11 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,7 +42,7 @@ public class DepartmentController {
    *
    * @return ResponseEntity containing the department information
    */
-  @RequestMapping("/{departmentCode}/info")
+  @GetMapping("/{departmentCode}")
   public ResponseEntity<Response> getDepartmentInfo(@PathVariable String departmentCode) {
     DepartmentDto department = departmentService.departmentInfo(departmentCode);
 
@@ -57,7 +64,7 @@ public class DepartmentController {
    * @param request the request containing department creation details
    * @return ResponseEntity containing the created department code
    */
-  @RequestMapping("/create")
+  @PostMapping("/")
   public ResponseEntity<Response> createDepartment(@RequestBody DepartmentCreateRequest request) {
     Map<String, String> data = departmentService.createDepartment(request);
     Response response =
@@ -78,7 +85,7 @@ public class DepartmentController {
    * @param departmentCode the code of the department to update
    * @return ResponseEntity containing the updated department code
    */
-  @RequestMapping("/{departmentCode}/update")
+  @PutMapping("/{departmentCode}")
   public ResponseEntity<Response> updateDepartment(
       @RequestBody DepartmentCreateRequest request, @PathVariable String departmentCode) {
     Map<String, String> data = departmentService.updateDepartment(request, departmentCode);
@@ -99,7 +106,7 @@ public class DepartmentController {
    * @param departmentCode the code of the department to deactivate
    * @return ResponseEntity indicating the result of the operation
    */
-  @RequestMapping("/{departmentCode}/deactivate")
+  @DeleteMapping("/{departmentCode}")
   public ResponseEntity<Response> deactivateDepartment(@PathVariable String departmentCode) {
     Map<String, String> data = departmentService.deactivateDepartment(departmentCode);
 
@@ -115,32 +122,11 @@ public class DepartmentController {
   }
 
   /**
-   * Activate a department.
-   *
-   * @param departmentCode the code of the department to activate
-   * @return ResponseEntity indicating the result of the operation
-   */
-  @RequestMapping("/{departmentCode}/activate")
-  public ResponseEntity<Response> activateDepartment(@PathVariable String departmentCode) {
-    Map<String, String> data = departmentService.activateDepartment(departmentCode);
-
-    Response response =
-        Response.builder()
-            .success(true)
-            .status(HttpStatus.OK.value())
-            .code(MessageConstant.S_DEP_002)
-            .message(i18nService.getMessage(MessageConstant.S_DEP_002))
-            .data(data)
-            .build();
-    return ResponseEntity.ok(response);
-  }
-
-  /**
    * Get all departments.
    *
    * @return ResponseEntity containing the list of all departments
    */
-  @RequestMapping("/list")
+  @GetMapping("/list")
   public ResponseEntity<Response> getAllDepartments() {
     List<DepartmentDto> departments = departmentService.getAllDepartments();
 
@@ -161,7 +147,7 @@ public class DepartmentController {
    * @param departmentCode the code of the department
    * @return ResponseEntity containing the list of employees in the department
    */
-  @RequestMapping("/{departmentCode}/employees")
+  @GetMapping("/{departmentCode}/employees")
   public ResponseEntity<Response> getEmployeesByDepartment(@PathVariable String departmentCode) {
     List<DepartmentEmployeesDto> employees =
         departmentService.getEmployeesByDepartmentCode(departmentCode);
@@ -181,13 +167,16 @@ public class DepartmentController {
    * Add an employee to a department.
    *
    * @param departmentCode the code of the department
-   * @param payload the request payload containing employee addition details
+   * @param request the request payload containing employee addition details
    * @return ResponseEntity containing the added employee information
    */
-  @RequestMapping("/{departmentCode}/add-employee")
+  @PostMapping("/{departmentCode}/employees/{employeeId}")
   public ResponseEntity<Response> addEmployeeToDepartment(
-      @PathVariable String departmentCode, @RequestBody EmployeeAddRequest payload) {
-    EmployeeDto employee = departmentService.addEmployeeToDepartment(payload, departmentCode);
+      @PathVariable String departmentCode,
+      @RequestBody EmployeeAddRequest request,
+      @PathVariable String employeeId) {
+    EmployeeDto employee =
+        departmentService.addEmployeeToDepartment(request, departmentCode, employeeId);
 
     Response response =
         Response.builder()
@@ -201,17 +190,40 @@ public class DepartmentController {
   }
 
   /**
+   * Add multiple employees to a department.
+   *
+   * @param departmentCode the code of the department
+   * @param requests the list of request payloads containing employee addition details
+   * @return ResponseEntity containing the added employees information
+   */
+  @PostMapping("/{departmentCode}/employees")
+  public ResponseEntity<Response> addMultipleEmployeesToDepartment(
+      @PathVariable String departmentCode, @RequestBody List<EmployeeAddManyRequest> requests) {
+    DepartmentEmployeeBatchResultDto employees =
+        departmentService.addEmployeesToDepartmentBatch(requests, departmentCode);
+
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_DEP_002)
+            .message(i18nService.getMessage(MessageConstant.S_DEP_002))
+            .data(employees)
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
    * Remove an employee from a department.
    *
    * @param departmentCode the code of the department
-   * @param payload the request payload containing the employee ID
+   * @param employeeId the ID of the employee to remove
    * @return ResponseEntity containing the removed employee information
    */
-  @RequestMapping("/{departmentCode}/remove-employee")
+  @DeleteMapping("/{departmentCode}/employees/{employeeId}")
   public ResponseEntity<Response> removeEmployeeFromDepartment(
-      @PathVariable String departmentCode, @RequestBody Map<String, String> payload) {
+      @PathVariable String departmentCode, @PathVariable String employeeId) {
 
-    String employeeId = payload.get("employeeId");
     EmployeeDto employee =
         departmentService.removeEmployeeFromDepartment(departmentCode, employeeId);
 
@@ -227,20 +239,67 @@ public class DepartmentController {
   }
 
   /**
-   * Transfer an employee from one department to another.
+   * Remove multiple employees from a department.
    *
-   * @param payload the request payload containing fromDepartmentCode and toDepartmentCode
-   * @param request the request containing employee addition details
+   * @param departmentCode the code of the department
+   * @param employeeIds the list of employee IDs to remove
+   * @return ResponseEntity containing the removed employees information
+   */
+  @DeleteMapping("/{departmentCode}/employees")
+  public ResponseEntity<Response> removeMultipleEmployeesFromDepartment(
+      @PathVariable String departmentCode, @RequestBody List<String> employeeIds) {
+
+    DepartmentEmployeeBatchResultDto employees =
+        departmentService.removeEmployeesFromDepartmentBatch(employeeIds, departmentCode);
+
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_DEP_002)
+            .message(i18nService.getMessage(MessageConstant.S_DEP_002))
+            .data(employees)
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Transfer an employee between departments.
+   *
+   * @param request the request containing transfer details
    * @return ResponseEntity indicating the result of the transfer operation
    */
-  @RequestMapping("/transfer-employee")
-  public ResponseEntity<Response> transferEmployee(
-      @RequestBody Map<String, String> payload, EmployeeAddRequest request) {
-    String fromDepartmentCode = payload.get("fromDepartmentCode");
-    String toDepartmentCode = payload.get("toDepartmentCode");
+  @PostMapping("/transfer")
+  public ResponseEntity<Response> transferEmployee(@RequestBody TransferEmployeeRequest request) {
 
+    Map<String, String> result = departmentService.transferEmployee(request);
+
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_DEP_002)
+            .message(i18nService.getMessage(MessageConstant.S_DEP_002))
+            .data(result)
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Change an employee's role within a department.
+   *
+   * @param departmentCode the code of the department
+   * @param employeeId the ID of the employee whose role is to be changed
+   * @param roleCode the new role code to assign to the employee
+   * @return ResponseEntity indicating the result of the role change operation
+   */
+  @PutMapping("/{departmentCode}/employees/{employeeId}/role/{roleCode}")
+  public ResponseEntity<Response> changeEmployeeRole(
+      @PathVariable String departmentCode,
+      @PathVariable String employeeId,
+      @PathVariable String roleCode) {
     Map<String, String> result =
-        departmentService.transferEmployee(fromDepartmentCode, request, toDepartmentCode);
+        departmentService.changeEmployeeRoleInDepartment(departmentCode, employeeId, roleCode);
 
     Response response =
         Response.builder()

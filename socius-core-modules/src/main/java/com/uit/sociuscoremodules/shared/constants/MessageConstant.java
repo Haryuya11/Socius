@@ -2,7 +2,6 @@ package com.uit.sociuscoremodules.shared.constants;
 
 /** Message constant for i18n keys. */
 public final class MessageConstant {
-
   /** Private constructor to prevent instantiation. */
   private MessageConstant() {}
 
@@ -97,6 +96,12 @@ public final class MessageConstant {
 
   /** Source or target department not found for transfer. */
   public static final String E_DEP_009 = "E_DEP_009";
+
+  /** Cannot find employee in department. */
+  public static final String E_DEP_010 = "E_DEP_010";
+
+  /** Cannot add employee to department. Employee already exists in department. */
+  public static final String E_DEP_011 = "E_DEP_011";
 
   /** Department created successfully. */
   public static final String S_DEP_001 = "S_DEP_001";

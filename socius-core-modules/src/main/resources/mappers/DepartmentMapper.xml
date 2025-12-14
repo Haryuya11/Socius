@@ -68,10 +68,11 @@
     <!-- Activate -->
     <update id="activate">
         UPDATE departments
-        SET deleted_at = NULL,
+        SET department_name = #{request.departmentName},
+            deleted_at = NULL,
             updated_at = CURRENT_TIMESTAMP,
             delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
-        WHERE department_code = #{departmentCode}
+        WHERE department_code = #{request.departmentCode}
         AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
     </update>
 
@@ -110,6 +111,20 @@
         WHERE department_code = #{departmentCode}
     </select>
 
+    <!-- Find Deleted Department By department code -->
+    <select id="findDeletedByDepartmentCode" resultMap="findAllDepartmentMap">
+        SELECT id,
+               department_code,
+               department_name,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM departments
+        WHERE department_code = #{departmentCode}
+        AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
     <!-- Add Employee to Department -->
     <insert id="addEmployeeToDepartment">
         INSERT INTO department_employees (department_code,
@@ -117,9 +132,9 @@
                                           role_code,
                                           is_primary)
         VALUES (#{departmentCode},
-                #{request.employeeId},
-                #{request.roleCode},
-                #{request.isPrimary})
+                #{employeeId},
+                #{roleCode},
+                #{isPrimary})
     </insert>
 
     <!-- Remove Employee from Department -->
@@ -136,9 +151,26 @@
     <!-- Change Employee Role in Department -->
     <update id="changeEmployeeRoleInDepartment">
         UPDATE department_employees
-        SET role_code = #{newRoleCode}
+        SET role_code = #{roleCode},
+            updated_at = CURRENT_TIMESTAMP
         WHERE department_code = #{departmentCode}
         AND employee_id = #{employeeId}
     </update>
 
+    <!-- Find Department Employee -->
+    <select id="findEmployeeInDepartment" resultMap="findAllEmployeesMap">
+        SELECT id,
+               employee_id,
+               role_code,
+               department_code,
+               is_primary,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM department_employees
+        WHERE department_code = #{departmentCode}
+        AND employee_id = #{employeeId}
+        AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
 </mapper>

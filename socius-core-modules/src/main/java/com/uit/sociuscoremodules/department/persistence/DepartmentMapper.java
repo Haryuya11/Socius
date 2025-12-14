@@ -3,7 +3,6 @@ package com.uit.sociuscoremodules.department.persistence;
 import com.uit.sociuscoremodules.department.domain.Department;
 import com.uit.sociuscoremodules.department.domain.DepartmentEmployees;
 import com.uit.sociuscoremodules.department.request.DepartmentCreateRequest;
-import com.uit.sociuscoremodules.department.request.EmployeeAddRequest;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -22,16 +21,16 @@ public interface DepartmentMapper {
   /**
    * Create a new Department.
    *
-   * @param request the department creation request
+   * @param request the department to be created
    */
-  void create(@Param("request") DepartmentCreateRequest request);
+  void create(@Param("request") Department request);
 
   /**
    * Update an existing Department.
    *
    * @param request the department update request
    */
-  void update(@Param("request") DepartmentCreateRequest request);
+  void update(@Param("request") Department request);
 
   /**
    * Soft delete a Department by its department code.
@@ -41,11 +40,11 @@ public interface DepartmentMapper {
   void deactivate(@Param("departmentCode") String departmentCode);
 
   /**
-   * Reactivate a Department by its department code.
+   * Reactivate a previously deleted Department.
    *
-   * @param departmentCode the department code
+   * @param request the department reactivation request
    */
-  void activate(@Param("departmentCode") String departmentCode);
+  void activate(@Param("departmentCode") DepartmentCreateRequest request);
 
   /**
    * Get all Departments.
@@ -76,8 +75,7 @@ public interface DepartmentMapper {
    *
    * @param request the employee addition request
    */
-  void addEmployeeToDepartment(
-      @Param("request") EmployeeAddRequest request, @Param("departmentCode") String departmentCode);
+  void addEmployeeToDepartment(DepartmentEmployees request);
 
   /**
    * Remove an Employee from a Department.
@@ -89,9 +87,32 @@ public interface DepartmentMapper {
       @Param("departmentCode") String departmentCode, @Param("employeeId") String employeeId);
 
   /**
-   * Move an Employee to a different Department.
+   * Find a deleted Department by its department code.
    *
-   * @param employeeId the employee's user ID
-   * @param newDepartmentCode the new department code
+   * @param departmentCode the department code
+   * @return the deleted Department entity
    */
+  Department findDeletedByDepartmentCode(@Param("departmentCode") String departmentCode);
+
+  /**
+   * Change an Employee's role in a Department.
+   *
+   * @param departmentCode the department code
+   * @param employeeId the employee's user ID
+   * @param roleCode the new role code
+   */
+  void changeEmployeeRoleInDepartment(
+      @Param("departmentCode") String departmentCode,
+      @Param("employeeId") String employeeId,
+      @Param("roleCode") String roleCode);
+
+  /**
+   * Find an Employee in a Department by department code and employee ID.
+   *
+   * @param departmentCode the department code
+   * @param employeeId the employee's user ID
+   * @return the DepartmentEmployees entity
+   */
+  DepartmentEmployees findEmployeeInDepartment(
+      @Param("departmentCode") String departmentCode, @Param("employeeId") String employeeId);
 }

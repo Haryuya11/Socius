@@ -5,6 +5,7 @@ import com.uit.sociuscoremodules.department.domain.DepartmentEmployees;
 import com.uit.sociuscoremodules.department.dto.DepartmentDto;
 import com.uit.sociuscoremodules.department.dto.DepartmentEmployeesDto;
 import com.uit.sociuscoremodules.department.request.DepartmentCreateRequest;
+import com.uit.sociuscoremodules.department.request.EmployeeAddRequest;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -69,4 +70,53 @@ public interface DepartmentConverter {
    * @return the corresponding list of DepartmentEmployeesDto
    */
   List<DepartmentEmployeesDto> entityListToEmployeeDto(List<DepartmentEmployees> employees);
+
+  /**
+   * Converts a DepartmentCreateRequest to a Department entity for creation.
+   *
+   * @param request The department creation request DTO.
+   * @return The corresponding Department entity.
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "deleteFlag", ignore = true)
+  Department createRequestToEntity(DepartmentCreateRequest request);
+
+  /**
+   * Converts an EmployeeAddRequest to a DepartmentEmployees entity for adding an employee to a
+   * department.
+   *
+   * @param request The employee addition request DTO.
+   * @return The corresponding DepartmentEmployees entity.
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "departmentCode", source = "departmentCode")
+  @Mapping(target = "employeeId", source = "employeeId")
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "deleteFlag", ignore = true)
+  DepartmentEmployees createEmployeeRequestToEntity(
+      EmployeeAddRequest request, String departmentCode, String employeeId);
+
+  /**
+   * Converts roleCode and isPrimary to an EmployeeAddRequest.
+   *
+   * @param roleCode the role code of the employee
+   * @param isPrimary whether the employee is primary in the department
+   * @return the corresponding EmployeeAddRequest
+   */
+  @Mapping(target = "roleCode", source = "roleCode")
+  @Mapping(target = "isPrimary", source = "isPrimary")
+  EmployeeAddRequest toEmployeeAddRequest(String roleCode, Boolean isPrimary);
+
+  /**
+   * Converts a DepartmentEmployees entity to a DepartmentEmployeesDto.
+   *
+   * @param departmentEmployees the DepartmentEmployees entity
+   * @return the corresponding DepartmentEmployeesDto
+   */
+  DepartmentEmployeesDto entityToDepartmentEmployeesDto(DepartmentEmployees departmentEmployees);
 }

@@ -36,7 +36,7 @@ public class DepartmentRepository {
    * @param request the department creation request
    */
   public void create(DepartmentCreateRequest request) {
-    departmentMapper.create(request);
+    departmentMapper.create(departmentConverter.createRequestToEntity(request));
   }
 
   /**
@@ -45,7 +45,7 @@ public class DepartmentRepository {
    * @param request the department update request
    */
   public void update(DepartmentCreateRequest request) {
-    departmentMapper.update(request);
+    departmentMapper.update(departmentConverter.createRequestToEntity(request));
   }
 
   /**
@@ -60,10 +60,10 @@ public class DepartmentRepository {
   /**
    * Activate a department by its department code.
    *
-   * @param departmentCode the department code
+   * @param request the department activation request
    */
-  public void activate(String departmentCode) {
-    departmentMapper.activate(departmentCode);
+  public void activate(DepartmentCreateRequest request) {
+    departmentMapper.activate(request);
   }
 
   /**
@@ -102,8 +102,10 @@ public class DepartmentRepository {
    * @param request the request containing employee addition details
    * @param departmentCode the department code
    */
-  public void addEmployeeToDepartment(EmployeeAddRequest request, String departmentCode) {
-    departmentMapper.addEmployeeToDepartment(request, departmentCode);
+  public void addEmployeeToDepartment(
+      EmployeeAddRequest request, String departmentCode, String employeeId) {
+    departmentMapper.addEmployeeToDepartment(
+        departmentConverter.createEmployeeRequestToEntity(request, departmentCode, employeeId));
   }
 
   /**
@@ -114,5 +116,39 @@ public class DepartmentRepository {
    */
   public void removeEmployeeFromDepartment(String departmentCode, String employeeId) {
     departmentMapper.removeEmployeeFromDepartment(departmentCode, employeeId);
+  }
+
+  /**
+   * Get deleted DepartmentDto by department code.
+   *
+   * @param departmentCode the department code
+   * @return the corresponding deleted DepartmentDto
+   */
+  public DepartmentDto findDeletedByDepartmentCode(String departmentCode) {
+    return departmentConverter.entityToDto(
+        departmentMapper.findDeletedByDepartmentCode(departmentCode));
+  }
+
+  /**
+   * Change an Employee's role in a Department.
+   *
+   * @param departmentCode the department code
+   * @param employeeId the employee's user ID
+   * @param roleCode the new role code
+   */
+  public void changeEmployeeRole(String departmentCode, String employeeId, String roleCode) {
+    departmentMapper.changeEmployeeRoleInDepartment(departmentCode, employeeId, roleCode);
+  }
+
+  /**
+   * Find an Employee in a Department by department code and employee ID.
+   *
+   * @param departmentCode the department code
+   * @param employeeId the employee's user ID
+   * @return the corresponding DepartmentEmployeesDto
+   */
+  public DepartmentEmployeesDto findEmployeeInDepartment(String departmentCode, String employeeId) {
+    return departmentConverter.entityToDepartmentEmployeesDto(
+        departmentMapper.findEmployeeInDepartment(departmentCode, employeeId));
   }
 }
