@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociuscoremodules.team.persistence.TeamMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="teamResultMap" type="com.uit.sociuscoremodules.team.domain.Team">
+        <id property="id" column="id"/>
+        <result property="teamCode" column="team_code"/>
+        <result property="teamName" column="team_name"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <resultMap id="employeeResultMap" type="com.uit.sociuscoremodules.employee.domain.Employee">
+        <id property="id" column="emp_id"/>
+        <result property="clientId" column="emp_client_id"/>
+        <result property="userId" column="emp_user_id"/>
+        <result property="firstName" column="emp_first_name"/>
+        <result property="lastName" column="emp_last_name"/>
+        <result property="imageUrl" column="emp_image_url"/>
+    </resultMap>
+
+    <resultMap id="teamWithEmployeesResultMap" type="com.uit.sociuscoremodules.team.domain.Team" extends="teamResultMap">
+        <association property="teamLead" resultMap="employeeResultMap"/>
+    </resultMap>
+
+    <!-- SQL Fragments -->
+    <sql id="joinEmployee">
+        LEFT JOIN team_employees te ON t.team_code = te.team_code
+            AND te.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        LEFT JOIN employees e ON te.employee_id = e.client_id
+            AND e.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </sql>
+
+    <sql id="searchCondition">
+        <if test="criteria.teamCode != null and criteria.teamCode.trim() != ''">
+            <bind name="teamCodeLike" value="'%' + criteria.teamCode.trim() + '%'"/>
+            AND t.team_code LIKE #{teamCodeLike}
+        </if>
+        <if test="criteria.teamName != null and criteria.teamName.trim() != ''">
+            <bind name="teamNameLike" value="'%' + criteria.teamName.trim() + '%'"/>
+            AND t.team_name LIKE #{teamNameLike}
+        </if>
+        <if test="criteria.departmentCode != null and criteria.departmentCode.trim() != ''">
+            AND t.department_code = #{criteria.departmentCode}
+        </if>
+    </sql>
+
+    <sql id="orderByClause">
+        <if test="sorts != null and sorts.size() > 0">
+            ORDER BY
+            <foreach collection="sorts" item="sort" separator=",">
+                <choose>
+                    <when test="sort.sortBy == 'teamCode'">t.team_code</when>
+                    <when test="sort.sortBy == 'teamName'">t.team_name</when>
+                    <when test="sort.sortBy == 'departmentCode'">t.department_code</when>
+                    <otherwise>t.created_at</otherwise>
+                </choose>
+                <choose>
+                    <when test="sort.sortDirection == 'ASC'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </foreach>
+        </if>
+    </sql>
+
+    <!-- Select Queries -->
+    <select id="findByTeamCode" resultMap="teamWithEmployeesResultMap">
+        SELECT t.id,
+               t.team_code,
+               t.team_name,
+               t.department_code,
+               t.created_at,
+               t.updated_at,
+               t.deleted_at,
+               e.id AS emp_id,
+               e.client_id AS emp_client_id,
+               e.user_id AS emp_user_id,
+               e.first_name AS emp_first_name,
+               e.last_name AS emp_last_name,
+               e.image_url AS emp_image_url
+        FROM teams t
+        <include refid="joinEmployee"/>
+        WHERE t.team_code = #{teamCode}
+          AND t.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findDeletedByTeamCode" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               department_code,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM teams
+        WHERE team_code = #{teamCode}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
+    <select id="search" resultMap="teamWithEmployeesResultMap">
+        SELECT t.id,
+               t.team_code,
+               t.team_name,
+               t.department_code,
+               t.created_at,
+               t.updated_at,
+               t.deleted_at,
+               e.id AS emp_id,
+               e.client_id AS emp_client_id,
+               e.user_id AS emp_user_id,
+               e.first_name AS emp_first_name,
+               e.last_name AS emp_last_name,
+               e.image_url AS emp_image_url
+        FROM teams t
+        LEFT JOIN team_employees te ON t.team_code = te.team_code
+            AND te.is_leader IS TRUE
+            AND te.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        LEFT JOIN employees e ON te.employee_id = e.client_id
+            AND e.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        WHERE t.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <include refid="searchCondition"/>
+        <include refid="orderByClause"/>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM teams t
+        WHERE t.delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <include refid="searchCondition"/>
+    </select>
+
+    <select id="existsByTeamCode" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM teams
+            WHERE team_code = #{teamCode}
+              AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+    <!-- Insert Query -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="team.id">
+        INSERT INTO teams (team_code, team_name, department_code, created_at, updated_at, delete_flag)
+        VALUES (#{team.teamCode},
+                #{team.teamName},
+                #{team.departmentCode},
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP,
+                ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value})
+    </insert>
+
+    <!-- Update Queries -->
+    <update id="update">
+        UPDATE teams
+        SET team_name = #{team.teamName},
+            department_code = #{team.departmentCode},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode}
+          AND delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="softDelete">
+        UPDATE teams
+        SET delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode}
+    </update>
+
+    <update id="reactivateTeam">
+        UPDATE teams
+        SET team_name = #{team.teamName},
+            department_code = #{team.departmentCode},
+            updated_at = CURRENT_TIMESTAMP,
+            deleted_at = NULL,
+            delete_flag = ${@com.uit.sociuscoremodules.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        WHERE team_code = #{team.teamCode}
+    </update>
+
+</mapper>
