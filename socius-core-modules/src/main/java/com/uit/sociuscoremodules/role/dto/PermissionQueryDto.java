@@ -1,4 +1,4 @@
-package com.uit.sociuscoremodules.employee.dto;
+package com.uit.sociuscoremodules.role.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

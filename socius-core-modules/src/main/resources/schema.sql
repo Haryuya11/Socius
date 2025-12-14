@@ -72,7 +72,10 @@ CREATE TABLE IF NOT EXISTS permissions
     resource        VARCHAR(50)        NOT NULL,
     action          VARCHAR(20)        NOT NULL,
     description     TEXT,
-    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at      TIMESTAMP,
+    delete_flag     SMALLINT  DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS role_permissions
@@ -81,6 +84,9 @@ CREATE TABLE IF NOT EXISTS role_permissions
     role_code       VARCHAR(10) NOT NULL,
     permission_code VARCHAR(50) NOT NULL,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at      TIMESTAMP,
+    delete_flag     SMALLINT  DEFAULT 0,
     UNIQUE (role_code, permission_code)
 );
 
@@ -113,7 +119,6 @@ CREATE TABLE IF NOT EXISTS tasks
     delete_flag   SMALLINT  DEFAULT 0
 );
 
-
 CREATE TABLE IF NOT EXISTS notifications
 (
     id            BIGSERIAL PRIMARY KEY,
@@ -121,5 +126,8 @@ CREATE TABLE IF NOT EXISTS notifications
     delivery_type SMALLINT    NOT NULL,
     payload_json  TEXT        NOT NULL,
     is_read       SMALLINT  DEFAULT 0,
-    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP,
+    delete_flag   SMALLINT  DEFAULT 0
 );

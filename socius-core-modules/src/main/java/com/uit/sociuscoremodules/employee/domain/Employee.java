@@ -1,5 +1,6 @@
 package com.uit.sociuscoremodules.employee.domain;
 
+import com.uit.sociuscoremodules.role.domain.Permission;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;

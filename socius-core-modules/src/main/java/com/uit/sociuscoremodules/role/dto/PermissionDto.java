@@ -1,4 +1,4 @@
-package com.uit.sociuscoremodules.employee.dto;
+package com.uit.sociuscoremodules.role.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,12 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Data Transfer Object for Permission information. */
+/** Data Transfer Object representing a permission. */
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class PermissionDto {
   private String permissionCode;
   private String permissionName;

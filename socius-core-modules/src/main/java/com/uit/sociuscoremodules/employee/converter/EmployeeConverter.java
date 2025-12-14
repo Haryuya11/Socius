@@ -50,6 +50,14 @@ public interface EmployeeConverter {
   EmployeeProfileDto entityToProfileDto(Employee employee);
 
   /**
+   * Converts an EmployeeDto to an EmployeeProfileDto.
+   *
+   * @param employeeDto the EmployeeDto
+   * @return the corresponding EmployeeProfileDto
+   */
+  EmployeeProfileDto dtoToProfileDto(EmployeeDto employeeDto);
+
+  /**
    * Converts an EmployeeDepartment entity to an EmployeeDepartmentDto.
    *
    * @param department the EmployeeDepartment entity

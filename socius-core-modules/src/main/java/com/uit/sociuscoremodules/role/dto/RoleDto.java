@@ -1,4 +1,4 @@
-package com.uit.sociuscoremodules.employee.dto;
+package com.uit.sociuscoremodules.role.dto;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -7,15 +7,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Data Transfer Object (DTO) representing permissions scoped to a specific role or context. */
+/** Data Transfer Object representing a role. */
 @Getter
 @Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class ScopedPermissionDto {
-  private String scope;
-  private String scopeCode;
+public class RoleDto {
+  private String roleCode;
   private String roleName;
+  private String roleType;
+  private String description;
   private List<PermissionDto> permissions;
 }
