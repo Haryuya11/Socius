@@ -51,13 +51,16 @@ public class TeamEmployeeRepository {
   }
 
   /**
-   * Insert a new team member.
+   * Add an employee to a team.
    *
-   * @param teamCode the team code
    * @param request the TeamEmployeeAddRequest
+   * @param teamCode the team code
+   * @param employeeId the employee ID
    */
-  public void insert(String teamCode, TeamEmployeeAddRequest request) {
-    teamEmployeeMapper.insert(teamEmployeeConverter.toEntity(teamCode, request));
+  public void addEmployeeToTeam(
+      TeamEmployeeAddRequest request, String teamCode, String employeeId) {
+    teamEmployeeMapper.insert(
+        teamEmployeeConverter.createTeamEmployeeRequestToEntity(request, teamCode, employeeId));
   }
 
   /**
@@ -72,12 +75,12 @@ public class TeamEmployeeRepository {
   }
 
   /**
-   * Remove an employee from a team (soft delete).
+   * Remove an employee from a team.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID (user_id)
+   * @param employeeId the employee ID
    */
-  public void softDelete(String teamCode, String employeeId) {
+  public void removeEmployeeFromTeam(String teamCode, String employeeId) {
     teamEmployeeMapper.softDelete(teamCode, employeeId);
   }
 

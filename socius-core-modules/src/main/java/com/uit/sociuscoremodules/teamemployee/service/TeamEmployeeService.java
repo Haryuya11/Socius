@@ -9,7 +9,9 @@ import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeDto;
 import com.uit.sociuscoremodules.teamemployee.request.SearchTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeAddRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeBatchAddRequest;
+import com.uit.sociuscoremodules.teamemployee.request.TransferTeamEmployeeRequest;
 import java.util.List;
+import java.util.Map;
 
 /** Service interface for team-employee relationship operations. */
 public interface TeamEmployeeService {
@@ -75,4 +77,12 @@ public interface TeamEmployeeService {
    */
   PageResponse<SearchTeamEmployeeDto> searchEmployeesInTeam(
       String teamCode, PaginationSearchRequest<SearchTeamEmployeeRequest> request);
+
+  /**
+   * Transfer an employee from one team to another.
+   *
+   * @param request the request containing transfer details
+   * @return Map containing transfer confirmation details
+   */
+  Map<String, String> transferEmployee(TransferTeamEmployeeRequest request);
 }

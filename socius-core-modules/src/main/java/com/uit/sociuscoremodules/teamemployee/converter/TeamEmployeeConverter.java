@@ -108,4 +108,38 @@ public interface TeamEmployeeConverter {
   @Mapping(target = "deletedAt", ignore = true)
   @Mapping(target = "deleteFlag", constant = "0")
   TeamEmployee toEntity(String teamCode, TeamEmployeeAddRequest request);
+
+  /**
+   * Converts roleCode and isLeader to a TeamEmployeeAddRequest.
+   *
+   * @param roleCode the role code of the employee
+   * @param isLeader whether the employee is team leader
+   * @return the corresponding TeamEmployeeAddRequest
+   */
+  @Mapping(target = "employeeId", ignore = true)
+  @Mapping(target = "roleCode", source = "roleCode")
+  @Mapping(target = "isLeader", source = "isLeader")
+  TeamEmployeeAddRequest toTeamEmployeeAddRequest(String roleCode, Boolean isLeader);
+
+  /**
+   * Converts TeamEmployeeAddRequest to TeamEmployee entity with additional parameters.
+   *
+   * @param request the TeamEmployeeAddRequest
+   * @param teamCode the team code
+   * @param employeeId the employee ID
+   * @return the corresponding TeamEmployee entity
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "teamCode", source = "teamCode")
+  @Mapping(target = "employeeId", source = "employeeId")
+  @Mapping(target = "roleCode", source = "request.roleCode")
+  @Mapping(target = "isLeader", source = "request.isLeader")
+  @Mapping(target = "employeeInfo", ignore = true)
+  @Mapping(target = "teamInfo", ignore = true)
+  @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+  @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "deleteFlag", constant = "0")
+  TeamEmployee createTeamEmployeeRequestToEntity(
+      TeamEmployeeAddRequest request, String teamCode, String employeeId);
 }

@@ -10,7 +10,9 @@ import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeBatchResultDto;
 import com.uit.sociuscoremodules.teamemployee.dto.TeamEmployeeDto;
 import com.uit.sociuscoremodules.teamemployee.request.SearchTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeBatchAddRequest;
+import com.uit.sociuscoremodules.teamemployee.request.TransferTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.service.TeamEmployeeService;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -150,6 +152,31 @@ public class TeamEmployeeController {
             .data(result)
             .build();
 
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Transfer an employee between teams.
+   *
+   * <p>POST /teams/transfer
+   *
+   * @param request the request containing transfer details
+   * @return ResponseEntity indicating the result of the transfer operation
+   */
+  @PostMapping("/transfer")
+  public ResponseEntity<Response> transferEmployee(
+      @RequestBody TransferTeamEmployeeRequest request) {
+
+    Map<String, String> result = teamEmployeeService.transferEmployee(request);
+
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_TEAM_004)
+            .message(i18nService.getMessage(MessageConstant.S_TEAM_004))
+            .data(result)
+            .build();
     return ResponseEntity.ok(response);
   }
 }

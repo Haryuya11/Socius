@@ -8,6 +8,7 @@ import com.uit.sociuscoremodules.shared.request.PaginationSearchRequest;
 import com.uit.sociuscoremodules.shared.response.PageResponse;
 import com.uit.sociuscoremodules.shared.service.I18nService;
 import com.uit.sociuscoremodules.shared.service.impl.BaseServiceImpl;
+import com.uit.sociuscoremodules.team.constants.TeamConstant;
 import com.uit.sociuscoremodules.team.dto.TeamDto;
 import com.uit.sociuscoremodules.team.repository.TeamRepository;
 import com.uit.sociuscoremodules.teamemployee.converter.TeamEmployeeConverter;
@@ -20,9 +21,11 @@ import com.uit.sociuscoremodules.teamemployee.repository.TeamEmployeeRepository;
 import com.uit.sociuscoremodules.teamemployee.request.SearchTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeAddRequest;
 import com.uit.sociuscoremodules.teamemployee.request.TeamEmployeeBatchAddRequest;
+import com.uit.sociuscoremodules.teamemployee.request.TransferTeamEmployeeRequest;
 import com.uit.sociuscoremodules.teamemployee.service.TeamEmployeeService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -88,7 +91,7 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
     validateTeamExists(teamCode);
     validateEmployeeExistsInTeam(teamCode, employeeId);
 
-    teamEmployeeRepository.softDelete(teamCode, employeeId);
+    teamEmployeeRepository.removeEmployeeFromTeam(teamCode, employeeId);
   }
 
   @Override
@@ -196,7 +199,7 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
   private TeamEmployeeDto createNewTeamEmployee(String teamCode, TeamEmployeeAddRequest request) {
     validateTeamLeadConstraint(teamCode, request.getIsLeader());
 
-    teamEmployeeRepository.insert(teamCode, request);
+    teamEmployeeRepository.addEmployeeToTeam(request, teamCode, request.getEmployeeId());
     return teamEmployeeRepository.findByTeamCodeAndEmployeeId(teamCode, request.getEmployeeId());
   }
 
@@ -219,5 +222,64 @@ public class TeamEmployeeServiceImpl extends BaseServiceImpl implements TeamEmpl
         .errorCode(MessageConstant.S_TEAM_EMP_001)
         .errorMessage(errorMessage)
         .build();
+  }
+
+  /**
+   * Transfer an employee from one team to another.
+   *
+   * @param request the request containing transfer details
+   * @return Map containing transfer details
+   */
+  @Override
+  public Map<String, String> transferEmployee(TransferTeamEmployeeRequest request) {
+    TeamDto fromTeam = teamRepository.findByTeamCode(request.getFromTeamCode());
+    if (fromTeam == null) {
+      throw notFound(MessageConstant.E_TEAM_002);
+    }
+
+    TeamDto toTeam = teamRepository.findByTeamCode(request.getToTeamCode());
+    if (toTeam == null) {
+      throw notFound(MessageConstant.E_TEAM_002);
+    }
+
+    TeamEmployeeDto existingEmployeeInFromTeam =
+        teamEmployeeRepository.findByTeamCodeAndEmployeeId(
+            request.getFromTeamCode(), request.getEmployeeId());
+    if (existingEmployeeInFromTeam == null) {
+      throw notFound(MessageConstant.E_TEAM_EMP_002);
+    }
+
+    TeamEmployeeDto existingEmployeeInToTeam =
+        teamEmployeeRepository.findByTeamCodeAndEmployeeId(
+            request.getToTeamCode(), request.getEmployeeId());
+    if (existingEmployeeInToTeam != null) {
+      throw badRequest(MessageConstant.E_TEAM_EMP_001);
+    }
+
+    TeamEmployeeAddRequest addRequest =
+        teamEmployeeConverter.toTeamEmployeeAddRequest(
+            request.getRoleCode(), request.getIsLeader());
+    addRequest.setEmployeeId(request.getEmployeeId()); // Set employeeId for reactivation
+
+    validateTeamLeadConstraint(request.getToTeamCode(), request.getIsLeader());
+
+    teamEmployeeRepository.removeEmployeeFromTeam(
+        request.getFromTeamCode(), request.getEmployeeId());
+
+    TeamEmployeeDto softDeletedInToTeam =
+        teamEmployeeRepository.findSoftDeletedByTeamCodeAndEmployeeId(
+            request.getToTeamCode(), request.getEmployeeId());
+
+    if (softDeletedInToTeam != null) {
+      teamEmployeeRepository.reactivate(request.getToTeamCode(), addRequest);
+    } else {
+      teamEmployeeRepository.addEmployeeToTeam(
+          addRequest, request.getToTeamCode(), request.getEmployeeId());
+    }
+
+    return Map.of(
+        TeamConstant.EMPLOYEE_ID, request.getEmployeeId(),
+        TeamConstant.FROM_TEAM_CODE, request.getFromTeamCode(),
+        TeamConstant.TO_TEAM_CODE, request.getToTeamCode());
   }
 }
