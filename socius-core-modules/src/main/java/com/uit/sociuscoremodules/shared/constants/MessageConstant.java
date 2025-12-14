@@ -2,7 +2,6 @@ package com.uit.sociuscoremodules.shared.constants;
 
 /** Message constant for i18n keys. */
 public final class MessageConstant {
-
   /** Private constructor to prevent instantiation. */
   private MessageConstant() {}
 
@@ -68,4 +67,57 @@ public final class MessageConstant {
 
   /** Successfully retrieved role details. */
   public static final String S_ROLE_002 = "S_ROLE_002";
+
+  // --- Department Module Messages ---
+
+  /** Department creation error message key. */
+  public static final String E_DEP_001 = "E_DEP_001";
+
+  /** Department update error message key. */
+  public static final String E_DEP_002 = "E_DEP_002";
+
+  /** Department find error message key. */
+  public static final String E_DEP_003 = "E_DEP_003";
+
+  /** Department deletion error message key. */
+  public static final String E_DEP_004 = "E_DEP_004";
+
+  /** Department is already exists error message key. */
+  public static final String E_DEP_005 = "E_DEP_005";
+
+  /** Cannot change manager. Employee not found. */
+  public static final String E_DEP_006 = "E_DEP_006";
+
+  /** Cannot deactivate. Department still has active employees. */
+  public static final String E_DEP_007 = "E_DEP_007";
+
+  /** Employee not found in the source department. */
+  public static final String E_DEP_008 = "E_DEP_008";
+
+  /** Source or target department not found for transfer. */
+  public static final String E_DEP_009 = "E_DEP_009";
+
+  /** Cannot find employee in department. */
+  public static final String E_DEP_010 = "E_DEP_010";
+
+  /** Cannot add employee to department. Employee already exists in department. */
+  public static final String E_DEP_011 = "E_DEP_011";
+
+  /** Department created successfully. */
+  public static final String S_DEP_001 = "S_DEP_001";
+
+  /** Department updated successfully. */
+  public static final String S_DEP_002 = "S_DEP_002";
+
+  /** Department details retrieved successfully. */
+  public static final String S_DEP_003 = "S_DEP_003";
+
+  /** Department deleted successfully. */
+  public static final String S_DEP_004 = "S_DEP_004";
+
+  /** Departments list retrieved successfully. */
+  public static final String S_DEP_005 = "S_DEP_005";
+
+  /** Department not found. */
+  public static final String W_DEP_001 = "W_DEP_001";
 }
