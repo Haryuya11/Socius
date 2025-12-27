@@ -7,7 +7,7 @@ springModulith = "1.4.3"
 
 # Database & Persistence
 mybatis = "3.0.5"
-postgresql = "42.7.5"
+postgresql = "42.7.8"
 
 # Mapping & Utils
 mapstruct = "1.5.5.Final"
@@ -19,6 +19,7 @@ azureSpring = "6.0.0"
 azureSpringActiveDirectory = "4.2.0"
 azureIdentity = "1.15.0"
 microsoftGraph = "6.54.0"
+azureBlob="12.32.0"
 
 # Security
 nimbusJoseJwt = "10.5"
@@ -31,21 +32,18 @@ checkstyle = "12.1.0"
 # Spring Boot Starters
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
-spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 spring-boot-starter-oauth2-client = { module = "org.springframework.boot:spring-boot-starter-oauth2-client" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
 spring-boot-starter-amqp = { module = "org.springframework.boot:spring-boot-starter-amqp" }
-spring-boot-starter-reactor-netty = { module = "org.springframework.boot:spring-boot-starter-reactor-netty" }
-spring-boot-starter-rsocket = { module = "org.springframework.boot:spring-boot-starter-rsocket" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools" }
 spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop" }
 
 # Spring Security
 spring-security-core = { module = "org.springframework.security:spring-security-core" }
 spring-security-config = { module = "org.springframework.security:spring-security-config" }
-spring-security-messaging = { module = "org.springframework.security:spring-security-messaging" }
 spring-security-test = { module = "org.springframework.security:spring-security-test" }
 
 # Spring Modulith
@@ -71,6 +69,7 @@ azure-spring-cloud-starter-active-directory = { module = "com.azure.spring:sprin
 azure-spring-cloud-starter-keyvault-secrets = { module = "com.azure.spring:spring-cloud-azure-starter-keyvault-secrets", version.ref = "azureSpring" }
 azure-identity = { module = "com.azure:azure-identity", version.ref = "azureIdentity" }
 microsoft-graph = { module = "com.microsoft.graph:microsoft-graph", version.ref = "microsoftGraph" }
+azure-storage-blob = { module = "com.azure:azure-storage-blob", version.ref = "azureBlob" }
 
 # Security & JWT
 nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbusJoseJwt" }
@@ -88,17 +87,8 @@ spring-mvc = [
     "spring-boot-starter-web",
     "spring-boot-starter-security",
     "spring-boot-starter-oauth2-client",
-    "spring-boot-starter-oauth2-resource-server"
-]
-
-spring-webflux = [
-    "spring-boot-starter-webflux",
-    "spring-boot-starter-reactor-netty",
-    "spring-boot-starter-rsocket",
-    "spring-boot-starter-security",
-    "spring-boot-starter-oauth2-client",
     "spring-boot-starter-oauth2-resource-server",
-    "spring-security-messaging"
+    "spring-boot-starter-aop"
 ]
 
 spring-security-core = [
@@ -110,7 +100,8 @@ azure-integration = [
     "azure-spring-cloud-starter-active-directory",
     "azure-spring-cloud-starter-keyvault-secrets",
     "azure-identity",
-    "microsoft-graph"
+    "microsoft-graph",
+    "azure-storage-blob"
 ]
 
 mybatis-full = [

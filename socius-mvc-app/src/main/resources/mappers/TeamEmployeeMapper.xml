@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.workforce.internal.persistence.TeamEmployeeMapper">
+
+    <resultMap id="TeamEmployeeResultMap" type="com.uit.sociusmvcapp.workforce.internal.domain.TeamEmployee">
+        <id property="id" column="te_id" />
+        <result property="roleCode" column="te_role_code" />
+        <result property="isLeader" column="te_is_leader" />
+        <result property="createdAt" column="te_created_at" />
+        <result property="updatedAt" column="te_updated_at" />
+        <result property="deleteFlag" column="te_delete_flag" />
+
+        <association property="team" javaType="com.uit.sociusmvcapp.workforce.internal.domain.summary.TeamSummary">
+            <result property="teamCode" column="t_team_code" />
+            <result property="teamName" column="t_team_name" />
+            <result property="departmentCode" column="t_department_code" />
+        </association>
+
+        <association property="employee" javaType="com.uit.sociusmvcapp.workforce.internal.domain.summary.EmployeeSummary">
+            <result property="userId" column="e_user_id" />
+            <result property="clientId" column="e_client_id" />
+            <result property="firstName" column="e_first_name" />
+            <result property="lastName" column="e_last_name" />
+            <result property="systemRole" column="e_system_role" />
+            <result property="imageUrl" column="e_image_url" />
+            <result property="salary" column="e_salary" />
+        </association>
+    </resultMap>
+
+    <update id="deleteByEmployeeId">
+        UPDATE team_employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+        WHERE employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <select id="findByTeamCodeAndEmployeeId" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.team_code = #{teamCode}
+          AND te.employee_id = #{employeeId}
+          AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findSoftDeletedByTeamCodeAndEmployeeId" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.team_code = #{teamCode}
+          AND te.employee_id = #{employeeId}
+          AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
+    <select id="findEmployeesByTeamCode" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.team_code = #{teamCode}
+        AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findTeamLeadByTeamCode" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.team_code = #{teamCode}
+          AND te.is_leader = true
+          AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="existsByTeamCodeAndEmployeeId" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM team_employees 
+            WHERE team_code = #{teamCode} AND employee_id = #{employeeId} 
+            AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+    <select id="existsTeamLeadByTeamCode" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM team_employees 
+            WHERE team_code = #{teamCode} AND is_leader = true 
+            AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+    
+    <select id="countTeamLeadersByTeamCode" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM team_employees 
+        WHERE team_code = #{teamCode} AND is_leader = true
+        AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="hasEmployees" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM team_employees
+            WHERE team_code = #{teamCode}
+            AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+    <select id="findByEmployeeId" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.employee_id = #{employeeId}
+        AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findByEmployeeIdIn" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.employee_id IN
+        <foreach item="employeeId" collection="employeeIds" open="(" separator="," close=")">
+            #{employeeId}
+        </foreach>
+        AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO team_employees
+            (employee_id, team_code, role_code, is_leader)
+        VALUES (#{team.clientId},
+                #{team.teamCode},
+                #{roleCode},
+                #{isLeader})
+    </insert>
+
+    <update id="updateLeadershipStatus">
+        UPDATE team_employees
+        SET is_leader = #{isLeader}, updated_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode} AND employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="softDelete">
+        UPDATE team_employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode} AND employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="reactivate">
+        UPDATE team_employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value},
+            deleted_at = NULL, 
+            role_code = #{roleCode},
+            is_leader = #{isLeader},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{team.teamCode}
+          AND employee_id = #{employee.clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    </update>
+
+    <update id="updateRoleCode">
+        UPDATE team_employees
+        SET role_code = #{roleCode}, updated_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode} AND employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <sql id="selectColumns">
+        te.id           AS te_id,
+        te.team_code    AS te_team_code,
+        te.employee_id  AS te_employee_id,
+        te.role_code    AS te_role_code,
+        te.is_leader    AS te_is_leader,
+        te.created_at   AS te_created_at,
+        te.updated_at   AS te_updated_at,
+        te.deleted_at   AS te_deleted_at,
+        te.delete_flag  AS te_delete_flag,
+
+        e.user_id       AS e_user_id,
+        e.client_id     AS e_client_id,
+        e.first_name    AS e_first_name,
+        e.last_name     AS e_last_name,
+        e.image_url     AS e_image_url,
+        e.system_role   AS e_system_role,
+        e.salary        AS e_salary,
+
+        t.team_code       AS t_team_code,
+        t.team_name       AS t_team_name,
+        t.department_code AS t_department_code
+    </sql>
+
+    <sql id="joinTables">
+        INNER JOIN employees e ON te.employee_id = e.client_id
+            AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        INNER JOIN teams t ON te.team_code = t.team_code
+            AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </sql>
+
+</mapper>
