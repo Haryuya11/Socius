@@ -69,7 +69,7 @@ jobs:
             echo "✅ Server ready"
 
   build:
-    name: Build Applications
+    name: Build Application
     runs-on: ubuntu-latest
     needs: pre-check
     steps:
@@ -90,25 +90,23 @@ jobs:
           chmod +x gradlew
           ./gradlew clean bootJar -x test --parallel --build-cache
 
-      - name: Prepare JARs for Upload
+      - name: Prepare JAR for Upload
         run: |
           # Create a clean artifacts directory
           mkdir -p ./upload-artifacts
           
-          # Find and copy JARs (excluding *-plain.jar)
+          # Find and copy MVC JAR (excluding *-plain.jar)
           MVC_JAR=$(find socius-mvc-app/build/libs -name '*.jar' ! -name '*-plain.jar' -type f | head -1)
-          WEBFLUX_JAR=$(find socius-webflux-app/build/libs -name '*.jar' ! -name '*-plain.jar' -type f | head -1)
           
-          if [[ -z "$MVC_JAR" || -z "$WEBFLUX_JAR" ]]; then
-            echo "❌ JAR files not found"
+          if [[ -z "$MVC_JAR" ]]; then
+            echo "❌ JAR file not found"
             exit 1
           fi
           
           # Copy with original names to upload directory
           cp "$MVC_JAR" ./upload-artifacts/
-          cp "$WEBFLUX_JAR" ./upload-artifacts/
           
-          echo "✅ JARs ready for upload:"
+          echo "✅ JAR ready for upload:"
           ls -lh ./upload-artifacts/
 
       - name: Upload Artifacts
@@ -169,46 +167,42 @@ jobs:
             # 1. Backup existing JARs
             BACKUP_DIR="$JAR_DIR/backups/$(date +%Y%m%d_%H%M%S)"
             sudo mkdir -p "$BACKUP_DIR"
+            # Backup only MVC jar or all jars if you want to be safe
             sudo cp "$JAR_DIR"/*.jar "$BACKUP_DIR/" 2>/dev/null || true
             
             # Cleanup old backups (Keep last 5)
             cd "$JAR_DIR/backups" && ls -t | tail -n +6 | xargs -I {} sudo rm -rf "{}" 2>/dev/null || true
             
-            # 2. Move new JARs
+            # 2. Move new JAR
             sudo mv /tmp/socius-deploy/*.jar "$JAR_DIR/" || {
-              echo "❌ Failed to move JAR files"
+              echo "❌ Failed to move JAR file"
               ls -lah /tmp/socius-deploy/
               exit 1
             }
             
-            # Rename to standard names
+            # Rename to standard name
             cd "$JAR_DIR"
             for jar in socius-mvc-app-*.jar; do
               [[ -f "$jar" ]] && sudo mv "$jar" socius-mvc-app.jar
-            done
-            for jar in socius-webflux-app-*.jar; do
-              [[ -f "$jar" ]] && sudo mv "$jar" socius-webflux-app.jar
             done
             
             # 3. Set Permissions
             sudo chown azureuser:azureuser "$JAR_DIR"/*.jar
             sudo chmod 500 "$JAR_DIR"/*.jar
             
-            # 4. Restart Services with Rollback
+            # 4. Restart Service with Rollback
             restart_service() {
               local svc=$1
               echo "Restarting $svc..."
               if ! sudo systemctl restart "$svc"; then
                  echo "❌ Failed to restart $svc. Rolling back..."
-                 sudo cp "$BACKUP_DIR"/*.jar "$JAR_DIR/"
+                 sudo cp "$BACKUP_DIR"/socius-mvc-app.jar "$JAR_DIR/"
                  sudo systemctl restart socius-mvc.service
-                 sudo systemctl restart socius-webflux.service
                  exit 1
               fi
             }
             
             restart_service "socius-mvc.service"
-            restart_service "socius-webflux.service"
             
             # Cleanup Tmp
             sudo rm -rf /tmp/socius-deploy
