@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 /** Implementation of EmployeeService for employee-related operations. */
@@ -78,6 +79,7 @@ public class EmployeeServiceImpl implements EmployeeService {
    * @param request the request containing user creation details
    */
   @Override
+  @Transactional
   public Map<String, String> create(EmployeeCreateRequest request) {
 
     EmployeeDto existingUser = employeeRepository.findByUserId(request.getUserId());
@@ -133,6 +135,7 @@ public class EmployeeServiceImpl implements EmployeeService {
    * @param clientId the client ID of the user to be updated
    */
   @Override
+  @Transactional
   public void update(EmployeeCreateRequest request, String clientId) {
     EmployeeDto user = employeeRepository.findByClientId(clientId);
 
@@ -157,6 +160,7 @@ public class EmployeeServiceImpl implements EmployeeService {
    * @param clientId the client ID of the user to be deactivated
    */
   @Override
+  @Transactional
   public void deactivate(String clientId) {
     EmployeeDto user = employeeRepository.findByClientId(clientId);
 
@@ -167,14 +171,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     employeeRepository.deactivate(clientId);
 
     eventPublisher.publishEvent(new EmployeeDeletedEvent(clientId));
-
-    eventPublisher.publishEvent(
-        new NotificationSendEvent(
-            this,
-            userContentProvider.getUserContent().getClientId(),
-            "Account Updated",
-            "Your account information has been updated.",
-            "/employees/profile"));
 
     eventPublisher.publishEvent(
         new NotificationSendEvent(

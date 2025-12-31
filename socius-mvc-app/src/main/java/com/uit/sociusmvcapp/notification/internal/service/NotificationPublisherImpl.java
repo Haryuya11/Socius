@@ -20,7 +20,7 @@ public class NotificationPublisherImpl implements NotificationPublisher {
   private final RabbitTemplate rabbitTemplate;
 
   /** Exchange name for notifications. */
-  @Value("${notification.exchange.name}")
+  @Value("${rabbitmq.exchange.name}")
   private String exchangeName;
 
   /** Routing key for notifications. */
