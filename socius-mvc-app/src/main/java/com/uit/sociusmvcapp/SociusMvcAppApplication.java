@@ -2,9 +2,13 @@ package com.uit.sociusmvcapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /** Main application class for Socius MVC Application. */
-@SpringBootApplication(scanBasePackages = {"com.uit.sociusmvcapp", "com.uit.sociuscoremodules"})
+@SpringBootApplication(scanBasePackages = {"com.uit.sociusmvcapp"})
+@EnableAsync
+@EnableRetry
 public class SociusMvcAppApplication {
 
   /**

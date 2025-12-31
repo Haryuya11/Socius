@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.workforce.internal.persistence.DepartmentEmployeeMapper">
+
+    <resultMap id="DepartmentEmployeeResultMap" type="com.uit.sociusmvcapp.workforce.internal.domain.DepartmentEmployee">
+        <id property="id" column="de_id"/>
+        <result property="roleCode" column="de_role_code"/>
+        <result property="isPrimary" column="de_is_primary"/>
+        <result property="createdAt" column="de_created_at"/>
+        <result property="updatedAt" column="de_updated_at"/>
+        <result property="deletedAt" column="de_deleted_at"/>
+        <result property="deleteFlag" column="de_delete_flag"/>
+
+        <association property="department" javaType="com.uit.sociusmvcapp.workforce.internal.domain.summary.DepartmentSummary">
+            <result property="departmentCode" column="d_department_code"/>
+            <result property="departmentName" column="d_department_name"/>
+        </association>
+
+        <association property="employee" javaType="com.uit.sociusmvcapp.workforce.internal.domain.summary.EmployeeSummary">
+            <result property="userId" column="e_user_id"/>
+            <result property="clientId" column="e_client_id"/>
+            <result property="firstName" column="e_first_name"/>
+            <result property="lastName" column="e_last_name"/>
+            <result property="systemRole" column="e_system_role"/>
+            <result property="imageUrl" column="e_image_url"/>
+            <result property="salary" column="e_salary"/>
+        </association>
+    </resultMap>
+
+    <sql id="selectColumns">
+        de.id               AS de_id,
+        de.department_code  AS de_department_code,
+        de.employee_id      AS de_employee_id,
+        de.role_code        AS de_role_code,
+        de.is_primary       AS de_is_primary,
+        de.created_at       AS de_created_at,
+        de.updated_at       AS de_updated_at,
+        de.deleted_at       AS de_deleted_at,
+        de.delete_flag      AS de_delete_flag,
+
+        d.department_code   AS d_department_code,
+        d.department_name   AS d_department_name,
+
+        e.user_id           AS e_user_id,
+        e.client_id         AS e_client_id,
+        e.first_name        AS e_first_name,
+        e.last_name         AS e_last_name,
+        e.system_role       AS e_system_role,
+        e.image_url         AS e_image_url,
+        e.salary            AS e_salary
+    </sql>
+
+    <sql id="joinTables">
+        INNER JOIN departments d ON de.department_code = d.department_code
+            AND d.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        INNER JOIN employees e ON de.employee_id = e.client_id
+        AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </sql>
+
+    <select id="getEmployeesByDepartmentCode" resultMap="DepartmentEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM department_employees de
+        <include refid="joinTables"/>
+        WHERE de.department_code = #{departmentCode}
+        AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findEmployeeInDepartment" resultMap="DepartmentEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM department_employees de
+        <include refid="joinTables"/>
+        WHERE de.department_code = #{departmentCode}
+        AND de.employee_id = #{employeeId}
+        AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="countEmployeesByDepartmentCode" resultType="int">
+        SELECT COUNT(*)
+        FROM department_employees
+        WHERE department_code = #{departmentCode}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="hasEmployees" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM department_employees
+            WHERE department_code = #{departmentCode}
+              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+    <select id="findByEmployeeId" resultMap="DepartmentEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM department_employees de
+        <include refid="joinTables"/>
+        WHERE de.employee_id = #{employeeId}
+          AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+
+    </select>
+
+    <select id="findByEmployeeIdIn" resultMap="DepartmentEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM department_employees de
+        <include refid="joinTables"/>
+        WHERE de.employee_id IN
+        <foreach item="employeeId" collection="employeeIds" open="(" separator="," close=")">
+            #{employeeId}
+        </foreach>
+          AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <insert id="addEmployeeToDepartment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO department_employees (
+            department_code,
+            employee_id,
+            role_code,
+            is_primary,
+            delete_flag)
+        VALUES (#{department.departmentCode},
+                #{employee.clientId},
+                #{roleCode},
+                #{isPrimary},
+                ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value})
+    </insert>
+
+    <update id="removeEmployeeFromDepartment">
+        UPDATE department_employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE department_code = #{departmentCode}
+          AND employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="deleteByEmployeeId">
+        UPDATE department_employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="changeEmployeeRoleInDepartment">
+        UPDATE department_employees
+        SET role_code = #{roleCode},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE department_code = #{departmentCode}
+          AND employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+</mapper>

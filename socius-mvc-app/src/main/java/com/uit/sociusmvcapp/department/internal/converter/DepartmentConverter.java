@@ -1,0 +1,25 @@
+package com.uit.sociusmvcapp.department.internal.converter;
+
+import com.uit.sociusmvcapp.department.dto.DepartmentDto;
+import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
+import com.uit.sociusmvcapp.department.internal.domain.Department;
+import com.uit.sociusmvcapp.shared.converter.BaseConverter;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+/** Converter for Department entity, DTO, and request objects. */
+@Mapper(componentModel = "spring")
+public interface DepartmentConverter extends BaseConverter<Department, DepartmentDto> {
+  /**
+   * Converts a DepartmentCreateRequest to a Department entity for creation.
+   *
+   * @param request The department creation request DTO.
+   * @return The corresponding Department entity.
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "deleteFlag", ignore = true)
+  Department createRequestToEntity(CreateDepartmentRequest request);
+}
