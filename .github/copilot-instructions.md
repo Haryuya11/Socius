@@ -2,432 +2,443 @@
 
 ## Repository Overview
 
-**Socius** is a Spring Boot-based employee management system with dual architecture support: traditional Spring MVC and reactive Spring WebFlux. The project follows a modular design pattern with shared core business logic and separate application layers for different deployment scenarios.
+**Socius** is a Spring Boot-based employee management system designed for workforce, team, department, and notification management with Azure Active Directory integration. The application follows Spring Modulith architectural patterns for a well-organized modular monolith.
 
 ### Key Technologies
 
-- **Java 17** - Programming language
+- **Java 17** - Programming language (OpenJDK 17.0.17)
 - **Spring Boot 3.5.6** - Application framework
-- **Spring Modulith 1.4.3** - Modular monolith architecture
-- **MyBatis 3.0.x** - SQL mapping framework
+- **Spring Modulith 1.4.3** - Modular monolith architecture  
+- **MyBatis 3.0.5** - SQL mapping and persistence
 - **MapStruct 1.5.5.Final** - Object mapping
-- **Spring WebFlux** - Reactive programming
-- **Spring MVC** - Traditional web framework
-- **PostgreSQL** - Database
-- **RabbitMQ** - Message broker
-- **Azure Entra ID** - Authentication provider
-- **Microsoft Graph API** - User management
-- **Lombok** - Code generation
+- **Spring MVC** - Web framework (RESTful APIs)
+- **PostgreSQL 42.7.8** - Database
+- **RabbitMQ** - Message broker for async messaging
+- **Azure Entra ID** - Authentication/authorization provider
+- **Microsoft Graph API 6.54.0** - User management integration
+- **Azure Blob Storage 12.32.0** - File storage
+- **Azure Key Vault** - Secret management
+- **Lombok 1.18.30** - Boilerplate code reduction
 - **Gradle 8.14** - Build tool
 
----
+### Repository Statistics
 
-## Module Architecture
-
-The project is organized into three main modules:
-
-### 1. `socius-core-modules` (Shared Core)
-
-This is a **Java library module** (not a runnable application) containing shared business logic, domain models, and infrastructure code.
-
-**Key packages:**
-- `employee` - Employee management, Azure AD integration
-- `notification` - Notification system with reactive support
-- `shared` - Common utilities, exceptions, configurations
-
-**Important components:**
-- **MyBatis Mappers**: `EmployeeMapper`, `NotificationMapper` (interfaces + XML)
-- **MapStruct Converters**: `EmployeeConverter`, `NotificationConverter`
-- **Domain Services**: Business logic implementations
-- **Repositories**: Data access layer
-
-### 2. `socius-mvc-app` (Spring MVC Application)
-
-Traditional servlet-based web application using blocking I/O.
-
-**Key features:**
-- REST controllers in `endpoint` package
-- Servlet-based security filter
-- Synchronous request handling
-- Traditional thread-per-request model
-
-### 3. `socius-webflux-app` (Reactive Application)
-
-Reactive, non-blocking application using Spring WebFlux.
-
-**Key features:**
-- WebSocket support for real-time notifications
-- Reactive security with `ReactiveAuthorizationFilter`
-- Non-blocking handlers using `Flux` and `Mono`
-- Concurrent map management with `Sinks` for broadcasting
-
-**Critical reactive components:**
-- `NotificationBroadcaster` - Manages WebSocket sinks with `ConcurrentHashMap`
-- `NotificationWebSocketHandler` - Handles WebSocket connections reactively
+- **Size**: ~130 MB (with dependencies)
+- **Java Files**: 188 source files (~9,824 lines of code)
+- **Single Module**: `socius-mvc-app` (monolithic application)
+- **Package Organization**: Modular packages by domain (workforce, team, department, employee, notification, iam, shared)
 
 ---
 
-## PR Review Focus Areas
+## Project Structure
 
-When reviewing pull requests, prioritize these areas in order:
+### Module: `socius-mvc-app`
 
-### 1. Bugs & Correctness (HIGHEST PRIORITY)
+**Location**: `/socius-mvc-app`  
+**Main Class**: `com.uit.sociusmvcapp.SociusMvcAppApplication`  
+**Application Type**: Spring Boot web application (blocking I/O, traditional MVC)
 
-#### MyBatis Security Issues
-- **CRITICAL**: Never use `${}` for parameter substitution in MyBatis XML files
-  - Use `#{}` for safe parameterized queries
-  - `${}` allows SQL injection - only acceptable for static enum values or constants
-  - Example: `WHERE id = #{userId}` ✅ vs `WHERE id = ${userId}` ❌
-- Check all `.xml` mapper files in `src/main/resources/mappers/`
+**Server Configuration**:
+- Port: 8080
+- Context Path: `/api`
+- Actuator endpoints: `/api/actuator/health`, `/api/actuator/info`, `/api/actuator/metrics`
 
-#### Reactive Programming Errors (WebFlux only)
-- **Never call `.block()` in reactive handlers** - this defeats non-blocking architecture
-- Check for blocking operations in:
-  - WebSocket handlers
-  - Reactive controllers
-  - Any method returning `Mono<T>` or `Flux<T>`
-- **Race conditions** with `Sinks`:
-  - Verify proper use of `tryEmitNext()` instead of `emitNext()`
-  - Check for thread-safe operations on `ConcurrentHashMap` in `NotificationBroadcaster`
-  - Ensure proper cleanup in `doFinally()` blocks
-- **Null pointer risks** in reactive chains:
-  - Always use `switchIfEmpty()` or provide default values
-  - Check `flatMap()` chains for null safety
+### Domain Modules
 
-#### MapStruct Mapping Issues
-- Verify mappers are properly injected (Spring component model)
-- Check for manual field mapping that should use MapStruct
-- Look for forgotten `@Mapper(componentModel = "spring")` annotation
-- Verify complex mappings use `@Mapping` annotations correctly
+Located in `socius-mvc-app/src/main/java/com/uit/sociusmvcapp/`:
 
-#### Thread Safety
-- Check concurrent access to shared data structures
-- Verify proper synchronization in `NotificationBroadcaster`
-- Look for race conditions in sink management
+1. **`workforce/`** - Workforce management (employee-team/department assignments)
+2. **`team/`** - Team domain (creation, management, operations)
+3. **`department/`** - Department domain (operations, hierarchies)
+4. **`employee/`** - Employee management (Azure AD sync, user profiles)
+5. **`notification/`** - Notification system (RabbitMQ-based async notifications)
+6. **`iam/`** - Identity and Access Management (roles, permissions, RBAC)
+7. **`shared/`** - Shared utilities, exceptions, configurations, filters
 
-### 2. Code Complexity
+### Package Structure Pattern
 
-#### Cognitive Complexity
-Identify methods with:
-- **Deeply nested conditionals** (more than 3 levels)
-- **Multiple early returns** without clear pattern
-- **Long method chains** that are hard to follow
-- **Mixed concerns** in single method
-
-**Refactoring suggestions:**
-- Extract nested logic into helper methods
-- Use early returns to reduce nesting
-- Apply guard clauses for validation
-- Split large methods following Single Responsibility Principle
-
-#### Cyclomatic Complexity
-Flag methods with:
-- **Many conditional branches** (if/else, switch)
-- **Multiple loop constructs**
-- **Complex boolean expressions**
-
-**Simplification strategies:**
-- Replace nested if/else with switch expressions or strategy pattern
-- Extract conditional logic into well-named predicates
-- Use streams for collection operations instead of loops
-
-### 3. Readability & Clean Code
-
-#### Naming Conventions
-- **Classes**: PascalCase, descriptive nouns (e.g., `EmployeeService`, `NotificationDto`)
-- **Methods**: camelCase, verb phrases (e.g., `findByClientId`, `createUserProfile`)
-- **Variables**: camelCase, meaningful names (avoid single letters except loop counters)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_PASSWORD`, `BUFFER_SIZE`)
-
-#### Code Organization
-- **Package structure** must respect module boundaries:
-  - Core modules: domain logic only, no web/reactive specifics
-  - MVC app: servlet-based components only
-  - WebFlux app: reactive components only
-- **Method size**: Aim for < 20 lines; refactor if > 50 lines
-- **Class size**: Consider splitting classes > 300 lines
-- **Remove dead code**: Unused methods, commented code, redundant variables
-
-#### Documentation
-- **JavaDoc** required for:
-  - All public APIs
-  - MapStruct converters with complex mappings
-  - MyBatis mapper interfaces
-- **Comments** should explain "why", not "what"
-- Update docs when changing behavior
-
-### 4. Best Practices
-
-#### Module Boundaries
-- **Core modules** must not import MVC or WebFlux specific classes
-- **No reactive types** (Mono/Flux) in core if used by MVC app
-- **Shared utilities** belong in `socius-core-modules/shared`
-
-#### MapStruct Usage
-- Always use MapStruct for DTO ↔ Domain ↔ Entity conversions
-- Avoid manual mapping with getters/setters
-- Use `@Mapping` for non-standard field mappings
-- Set `unmappedTargetPolicy = ReportingPolicy.IGNORE` or `ERROR` explicitly
-
-#### MyBatis Best Practices
-- Use `#{}` for parameters (prevents SQL injection)
-- Define `resultMap` for complex object mapping
-- Avoid N+1 queries - use joins or batch fetching
-- Keep SQL in XML files, not annotations
-
-#### Reactive Best Practices (WebFlux only)
-- Chain operations instead of blocking
-- Use `subscribeOn()` and `publishOn()` for thread control
-- Properly handle backpressure with `onBackpressureBuffer()` or `onBackpressureDrop()`
-- Always test reactive flows with `StepVerifier`
-
----
-
-## Commit Guidelines
-
-Before creating a PR:
-
-### Squash Commits
-- Combine related commits into logical units
-- Each commit should represent one complete change
-
-### Commit Message Format
+Each domain module follows this internal structure:
 ```
-<type>: <short summary> (max 72 chars)
-
-<optional detailed description>
-
-<optional references to issues/tickets>
+[module]/
+├── dto/                    # Public data transfer objects
+│   └── request/            # Request DTOs for API endpoints
+├── *Service.java           # Public service interface(s)
+└── internal/               # Implementation details (internal visibility)
+    ├── converter/          # MapStruct converters
+    ├── repository/         # Repository interfaces (business layer)
+    ├── persistence/        # MyBatis mapper interfaces
+    ├── service/            # Service implementations
+    ├── domain/             # Domain models/entities
+    ├── constants/          # Module constants
+    ├── component/          # Spring components
+    └── listener/           # Event listeners
 ```
 
-**Types:**
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `refactor:` - Code restructuring without behavior change
-- `perf:` - Performance improvement
-- `docs:` - Documentation only
-- `style:` - Code style/formatting (Spotless)
-- `test:` - Adding or updating tests
-- `chore:` - Build, dependencies, tooling
+### Key Configuration Files
 
-**Good examples:**
-```
-feat: Add WebSocket notification broadcasting
-
-Implements real-time notification delivery using Spring WebFlux
-WebSocket with per-user sinks managed in ConcurrentHashMap.
-```
-
-```
-fix: Prevent SQL injection in EmployeeMapper
-
-Changed ${userId} to #{userId} in findByUserId query.
-```
-
-**Bad examples:**
-```
-Update files  ❌ (too vague)
-```
-```
-Fixed bug in employee service and added notification feature and updated dependencies  ❌ (should be 3 commits)
-```
+- **Build**: `build.gradle` (root), `socius-mvc-app/build.gradle`
+- **Settings**: `settings.gradle`
+- **Dependencies**: `gradle/libs.versions.toml` (version catalog)
+- **Checkstyle**: `config/checkstyle/google_checks.xml`, `config/checkstyle/checkstyle-suppressions.xml`
+- **Application Config**: `socius-mvc-app/src/main/resources/application.properties`
+- **MyBatis Mappers**: `socius-mvc-app/src/main/resources/mappers/*.xml` (8 mapper files)
+- **Logging**: `socius-mvc-app/src/main/resources/log4j2.xml`
+- **i18n**: `socius-mvc-app/src/main/resources/i18n/messages*.properties`
 
 ---
 
 ## Build & Development Commands
 
-### Build
-```bash
-# Clean and build all modules
-./gradlew clean build
+### Critical Pre-Build Step
 
-# Build without tests (faster)
+**ALWAYS run `./gradlew spotlessApply` before building** if you've made any code changes. The build will fail on checkstyle violations otherwise.
+
+### Validated Build Sequence
+
+#### 1. Format Code (Required Before Building)
+```bash
+# Fix code formatting automatically
+./gradlew spotlessApply
+
+# Fixes: import order, trailing whitespace, unused imports, newlines
+# Takes: ~4-5 seconds
+```
+
+#### 2. Build Application
+```bash
+# Recommended: Build without tests (tests require full environment)
 ./gradlew clean build -x test
 
-# Build specific module
-./gradlew :socius-core-modules:build
-./gradlew :socius-mvc-app:build
-./gradlew :socius-webflux-app:build
+# Full build with tests (requires database, Azure, RabbitMQ)
+./gradlew clean build
+
+# Fast build with caching
+./gradlew clean build -x test --parallel --build-cache
+
+# Build only (no clean)
+./gradlew build -x test
 ```
 
-### Code Quality
+**Build Performance**:
+- Clean build without tests: ~25-30 seconds
+- With parallel/cache: ~20-25 seconds
+- Full build with tests: 45-60 seconds (requires environment setup)
 
-#### Spotless (Code Formatting)
+**Build Order** (as executed by Gradle):
+1. `compileJava` - Compile source code (~15-20 seconds with Lombok/MapStruct processors)
+2. `processResources` - Copy resources
+3. `classes` - Assemble main classes
+4. `bootJar` - Create executable JAR
+5. `jar` - Create standard JAR
+6. `checkstyleMain` - Run checkstyle on main code
+7. `compileTestJava` - Compile test code
+8. `checkstyleTest` - Run checkstyle on test code
+9. `assemble`, `check`, `build` - Aggregate tasks
+
+#### 3. Code Quality Checks
 ```bash
-# Check formatting
+# Check formatting (runs automatically with build)
 ./gradlew spotlessCheck
 
-# Auto-fix formatting
-./gradlew spotlessApply
+# Run checkstyle manually
+./gradlew checkstyleMain checkstyleTest
+
+# View checkstyle report
+cat socius-mvc-app/build/reports/checkstyle/main.html
 ```
 
-**Configuration:**
+**Spotless Configuration**:
 - Uses Google Java Format
 - Auto-removes unused imports
 - Trims trailing whitespace
 - Ensures newline at end of file
 
-#### Checkstyle
-```bash
-# Run checkstyle (runs automatically with build)
-./gradlew checkstyleMain
-./gradlew checkstyleTest
-```
-
-**Configuration:**
-- Based on `config/checkstyle/google_checks.xml`
+**Checkstyle Configuration**:
+- Based on Google Java Style Guide (`config/checkstyle/google_checks.xml`)
 - Custom suppressions in `config/checkstyle/checkstyle-suppressions.xml`
-- Max warnings: 0 (build fails on any warning)
+- **Max warnings: 0** (build fails on any warning)
+- Common violations: import order, extra import separations
 
-### Testing
+#### 4. Testing
 ```bash
 # Run all tests
 ./gradlew test
 
-# Run tests for specific module
-./gradlew :socius-core-modules:test
-
-# Run tests with coverage (if configured)
-./gradlew test jacocoTestReport
+# Skip tests (recommended for code validation)
+./gradlew build -x test
 ```
 
-### Running Applications
+**⚠️ Important: Test Environment Requirements**
 
-#### MVC Application
+Tests require full environment configuration and will fail without:
+- PostgreSQL database connection
+- Azure Active Directory credentials
+- RabbitMQ server
+- Azure Blob Storage
+- Azure Key Vault
+
+**Expected test failure without environment**:
+```
+ConfigurationPropertiesBindException
+→ caused by ConversionFailedException
+→ caused by IllegalArgumentException
+```
+
+**Solution**: Always use `-x test` flag when validating code changes unless you have a fully configured environment.
+
+#### 5. Running the Application
 ```bash
+# Run application with Gradle
 ./gradlew :socius-mvc-app:bootRun
+
+# Build executable JAR
+./gradlew :socius-mvc-app:bootJar
+
+# Run JAR directly
+java -jar socius-mvc-app/build/libs/socius-mvc-app-1.0-SNAPSHOT.jar
 ```
 
-#### WebFlux Application
-```bash
-./gradlew :socius-webflux-app:bootRun
-```
-
-**Environment setup:**
-- Create `.env` file in project root (see `.env.example` if available)
-- Required: Database connection, Azure AD credentials, RabbitMQ config
+**Required Environment Variables** (see `application.properties` for full list):
+- **Database**: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SCHEMA`
+- **Azure AD**: `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_PRIMARY_DOMAIN`
+- **Azure Storage**: `AZURE_BLOB_CONNECTION_STRING`, `AZURE_BLOB_USER_CONTAINER_NAME`
+- **RabbitMQ**: `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USERNAME`, `RABBITMQ_PASSWORD`, `RABBITMQ_VHOST`, `RABBITMQ_SSL`, `RABBITMQ_EXCHANGE_NAME`, `NOTIFICATION_ROUTING_KEY`
+- **Key Vault**: `KEY_VAULT_ENDPOINT`
 
 ---
 
-## Search & Analysis Strategy
+## Common Build Issues & Solutions
 
-### PR Review Scope
-1. **Always start with files changed in the PR**
-2. **Check related files only when necessary:**
-   - Mapper XML when Java mapper interface changes
-   - Service implementations when interfaces change
-   - Tests when implementation changes
-   - Converters when DTOs or domain models change
+### Issue 1: Checkstyle Violations After Code Changes
 
-3. **Avoid unnecessary project-wide searches unless:**
-   - Detecting cross-module impact (e.g., shared utility change)
-   - Finding all usages of deprecated method
-   - Verifying consistent pattern across codebase
+**Symptoms**:
+```
+[WARN] Wrong lexicographical order for imports
+[WARN] Extra separation in import group
+Task :socius-mvc-app:checkstyleMain FAILED
+```
 
-### File Patterns to Check
+**Solution**:
+```bash
+./gradlew spotlessApply
+./gradlew build -x test
+```
 
-When reviewing changes in:
-- **`*Mapper.java`** → Check `src/main/resources/mappers/*Mapper.xml`
-- **`*Converter.java`** → Verify DTO/Domain/Entity classes
-- **Reactive handlers** → Check for blocking calls, proper Flux/Mono usage
-- **Service classes** → Verify transaction boundaries, error handling
-- **Controllers** → Check request validation, response formatting
+**Prevention**: Always run `spotlessApply` before committing code.
+
+### Issue 2: Lombok/MapStruct Compilation Errors
+
+**Symptoms**: "Cannot find symbol" for getters/setters, or mapper implementations not found
+
+**Root Cause**: Annotation processors not executed or IDE not configured
+
+**Solution**:
+```bash
+# Clean and rebuild
+./gradlew clean build -x test
+
+# Verify annotation processors in build.gradle:
+# - compileOnly libs.lombok
+# - annotationProcessor libs.lombok
+# - implementation libs.mapstruct
+# - annotationProcessor libs.mapstruct.processor
+```
+
+### Issue 3: Tests Fail with Configuration Errors
+
+**Symptoms**: `ConfigurationPropertiesBindException`, `UnsatisfiedDependencyException`
+
+**Root Cause**: Missing environment variables for external services
+
+**Solution**: Use `-x test` flag or set up full test environment
+
+### Issue 4: Gradle Daemon Issues
+
+**Symptoms**: Build hangs or shows stale results
+
+**Solution**:
+```bash
+./gradlew --stop
+./gradlew clean build -x test
+```
 
 ---
 
-## Common Issues & Solutions
+## Code Quality Guidelines
 
-### Build Failures
+### 1. MyBatis SQL Injection Prevention (CRITICAL)
 
-#### Checkstyle Violations
-```bash
-# View detailed report
-cat build/reports/checkstyle/main.html
+**Always use `#{}` for parameters, never `${}`**
 
-# Auto-fix most issues
-./gradlew spotlessApply
+```xml
+<!-- ✅ CORRECT: Safe parameterized query -->
+<select id="findById" resultType="Employee">
+  SELECT * FROM employees WHERE id = #{id}
+</select>
+
+<!-- ❌ WRONG: SQL injection vulnerability -->
+<select id="findById" resultType="Employee">
+  SELECT * FROM employees WHERE id = ${id}
+</select>
 ```
 
-#### Spotless Failures
-```bash
-# Fix formatting
-./gradlew spotlessApply
+**When to use each**:
+- `#{}` - All user inputs, parameters (99% of cases)
+- `${}` - Only for column/table names from static enums (avoid if possible)
 
-# Then rebuild
-./gradlew build
+**Mapper XML Locations**: `socius-mvc-app/src/main/resources/mappers/*.xml`
+
+### 2. MapStruct Best Practices
+
+**Always use MapStruct for conversions** (never manual mapping):
+
+```java
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface EmployeeConverter {
+    EmployeeDto toDto(Employee entity);
+    Employee toEntity(EmployeeDto dto);
+    
+    @Mapping(source = "userId", target = "user.id")
+    EmployeeDto toDtoWithMapping(Employee entity);
+}
 ```
 
-#### Compilation Errors
-- Check for missing dependencies in `build.gradle`
-- Verify Lombok and MapStruct annotation processors are configured
-- Ensure Java 17 toolchain is available
+**Key requirements**:
+- `componentModel = "spring"` - Required for Spring injection
+- `unmappedTargetPolicy` - Explicitly set to `IGNORE` or `ERROR`
+- Use `@Mapping` for non-standard field mappings
 
-### Test Failures
-- Check for environment-specific configuration in test properties
-- Verify test database setup (H2/PostgreSQL)
-- Check for hardcoded values that need mocking
+### 3. Package Organization Rules
+
+**Public API** (top-level package):
+- DTOs, service interfaces, enums
+- Exposed to other modules
+
+**Internal** (`internal/` subpackage):
+- Implementations, converters, repositories
+- Not exposed to other modules
+
+**Shared** (`shared/` package):
+- Cross-cutting concerns only
+- Utilities, exceptions, filters, configs
+
+### 4. Naming Conventions
+
+- **Classes**: `PascalCase` (e.g., `EmployeeService`, `TeamDto`)
+- **Methods**: `camelCase`, verb-first (e.g., `findById`, `createEmployee`, `validateInput`)
+- **Variables**: `camelCase`, descriptive (e.g., `employeeList`, `currentUser`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `DEFAULT_PAGE_SIZE`, `MAX_RETRY_ATTEMPTS`)
+- **Packages**: lowercase, single word preferred
+
+### 5. Code Complexity Limits
+
+- **Method length**: Target < 20 lines, refactor if > 50 lines
+- **Class length**: Consider splitting if > 300 lines
+- **Nesting depth**: Maximum 3 levels of conditionals
+- **Cyclomatic complexity**: Keep below 10 per method
+- **Parameters**: Maximum 5 parameters per method
+
+---
+
+## GitHub Workflow
+
+### Deployment Workflow (`main.yml`)
+
+**Location**: `.github/workflows/main.yml`
+
+**Trigger**: Manual (`workflow_dispatch`) with environment selection
+
+**Build Command Used in CI**:
+```bash
+./gradlew clean bootJar -x test --parallel --build-cache
+```
+
+**Steps**:
+1. Validate deployment confirmation
+2. Pre-deployment checks (disk space, Java version)
+3. Build application with Gradle
+4. Prepare JAR artifacts (excludes `*-plain.jar`)
+5. Upload artifacts
+6. Transfer to Azure VM
+7. Deploy with automatic rollback on failure
+8. Record deployment history
+
+**Important**: CI uses `bootJar` task (not `build`) to create executable JAR only.
 
 ---
 
 ## Security Considerations
 
-### Always Review For:
+### Critical Security Checks
 
 1. **SQL Injection** - Verify MyBatis uses `#{}` not `${}`
-2. **Sensitive Data Logging** - No passwords, tokens, or PII in logs
-3. **Input Validation** - All user input must be validated
-4. **Authentication Bypass** - Verify security filters are applied
-5. **Azure AD Token Handling** - Proper validation and expiration checks
+2. **Sensitive Data** - No passwords, tokens, API keys in logs or source code
+3. **Input Validation** - All user inputs validated before processing
+4. **Authentication** - Verify security filters applied to protected endpoints
+5. **Azure Tokens** - Proper validation and expiration handling
 
-### Sensitive Files
-- Never commit `.env` files
-- Keep secrets in environment variables or Azure Key Vault
-- Review changes to security configurations carefully
+### Sensitive Files (Never Commit)
 
----
+- `.env` files
+- `application-local.properties`
+- Any file containing credentials or API keys
 
-## Operating Principles Summary
+### Secret Management
 
-1. **Safety First** - Always prioritize correctness over feature delivery
-2. **Minimal Changes** - Only modify what's necessary for the PR goal
-3. **Respect Boundaries** - Maintain module separation (core, mvc, webflux)
-4. **Test Before Approve** - Verify build, tests, and formatting pass
-5. **Clear Communication** - Provide specific, actionable feedback
-6. **Trust but Verify** - Follow these instructions; search only when gaps exist
+- Use environment variables for all secrets
+- Azure Key Vault for production secrets
+- Never hardcode credentials
 
 ---
 
-## Quick Reference Checklist
+## Working with This Codebase
 
-Use this for every PR review:
+### Before Making Changes
 
-- [ ] Build passes: `./gradlew clean build`
-- [ ] Formatting correct: `./gradlew spotlessCheck`
-- [ ] Tests pass: `./gradlew test`
-- [ ] No SQL injection risks (MyBatis `#{}` vs `${}`)
-- [ ] No blocking calls in reactive code (`.block()`)
-- [ ] MapStruct used for conversions (not manual mapping)
-- [ ] Thread safety verified (especially sinks in WebFlux)
-- [ ] Complexity acceptable (methods < 50 lines, clear logic)
-- [ ] Naming consistent and clear
-- [ ] Module boundaries respected
-- [ ] Commit messages follow format
-- [ ] No sensitive data exposed
-- [ ] Documentation updated if needed
+1. Understand the domain module structure
+2. Locate the relevant package (workforce, team, department, etc.)
+3. Check existing patterns in similar files
+4. Review MyBatis mappers if persistence changes needed
 
----
+### Making Code Changes
 
-## When You Need Help
+1. Make minimal changes to accomplish goal
+2. Run `./gradlew spotlessApply` after editing
+3. Build to verify: `./gradlew build -x test`
+4. Check for checkstyle/spotless violations
+5. Review changes with `git diff`
 
-If you encounter situations not covered in these instructions:
+### Common Tasks
 
-1. **Check existing code** for similar patterns
-2. **Review Spring Boot/WebFlux documentation** for framework-specific questions
-3. **Consult MyBatis docs** for mapper configuration issues
-4. **Ask the user** if business logic context is unclear
+**Add new endpoint**:
+1. Create/update DTO in `[module]/dto/`
+2. Add/update service interface in `[module]/`
+3. Implement in `[module]/internal/service/`
+4. Add controller method (if needed)
 
-**Focus areas where human judgment is needed:**
-- Business logic correctness
-- Performance implications of architectural changes
-- Trade-offs between different implementation approaches
-- Product requirements and feature specifications
+**Add database query**:
+1. Add method to MyBatis mapper interface in `[module]/internal/persistence/`
+2. Add SQL query to corresponding XML in `resources/mappers/`
+3. Use `#{}` for all parameters
+4. Add integration test if possible
+
+**Add domain object conversion**:
+1. Create/update MapStruct converter in `[module]/internal/converter/`
+2. Use `@Mapper(componentModel = "spring")`
+3. Let MapStruct auto-generate implementation
+
+### Trust These Instructions
+
+These instructions were created through comprehensive repository exploration and validated by:
+- Running actual build commands
+- Testing formatting tools
+- Examining all configuration files
+- Reviewing package structure
+- Analyzing GitHub workflows
+
+**Only perform additional searches if**:
+- Information is incomplete for your specific task
+- You find contradictions in these instructions
+- The codebase has changed significantly since these were written
+
+Otherwise, trust these instructions and proceed with your task efficiently.
