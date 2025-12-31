@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.notification.internal.persistence.NotificationMapper">
+    <insert id="insert"
+            parameterType="com.uit.sociusmvcapp.notification.internal.domain.Notification"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO notifications
+            (receiver_id, delivery_type, payload_json)
+        VALUES (#{receiverId}, #{deliveryType}, #{payload})
+    </insert>
+
+    <select id="countUnreadByClientId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM notifications
+        WHERE receiver_id = #{clientId}
+          AND is_read = ${@com.uit.sociusmvcapp.notification.enums.NotificationStatus@UNREAD.code}
+    </select>
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.team.internal.persistence.TeamMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="teamResultMap" type="com.uit.sociusmvcapp.team.internal.domain.Team">
+        <id property="id" column="id"/>
+        <result property="teamCode" column="team_code"/>
+        <result property="teamName" column="team_name"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <!-- Select Queries -->
+    <select id="findByTeamCode" resultMap="teamResultMap">
+        SELECT t.id,
+               t.team_code,
+               t.team_name,
+               t.department_code,
+               t.created_at,
+               t.updated_at,
+               t.deleted_at
+        FROM teams t
+        WHERE t.team_code = #{teamCode}
+          AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findDeletedByTeamCode" resultMap="teamResultMap">
+        SELECT id,
+               team_code,
+               team_name,
+               department_code,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM teams
+        WHERE team_code = #{teamCode}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
+    <select id="existsByTeamCode" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM teams
+            WHERE team_code = #{teamCode}
+              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+    <!-- Insert Query -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO teams (team_code, team_name, department_code, created_at, updated_at, delete_flag)
+        VALUES (#{teamCode},
+                #{teamName},
+                #{departmentCode},
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP,
+                ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value})
+    </insert>
+
+    <!-- Update Queries -->
+    <update id="update">
+        UPDATE teams
+        SET team_name = #{team.teamName},
+            department_code = #{team.departmentCode},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="softDelete">
+        UPDATE teams
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode}
+    </update>
+
+    <update id="reactivateTeam">
+        UPDATE teams
+        SET team_name = #{teamName},
+            department_code = #{departmentCode},
+            updated_at = CURRENT_TIMESTAMP,
+            deleted_at = NULL,
+            delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        WHERE team_code = #{teamCode}
+    </update>
+
+</mapper>
