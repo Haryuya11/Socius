@@ -26,9 +26,9 @@ public interface NotificationMapper {
   Integer countUnreadByClientId(String clientId);
 
   /**
-   * Retrieve notifications by client ID with cursor pagination. * @param clientId the client ID
-   * (receiver)
+   * Retrieve notifications by client ID with cursor pagination.
    *
+   * @param clientId the client ID (receiver)
    * @param lastCreatedAt the 'created_at' of the last item in the previous list (can be null for
    *     1st page)
    * @param lastId the 'id' of the last item in the previous list (can be null for 1st page)
