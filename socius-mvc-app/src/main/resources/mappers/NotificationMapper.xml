@@ -2,6 +2,19 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.uit.sociusmvcapp.notification.internal.persistence.NotificationMapper">
+
+    <resultMap id="notificationMap" type="com.uit.sociusmvcapp.notification.internal.domain.Notification">
+        <id property="id" column="id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="payload" column="payload_json"/>
+        <result property="isRead" column="is_read"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
     <insert id="insert"
             parameterType="com.uit.sociusmvcapp.notification.internal.domain.Notification"
             useGeneratedKeys="true"
@@ -16,5 +29,47 @@
         SELECT COUNT(*) FROM notifications
         WHERE receiver_id = #{clientId}
           AND is_read = ${@com.uit.sociusmvcapp.notification.enums.NotificationStatus@UNREAD.code}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </select>
+
+    <select id="getNotificationsByClientId" resultMap="notificationMap">
+        SELECT id,
+               receiver_id,
+               delivery_type,
+               payload_json,
+               is_read,
+               created_at,
+               updated_at,
+               deleted_at,
+               delete_flag
+        FROM notifications
+        WHERE receiver_id = #{clientId}
+            AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <if test="lastCreatedAt != null and lastId != null">
+            <![CDATA[
+            AND (
+                created_at < #{lastCreatedAt}
+                OR (created_at = #{lastCreatedAt} AND id < #{lastId})
+            )
+            ]]>
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <update id="markAsRead">
+        UPDATE notifications
+        set is_read = ${@com.uit.sociusmvcapp.notification.enums.NotificationStatus@READ.code}
+        WHERE id = #{notificationId}
+          AND is_read = ${@com.uit.sociusmvcapp.notification.enums.NotificationStatus@UNREAD.code}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="markAllAsRead">
+        UPDATE notifications
+        set is_read = ${@com.uit.sociusmvcapp.notification.enums.NotificationStatus@READ.code}
+        WHERE receiver_id = #{clientId}
+          AND is_read = ${@com.uit.sociusmvcapp.notification.enums.NotificationStatus@UNREAD.code}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
 </mapper>

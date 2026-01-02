@@ -74,6 +74,15 @@ public final class MessageConstant {
   /** Successfully retrieved count of unread notifications. */
   public static final String S_NOTIFY_001 = "S_NOTIFY_001";
 
+  /** Successfully retrieved notifications list. */
+  public static final String S_NOTIFY_002 = "S_NOTIFY_002";
+
+  /** Successfully marked notification as read. */
+  public static final String S_NOTIFY_003 = "S_NOTIFY_003";
+
+  /** Successfully marked all notifications as read. */
+  public static final String S_NOTIFY_004 = "S_NOTIFY_004";
+
   /** Successfully retrieved roles list. */
   public static final String S_ROLE_001 = "S_ROLE_001";
 
