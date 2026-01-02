@@ -9,7 +9,11 @@ import com.uit.sociusmvcapp.notification.dto.request.NotificationCreateRequest;
 import com.uit.sociusmvcapp.notification.internal.converter.NotificationConverter;
 import com.uit.sociusmvcapp.notification.internal.domain.Notification;
 import com.uit.sociusmvcapp.notification.internal.repository.NotificationRepository;
+import com.uit.sociusmvcapp.shared.constants.CommonConstant;
+import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import java.time.LocalDateTime;
+import java.util.Base64;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,6 +63,69 @@ public class NotificationServiceImpl implements NotificationService {
     notificationRepository.insert(notification);
     NotificationDto dto = notificationConverter.entityToDto(notification);
     notificationPublisher.publishNotification(dto);
+  }
+
+  /**
+   * Retrieve notifications for the current user.
+   *
+   * @param cursor the pagination cursor
+   * @param limit the number of items to retrieve
+   * @return the list of notifications
+   */
+  @Override
+  public CursorResponse<NotificationDto> getNotifications(String cursor, int limit) {
+    String clientId = userContentProvider.getUserContent().getClientId();
+    LocalDateTime lastCreatedAt = null;
+    Integer lastId = null;
+
+    // Decode cursor if provided
+    if (cursor != null && !cursor.isEmpty()) {
+      String decoded = new String(Base64.getDecoder().decode(cursor));
+      String[] parts = decoded.split(CommonConstant.UNDERSCORE);
+      lastCreatedAt = LocalDateTime.parse(parts[CommonConstant.INIT_INDEX]);
+      lastId = Integer.parseInt(parts[CommonConstant.ONE]);
+    }
+
+    // Fetch notifications from repository
+    List<NotificationDto> notificationDtos =
+        notificationRepository.getNotificationsByClientId(clientId, lastCreatedAt, lastId, limit);
+
+    // Prepare next cursor
+    String nextCursor = null;
+    if (!notificationDtos.isEmpty()) {
+      NotificationDto lastNotification =
+          notificationDtos.get(notificationDtos.size() - CommonConstant.ONE);
+      String cursorString =
+          lastNotification.getCreatedAt().toString()
+              + CommonConstant.UNDERSCORE
+              + lastNotification.getId();
+      nextCursor = Base64.getEncoder().encodeToString(cursorString.getBytes());
+    }
+
+    boolean hasNext = notificationDtos.size() >= limit;
+    return CursorResponse.<NotificationDto>builder()
+        .data(notificationDtos)
+        .nextCursor(nextCursor)
+        .hasNext(hasNext)
+        .build();
+  }
+
+  /**
+   * Mark a notification as read.
+   *
+   * @param notificationId the ID of the notification to be marked as read
+   */
+  @Override
+  public void markAsRead(Long notificationId) {
+    String clientId = userContentProvider.getUserContent().getClientId();
+    notificationRepository.markAsRead(notificationId, clientId);
+  }
+
+  /** Mark all notifications as read for the current user. */
+  @Override
+  public void markAllAsRead() {
+    String clientId = userContentProvider.getUserContent().getClientId();
+    notificationRepository.markAllAsRead(clientId);
   }
 
   /**

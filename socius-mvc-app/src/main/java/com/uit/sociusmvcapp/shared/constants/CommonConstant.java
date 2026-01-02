@@ -15,6 +15,12 @@ public final class CommonConstant {
   /** The forward slash character used in URLs and file paths. */
   public static final String FORWARD_SLASH = "/";
 
+  /** The underscore character used in identifiers and file names. */
+  public static final String UNDERSCORE = "_";
+
   /** Initial number constant set to zero. */
   public static final int INIT_INDEX = 0;
+
+  /** Constant representing the number one. */
+  public static final int ONE = 1;
 }
