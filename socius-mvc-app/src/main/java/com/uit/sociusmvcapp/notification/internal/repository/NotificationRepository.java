@@ -58,9 +58,10 @@ public class NotificationRepository {
    * Mark a notification as read.
    *
    * @param notificationId the ID of the notification to be marked as read
+   * @param clientId the client ID
    */
-  public void markAsRead(String notificationId) {
-    notificationMapper.markAsRead(notificationId);
+  public void markAsRead(Long notificationId, String clientId) {
+    notificationMapper.markAsRead(notificationId, clientId);
   }
 
   /**

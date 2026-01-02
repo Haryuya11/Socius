@@ -36,7 +36,7 @@ public interface NotificationService {
    *
    * @param notificationId the ID of the notification to be marked as read
    */
-  void markAsRead(String notificationId);
+  void markAsRead(Long notificationId);
 
   /** Mark all notifications as read for the current user. */
   void markAllAsRead();

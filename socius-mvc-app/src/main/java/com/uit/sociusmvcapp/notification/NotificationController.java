@@ -72,7 +72,7 @@ public class NotificationController {
    * @return ResponseEntity indicating the operation result
    */
   @PutMapping("/read/{notificationId}")
-  public ResponseEntity<Response> readNotification(@PathVariable String notificationId) {
+  public ResponseEntity<Response> readNotification(@PathVariable Long notificationId) {
     notificationService.markAsRead(notificationId);
     Response response =
         Response.builder()

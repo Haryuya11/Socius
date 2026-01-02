@@ -45,8 +45,9 @@ public interface NotificationMapper {
    * Mark a notification as read.
    *
    * @param notificationId the ID of the notification to be marked as read
+   * @param clientId the client ID
    */
-  void markAsRead(String notificationId);
+  void markAsRead(@Param("notificationId") Long notificationId, @Param("clientId") String clientId);
 
   /**
    * Mark all notifications as read for the given client ID.

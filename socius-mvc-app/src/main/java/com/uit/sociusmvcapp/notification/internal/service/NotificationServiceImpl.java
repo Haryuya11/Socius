@@ -116,8 +116,9 @@ public class NotificationServiceImpl implements NotificationService {
    * @param notificationId the ID of the notification to be marked as read
    */
   @Override
-  public void markAsRead(String notificationId) {
-    notificationRepository.markAsRead(notificationId);
+  public void markAsRead(Long notificationId) {
+    String clientId = userContentProvider.getUserContent().getClientId();
+    notificationRepository.markAsRead(notificationId, clientId);
   }
 
   /** Mark all notifications as read for the current user. */
