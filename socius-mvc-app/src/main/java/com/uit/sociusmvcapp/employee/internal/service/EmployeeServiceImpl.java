@@ -1,16 +1,17 @@
 package com.uit.sociusmvcapp.employee.internal.service;
 
-import com.uit.sociusmvcapp.employee.AzureBlobService;
-import com.uit.sociusmvcapp.employee.AzureGraphService;
+import com.microsoft.graph.models.User;
+import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
+import com.uit.sociusmvcapp.azure.graph.ChangePasswordRequest;
 import com.uit.sociusmvcapp.employee.EmployeeDeletedEvent;
 import com.uit.sociusmvcapp.employee.EmployeeService;
 import com.uit.sociusmvcapp.employee.WorkforceGateway;
 import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
-import com.uit.sociusmvcapp.employee.dto.UploadFileDto;
-import com.uit.sociusmvcapp.employee.dto.request.ChangePasswordRequest;
-import com.uit.sociusmvcapp.employee.dto.request.EmployeeCreateRequest;
+import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
+import com.uit.sociusmvcapp.employee.internal.adapter.EmployeeBlobAdapter;
+import com.uit.sociusmvcapp.employee.internal.adapter.EmployeeGraphAdapter;
 import com.uit.sociusmvcapp.employee.internal.constants.EmployeeConstant;
 import com.uit.sociusmvcapp.employee.internal.repository.EmployeeRepository;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
@@ -21,7 +22,6 @@ import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
-import com.uit.sociusmvcapp.shared.request.UploadRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import java.util.Collections;
@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,20 +46,17 @@ public class EmployeeServiceImpl implements EmployeeService {
   /** Provider for user content. */
   private final UserContentProvider userContentProvider;
 
-  /** Service for interacting with Azure Graph API. */
-  private final AzureGraphService azureGraphService;
-
-  /** Service for interacting with Azure Blob Storage. */
-  private final AzureBlobService azureBlobService;
-
   /** Service for sending notifications. */
   private final ApplicationEventPublisher eventPublisher;
 
   /** Gateway for workforce-related data. */
   private final WorkforceGateway workforceGateway;
 
-  @Value("${azure.blob.user.container-name}")
-  private String containerName;
+  /** Adapter for Azure Graph operations. */
+  private final EmployeeGraphAdapter employeeGraphAdapter;
+
+  /** Adapter for Azure Blob operations specific to Employee module. */
+  private final EmployeeBlobAdapter employeeBlobAdapter;
 
   // ========================= EMPLOYEE SERVICE MAIN METHODS =========================
   /**
@@ -80,38 +76,36 @@ public class EmployeeServiceImpl implements EmployeeService {
    */
   @Override
   @Transactional
-  public Map<String, String> create(EmployeeCreateRequest request) {
-
+  public Map<String, String> create(CreateEmployeeRequest request) {
     EmployeeDto existingUser = employeeRepository.findByUserId(request.getUserId());
     if (existingUser != null) {
       throw ExceptionFactory.badRequest(MessageConstant.E_EMP_007);
     }
 
     EmployeeDto deletedUser = employeeRepository.findDeletedByUserId(request.getUserId());
-    String clientId;
+    String userClientId;
 
     if (deletedUser == null) {
-      com.microsoft.graph.models.User azureUser = azureGraphService.createUser(request);
-
+      User azureUser = employeeGraphAdapter.createUser(request);
       if (azureUser == null || azureUser.getId() == null) {
         log.error("Failed to create user on Azure: Azure returned null");
         throw ExceptionFactory.internalError(MessageConstant.E_SYS_001);
       }
 
-      clientId = azureUser.getId();
-      request.setClientId(clientId);
+      userClientId = azureUser.getId();
+      request.setClientId(userClientId);
       employeeRepository.create(request);
     } else {
-      clientId = deletedUser.getClientId();
+      userClientId = deletedUser.getClientId();
 
-      if (clientId == null || clientId.isEmpty()) {
+      if (userClientId == null || userClientId.isEmpty()) {
         log.error(
             "Deleted user found but clientId is missing in DB for userId: {}", request.getUserId());
         throw ExceptionFactory.internalError(MessageConstant.E_SYS_001);
       }
 
-      request.setClientId(clientId);
-      azureGraphService.reactivateUser(clientId, request);
+      request.setClientId(userClientId);
+      employeeGraphAdapter.reactivateUser(userClientId, request);
       employeeRepository.reactivate(request);
     }
 
@@ -123,9 +117,9 @@ public class EmployeeServiceImpl implements EmployeeService {
             String.format(
                 "Account for %s %s has been created.",
                 request.getLastName(), request.getFirstName()),
-            "/employees/" + clientId));
+            "/employees/" + userClientId));
 
-    return Map.of(EmployeeConstant.CLIENT_ID, clientId);
+    return Map.of(EmployeeConstant.CLIENT_ID, userClientId);
   }
 
   /**
@@ -136,13 +130,12 @@ public class EmployeeServiceImpl implements EmployeeService {
    */
   @Override
   @Transactional
-  public void update(EmployeeCreateRequest request, String clientId) {
+  public void update(CreateEmployeeRequest request, String clientId) {
     EmployeeDto user = employeeRepository.findByClientId(clientId);
-
     if (user == null) {
       throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
     }
-    azureGraphService.updateUser(clientId, request);
+    employeeGraphAdapter.updateUser(clientId, request);
     request.setClientId(clientId);
     employeeRepository.update(request);
     eventPublisher.publishEvent(
@@ -167,7 +160,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     if (user == null) {
       throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
     }
-    azureGraphService.deactivateUser(clientId);
+    employeeGraphAdapter.deactivateUser(clientId);
     employeeRepository.deactivate(clientId);
 
     eventPublisher.publishEvent(new EmployeeDeletedEvent(clientId));
@@ -189,12 +182,11 @@ public class EmployeeServiceImpl implements EmployeeService {
    */
   @Override
   public void changeUserPassword(ChangePasswordRequest request) {
-    String clientId = userContentProvider.getUserContent().getClientId();
+    String userClientId = userContentProvider.getUserContent().getClientId();
     if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-      log.info("New password and confirm password do not match for clientId: {}", clientId);
       throw ExceptionFactory.badRequest(MessageConstant.E_EMP_006);
     }
-    azureGraphService.changeUserPassword(clientId, request);
+    employeeGraphAdapter.changeUserPassword(userClientId, request);
   }
 
   /**
@@ -251,6 +243,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     if (!employeeRepository.existsByClientId(clientId)) {
       throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
     }
+
+    employeeGraphAdapter.validateUserExists(clientId);
   }
 
   /**
@@ -261,15 +255,19 @@ public class EmployeeServiceImpl implements EmployeeService {
    */
   @Override
   public UploadFileDto uploadAvatar(MultipartFile file) {
-    String clientId = userContentProvider.getUserContent().getClientId();
-    UploadRequest request = buildUploadRequest(file, clientId);
-    if (request == null) {
-      log.error("Failed to build upload request for userId: {}", clientId);
-      throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
-    }
-    String path = azureBlobService.uploadFile(request, containerName);
-    String sasToken = azureBlobService.generateSasToken(path, containerName);
-    return UploadFileDto.builder().path(path).url(sasToken).build();
+    String userClientId = userContentProvider.getUserContent().getClientId();
+    return employeeBlobAdapter.uploadAvatar(file, userClientId);
+  }
+
+  /**
+   * Get the full URL of an avatar given its path.
+   *
+   * @param path the path of the avatar
+   * @return the full URL of the avatar
+   */
+  @Override
+  public String getAvatarUrl(String path) {
+    return employeeBlobAdapter.getAvatarUrl(path);
   }
 
   /**
@@ -313,27 +311,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                           iam.getRoleCode(),
                           iam.getIsLeader()))
               .toList());
-    }
-  }
-
-  /**
-   * Build an UploadRequest from a MultipartFile and clientId.
-   *
-   * @param file the MultipartFile to be uploaded
-   * @param clientId the ID of the user uploading the file
-   * @return the constructed UploadRequest
-   */
-  private UploadRequest buildUploadRequest(MultipartFile file, String clientId) {
-    try {
-      return UploadRequest.builder()
-          .clientId(clientId)
-          .fileName(file.getOriginalFilename())
-          .contentType(file.getContentType())
-          .fileSize(file.getSize())
-          .inputStream(file.getInputStream())
-          .build();
-    } catch (Exception e) {
-      return null;
     }
   }
 }

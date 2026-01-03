@@ -1,10 +1,10 @@
 package com.uit.sociusmvcapp.employee;
 
+import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
+import com.uit.sociusmvcapp.azure.graph.ChangePasswordRequest;
 import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
-import com.uit.sociusmvcapp.employee.dto.UploadFileDto;
-import com.uit.sociusmvcapp.employee.dto.request.ChangePasswordRequest;
-import com.uit.sociusmvcapp.employee.dto.request.EmployeeCreateRequest;
+import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
@@ -27,7 +27,7 @@ public interface EmployeeService {
    *
    * @param request the request containing user creation details
    */
-  Map<String, String> create(EmployeeCreateRequest request);
+  Map<String, String> create(CreateEmployeeRequest request);
 
   /**
    * Update an existing user profile.
@@ -35,7 +35,7 @@ public interface EmployeeService {
    * @param request the request containing user update details
    * @param clientId the client ID of the user to be updated
    */
-  void update(EmployeeCreateRequest request, String clientId);
+  void update(CreateEmployeeRequest request, String clientId);
 
   /**
    * Deactivate a user profile.
@@ -81,4 +81,12 @@ public interface EmployeeService {
    * @return UploadFileDto containing details of the uploaded file
    */
   UploadFileDto uploadAvatar(MultipartFile file);
+
+  /**
+   * Get the full URL of an avatar given its path.
+   *
+   * @param path the path of the avatar
+   * @return the full URL of the avatar
+   */
+  String getAvatarUrl(String path);
 }

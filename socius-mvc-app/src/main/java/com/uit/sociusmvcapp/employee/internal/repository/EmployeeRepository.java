@@ -2,7 +2,7 @@ package com.uit.sociusmvcapp.employee.internal.repository;
 
 import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
-import com.uit.sociusmvcapp.employee.dto.request.EmployeeCreateRequest;
+import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.employee.internal.converter.EmployeeConverter;
 import com.uit.sociusmvcapp.employee.internal.persistence.EmployeeMapper;
@@ -46,7 +46,7 @@ public class EmployeeRepository {
    *
    * @param request the user creation request
    */
-  public void create(EmployeeCreateRequest request) {
+  public void create(CreateEmployeeRequest request) {
     employeeMapper.create(employeeConverter.createRequestToEntity(request));
   }
 
@@ -55,7 +55,7 @@ public class EmployeeRepository {
    *
    * @param request the user creation request
    */
-  public void update(EmployeeCreateRequest request) {
+  public void update(CreateEmployeeRequest request) {
     employeeMapper.update(employeeConverter.createRequestToEntity(request));
   }
 
@@ -73,7 +73,7 @@ public class EmployeeRepository {
    *
    * @param request the user reactivation request
    */
-  public void reactivate(EmployeeCreateRequest request) {
+  public void reactivate(CreateEmployeeRequest request) {
     employeeMapper.reactivate(employeeConverter.createRequestToEntity(request));
   }
 

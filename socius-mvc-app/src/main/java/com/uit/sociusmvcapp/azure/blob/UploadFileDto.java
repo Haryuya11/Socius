@@ -1,4 +1,4 @@
-package com.uit.sociusmvcapp.employee.dto;
+package com.uit.sociusmvcapp.azure.blob;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

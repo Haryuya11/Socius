@@ -16,7 +16,6 @@ commonsLang3 = "3.19.0"
 
 # Azure
 azureSpring = "6.0.0"
-azureSpringActiveDirectory = "4.2.0"
 azureIdentity = "1.15.0"
 microsoftGraph = "6.54.0"
 azureBlob="12.32.0"
@@ -33,7 +32,6 @@ checkstyle = "12.1.0"
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
-spring-boot-starter-oauth2-client = { module = "org.springframework.boot:spring-boot-starter-oauth2-client" }
 spring-boot-starter-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server" }
 spring-boot-starter-amqp = { module = "org.springframework.boot:spring-boot-starter-amqp" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools" }
@@ -65,7 +63,6 @@ mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.re
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 
 # Azure
-azure-spring-cloud-starter-active-directory = { module = "com.azure.spring:spring-cloud-azure-starter-active-directory", version.ref = "azureSpringActiveDirectory" }
 azure-spring-cloud-starter-keyvault-secrets = { module = "com.azure.spring:spring-cloud-azure-starter-keyvault-secrets", version.ref = "azureSpring" }
 azure-identity = { module = "com.azure:azure-identity", version.ref = "azureIdentity" }
 microsoft-graph = { module = "com.microsoft.graph:microsoft-graph", version.ref = "microsoftGraph" }
@@ -80,13 +77,11 @@ commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "co
 # Testing
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-reactor-test = { module = "io.projectreactor:reactor-test" }
 
 [bundles]
 spring-mvc = [
     "spring-boot-starter-web",
     "spring-boot-starter-security",
-    "spring-boot-starter-oauth2-client",
     "spring-boot-starter-oauth2-resource-server",
     "spring-boot-starter-aop"
 ]
@@ -97,7 +92,6 @@ spring-security-core = [
 ]
 
 azure-integration = [
-    "azure-spring-cloud-starter-active-directory",
     "azure-spring-cloud-starter-keyvault-secrets",
     "azure-identity",
     "microsoft-graph",

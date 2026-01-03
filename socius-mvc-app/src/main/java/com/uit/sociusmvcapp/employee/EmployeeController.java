@@ -1,10 +1,10 @@
 package com.uit.sociusmvcapp.employee;
 
+import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
+import com.uit.sociusmvcapp.azure.graph.ChangePasswordRequest;
 import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
-import com.uit.sociusmvcapp.employee.dto.UploadFileDto;
-import com.uit.sociusmvcapp.employee.dto.request.ChangePasswordRequest;
-import com.uit.sociusmvcapp.employee.dto.request.EmployeeCreateRequest;
+import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
@@ -65,7 +65,7 @@ public class EmployeeController {
    * @return ResponseEntity indicating the result of the operation
    */
   @PostMapping
-  public ResponseEntity<Response> create(@RequestBody EmployeeCreateRequest request) {
+  public ResponseEntity<Response> create(@RequestBody CreateEmployeeRequest request) {
     Map<String, String> data = employeeService.create(request);
     Response response =
         Response.builder()
@@ -87,7 +87,7 @@ public class EmployeeController {
    */
   @PutMapping("/{clientId}")
   public ResponseEntity<Response> update(
-      @RequestBody EmployeeCreateRequest request, @PathVariable String clientId) {
+      @RequestBody CreateEmployeeRequest request, @PathVariable String clientId) {
     employeeService.update(request, clientId);
     Response response =
         Response.builder()
@@ -192,9 +192,29 @@ public class EmployeeController {
         Response.builder()
             .success(true)
             .status(HttpStatus.OK.value())
-            .code(MessageConstant.S_EMP_007)
-            .message(i18nService.getMessage(MessageConstant.S_EMP_007))
+            .code(MessageConstant.S_EMP_008)
+            .message(i18nService.getMessage(MessageConstant.S_EMP_008))
             .data(responseDto)
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get the full URL of an avatar by its path.
+   *
+   * @param path the path of the avatar
+   * @return ResponseEntity containing the full URL of the avatar
+   */
+  @GetMapping("/avatar-url")
+  public ResponseEntity<Response> getAvatarUrl(@RequestParam("path") String path) {
+    String url = employeeService.getAvatarUrl(path);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_EMP_009)
+            .message(i18nService.getMessage(MessageConstant.S_EMP_009))
+            .data(url)
             .build();
     return ResponseEntity.ok(response);
   }

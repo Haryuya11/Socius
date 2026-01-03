@@ -1,4 +1,4 @@
-package com.uit.sociusmvcapp.employee.internal.config;
+package com.uit.sociusmvcapp.azure.blob.internal.config;
 
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;

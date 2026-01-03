@@ -1,4 +1,4 @@
-package com.uit.sociusmvcapp.shared.request;
+package com.uit.sociusmvcapp.azure.blob;
 
 import java.io.InputStream;
 import lombok.AllArgsConstructor;

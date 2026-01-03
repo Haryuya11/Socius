@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmployeeCreateRequest {
+public class CreateEmployeeRequest {
   private String clientId;
   private String userId;
   private String firstName;
