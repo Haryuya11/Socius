@@ -62,6 +62,9 @@ public final class MessageConstant {
   /** Upload employee avatar successfully. */
   public static final String S_EMP_008 = "S_EMP_008";
 
+  /** Employee avatar retrieved successfully. */
+  public static final String S_EMP_009 = "S_EMP_009";
+
   /** Employee with the same ID already exists. */
   public static final String W_EMP_001 = "W_EMP_001";
 

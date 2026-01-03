@@ -5,7 +5,7 @@ import com.microsoft.graph.models.PasswordProfile;
 import com.microsoft.graph.models.User;
 import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
-import com.uit.sociusmvcapp.employee.dto.request.EmployeeCreateRequest;
+import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.internal.constants.EmployeeConstant;
 import com.uit.sociusmvcapp.employee.internal.domain.Employee;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
@@ -63,7 +63,7 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
       target = "identities",
       expression = "java(createEmailIdentity(request.getUserId(), issuer))")
   @Mapping(target = "mail", expression = "java(request.getUserId())")
-  User toGraphUser(EmployeeCreateRequest request, String issuer);
+  User toGraphUser(CreateEmployeeRequest request, String issuer);
 
   /**
    * Converts an EmployeeCreateRequest to a Microsoft Graph User object for an update operation.
@@ -78,7 +78,7 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
   @Mapping(target = "displayName", expression = "java(buildDisplayName(request))")
   @Mapping(target = "givenName", expression = "java(request.getFirstName())")
   @Mapping(target = "surname", expression = "java(request.getLastName())")
-  User toGraphUserForUpdate(EmployeeCreateRequest request);
+  User toGraphUserForUpdate(CreateEmployeeRequest request);
 
   /**
    * Converts an EmployeeCreateRequest to an Employee entity.
@@ -91,7 +91,7 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "deletedAt", ignore = true)
   @Mapping(target = "deleteFlag", ignore = true)
-  Employee createRequestToEntity(EmployeeCreateRequest request);
+  Employee createRequestToEntity(CreateEmployeeRequest request);
 
   /**
    * Converts an EmployeeDto to a UserPrincipal DTO.
@@ -113,7 +113,7 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
    * @return The constructed display name.
    */
   @Named("buildDisplayName")
-  default String buildDisplayName(EmployeeCreateRequest request) {
+  default String buildDisplayName(CreateEmployeeRequest request) {
     if (request == null) {
       return "";
     }

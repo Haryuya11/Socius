@@ -1,4 +1,4 @@
-package com.uit.sociusmvcapp.employee.dto.request;
+package com.uit.sociusmvcapp.azure.graph;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

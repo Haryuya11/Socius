@@ -1,4 +1,4 @@
-package com.uit.sociusmvcapp.employee.internal.constants;
+package com.uit.sociusmvcapp.azure.graph.internal.constants;
 
 /**
  * Constants for Microsoft Graph User fields.
