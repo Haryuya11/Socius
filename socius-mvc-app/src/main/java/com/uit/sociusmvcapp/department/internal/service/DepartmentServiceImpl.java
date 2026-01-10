@@ -69,6 +69,9 @@ public class DepartmentServiceImpl implements DepartmentService {
    */
   @Override
   public void update(CreateDepartmentRequest request, String departmentCode) {
+    if (request.getDepartmentCode() != null && !request.getDepartmentCode().equals(departmentCode)) {
+      throw ExceptionFactory.badRequest(MessageConstant.E_DEP_002);
+    }
     DepartmentDto existingDepartment = departmentRepository.findByDepartmentCode(departmentCode);
     if (existingDepartment == null) {
       throw ExceptionFactory.notFound(MessageConstant.W_DEP_001);
