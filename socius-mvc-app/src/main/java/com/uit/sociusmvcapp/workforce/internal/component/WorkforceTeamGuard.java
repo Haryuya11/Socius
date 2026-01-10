@@ -30,7 +30,7 @@ public class WorkforceTeamGuard implements TeamActionGuard {
         log.info("Validating DEACTIVATE action for team: {}", teamCode);
         if (teamEmployeeRepository.hasEmployees(teamCode)) {
           log.error("Cannot deactivate team {} because it has assigned employees.", teamCode);
-          throw ExceptionFactory.badRequest(MessageConstant.E_TEAM_008);
+          throw ExceptionFactory.badRequest(MessageConstant.E_TEAM_007);
         }
       }
       case ACTIVATE -> log.info("Validating ACTIVATE action for team: {}", teamCode);

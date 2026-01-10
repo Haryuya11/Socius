@@ -1,11 +1,14 @@
 package com.uit.sociusmvcapp.team.internal.repository;
 
+import com.uit.sociusmvcapp.shared.request.SortRequest;
+import com.uit.sociusmvcapp.team.dto.SearchTeamDto;
 import com.uit.sociusmvcapp.team.dto.TeamDto;
-import com.uit.sociusmvcapp.team.dto.request.TeamCreateRequest;
-import com.uit.sociusmvcapp.team.dto.request.TeamUpdateRequest;
+import com.uit.sociusmvcapp.team.dto.request.CreateTeamRequest;
+import com.uit.sociusmvcapp.team.dto.request.SearchTeamRequest;
+import com.uit.sociusmvcapp.team.dto.request.UpdateTeamRequest;
 import com.uit.sociusmvcapp.team.internal.converter.TeamConverter;
-import com.uit.sociusmvcapp.team.internal.domain.Team;
 import com.uit.sociusmvcapp.team.internal.persistence.TeamMapper;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -23,8 +26,7 @@ public class TeamRepository {
    * @return TeamDto
    */
   public TeamDto findByTeamCode(String teamCode) {
-    Team team = teamMapper.findByTeamCode(teamCode);
-    return team != null ? teamConverter.entityToDto(team) : null;
+    return teamConverter.entityToDto(teamMapper.findByTeamCode(teamCode));
   }
 
   /**
@@ -34,8 +36,7 @@ public class TeamRepository {
    * @return TeamDto
    */
   public TeamDto findDeletedByTeamCode(String teamCode) {
-    Team team = teamMapper.findDeletedByTeamCode(teamCode);
-    return team != null ? teamConverter.entityToDto(team) : null;
+    return teamConverter.entityToDto(teamMapper.findDeletedByTeamCode(teamCode));
   }
 
   /**
@@ -43,7 +44,7 @@ public class TeamRepository {
    *
    * @param request the team creation request
    */
-  public void insert(TeamCreateRequest request) {
+  public void insert(CreateTeamRequest request) {
     teamMapper.insert(teamConverter.createRequestToEntity(request));
   }
 
@@ -53,7 +54,7 @@ public class TeamRepository {
    * @param teamCode the team code
    * @param request the team update request
    */
-  public void update(String teamCode, TeamUpdateRequest request) {
+  public void update(String teamCode, UpdateTeamRequest request) {
     teamMapper.update(teamCode, teamConverter.updateRequestToEntity(request));
   }
 
@@ -81,7 +82,31 @@ public class TeamRepository {
    *
    * @param request the team creation request
    */
-  public void reactivateTeam(TeamCreateRequest request) {
+  public void reactivateTeam(CreateTeamRequest request) {
     teamMapper.reactivateTeam(teamConverter.createRequestToEntity(request));
+  }
+
+  /**
+   * Search for teams based on criteria, sorting, pagination.
+   *
+   * @param criteria the search criteria
+   * @param sorts the sorting options
+   * @param limit the maximum number of records to return
+   * @param offset the starting point for records to return
+   * @return list of SearchTeamDto matching the search criteria
+   */
+  public List<SearchTeamDto> search(
+      SearchTeamRequest criteria, List<SortRequest> sorts, int limit, int offset) {
+    return teamConverter.entitiesToSearchDtos(teamMapper.search(criteria, sorts, limit, offset));
+  }
+
+  /**
+   * Count teams based on search criteria.
+   *
+   * @param criteria the search criteria
+   * @return the total count of teams matching the criteria
+   */
+  public int count(SearchTeamRequest criteria) {
+    return teamMapper.count(criteria);
   }
 }

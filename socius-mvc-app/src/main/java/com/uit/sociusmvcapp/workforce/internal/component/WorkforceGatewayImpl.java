@@ -53,7 +53,7 @@ public class WorkforceGatewayImpl implements WorkforceGateway {
     return entities.stream()
         .collect(
             Collectors.groupingBy(
-                TeamEmployeeDto::getClientId,
+                dto -> dto.getEmployee().getClientId(),
                 Collectors.mapping(teamEmployeeConverter::toUserTeamInfo, Collectors.toList())));
   }
 

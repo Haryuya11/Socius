@@ -123,11 +123,49 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO team_employees
             (employee_id, team_code, role_code, is_leader)
-        VALUES (#{team.clientId},
+        VALUES (#{employee.clientId},
                 #{team.teamCode},
                 #{roleCode},
                 #{isLeader})
     </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO team_employees
+            (employee_id, team_code, role_code, is_leader)
+        VALUES
+        <foreach collection="teamEmployees" item="te" separator=",">
+            (#{te.employee.clientId},
+             #{te.team.teamCode},
+             #{te.roleCode},
+             #{te.isLeader})
+        </foreach>
+    </insert>
+
+    <update id="batchReactivate">
+        <foreach collection="teamEmployees" item="te" separator=";">
+            UPDATE team_employees
+            SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value},
+                deleted_at = NULL,
+                role_code = #{te.roleCode},
+                is_leader = #{te.isLeader},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE team_code = #{te.team.teamCode}
+              AND employee_id = #{te.employee.clientId}
+              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+        </foreach>
+    </update>
+
+    <select id="findSoftDeletedByTeamCodeAndEmployeeIds" resultMap="TeamEmployeeResultMap">
+        SELECT <include refid="selectColumns"/>
+        FROM team_employees te
+        <include refid="joinTables"/>
+        WHERE te.team_code = #{teamCode}
+          AND te.employee_id IN
+          <foreach item="employeeId" collection="employeeIds" open="(" separator="," close=")">
+              #{employeeId}
+          </foreach>
+          AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
 
     <update id="updateLeadershipStatus">
         UPDATE team_employees
@@ -141,6 +179,18 @@
         SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
             deleted_at = CURRENT_TIMESTAMP
         WHERE team_code = #{teamCode} AND employee_id = #{employeeId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="batchSoftDelete">
+        UPDATE team_employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE team_code = #{teamCode}
+          AND employee_id IN
+          <foreach item="employeeId" collection="employeeIds" open="(" separator="," close=")">
+              #{employeeId}
+          </foreach>
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </update>
 

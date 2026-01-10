@@ -185,6 +185,9 @@ public final class MessageConstant {
   /** Team deleted successfully. */
   public static final String S_TEAM_005 = "S_TEAM_005";
 
+  /** Teams search completed successfully. */
+  public static final String S_TEAM_006 = "S_TEAM_006";
+
   // ================= TEAM EMPLOYEE MODULE =================
   /** Employee is already in the team. */
   public static final String E_TEAM_EMP_001 = "E_TEAM_EMP_001";

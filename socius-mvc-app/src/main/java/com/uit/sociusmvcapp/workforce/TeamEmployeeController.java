@@ -5,13 +5,17 @@ import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
 import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeBatchResultDto;
 import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeDto;
-import com.uit.sociusmvcapp.workforce.dto.request.TeamEmployeeBatchAddRequest;
+import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeRemovalResultDto;
+import com.uit.sociusmvcapp.workforce.dto.request.AddEmployeesToTeamRequest;
+import com.uit.sociusmvcapp.workforce.dto.request.RemoveEmployeesFromTeamRequest;
 import com.uit.sociusmvcapp.workforce.dto.request.TransferTeamEmployeeRequest;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,6 +35,30 @@ public class TeamEmployeeController {
   private final TeamEmployeeService teamEmployeeService;
 
   /**
+   * Get all employees in a team.
+   *
+   * <p>GET /teams/{teamCode}/employees
+   *
+   * @param teamCode the team code
+   * @return ResponseEntity containing list of employees
+   */
+  @GetMapping("/{teamCode}/employees")
+  public ResponseEntity<Response> getEmployeesByTeamCode(@PathVariable String teamCode) {
+    List<TeamEmployeeDto> employees = teamEmployeeService.getEmployeesByTeamCode(teamCode);
+
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_TEAM_EMP_004)
+            .message(i18nService.getMessage(MessageConstant.S_TEAM_EMP_004))
+            .data(employees)
+            .build();
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
    * Add employee(s) to a team.
    *
    * <p>POST /teams/{teamCode}/employees
@@ -43,7 +71,7 @@ public class TeamEmployeeController {
    */
   @PostMapping("/{teamCode}/employees")
   public ResponseEntity<Response> addEmployeesToTeam(
-      @PathVariable String teamCode, @RequestBody TeamEmployeeBatchAddRequest request) {
+      @PathVariable String teamCode, @RequestBody AddEmployeesToTeamRequest request) {
 
     TeamEmployeeBatchResultDto result = teamEmployeeService.addEmployeesToTeam(teamCode, request);
 
@@ -70,25 +98,39 @@ public class TeamEmployeeController {
   }
 
   /**
-   * Remove an employee from a team.
+   * Remove employee(s) from a team.
    *
-   * <p>DELETE /teams/{teamCode}/employees/{employeeId}
+   * <p>DELETE /teams/{teamCode}/employees
+   *
+   * <p>Returns list of removed employee IDs and failed operations.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID (client_id) to remove
-   * @return ResponseEntity with success message
+   * @param request the request containing employee(s) to remove
+   * @return ResponseEntity containing removed IDs and failed list
    */
-  @DeleteMapping("/{teamCode}/employees/{employeeId}")
-  public ResponseEntity<Response> removeEmployeeFromTeam(
-      @PathVariable String teamCode, @PathVariable String employeeId) {
-    teamEmployeeService.removeEmployeeFromTeam(teamCode, employeeId);
+  @DeleteMapping("/{teamCode}/employees")
+  public ResponseEntity<Response> removeEmployeesFromTeam(
+      @PathVariable String teamCode, @RequestBody RemoveEmployeesFromTeamRequest request) {
+
+    TeamEmployeeRemovalResultDto result =
+        teamEmployeeService.removeEmployeesFromTeam(teamCode, request);
+
+    // Check if 100% successful
+    boolean success = result.getFailed().isEmpty();
 
     Response response =
         Response.builder()
-            .success(true)
+            .success(success)
             .status(HttpStatus.OK.value())
-            .code(MessageConstant.S_TEAM_EMP_002)
-            .message(i18nService.getMessage(MessageConstant.S_TEAM_EMP_002))
+            .code(success ? MessageConstant.S_TEAM_EMP_002 : MessageConstant.S_TEAM_EMP_005)
+            .message(
+                success
+                    ? i18nService.getMessage(MessageConstant.S_TEAM_EMP_002)
+                    : String.format(
+                        i18nService.getMessage(MessageConstant.S_TEAM_EMP_005),
+                        result.getRemovedEmployeeIds().size(),
+                        result.getFailed().size()))
+            .data(result)
             .build();
 
     return ResponseEntity.ok(response);

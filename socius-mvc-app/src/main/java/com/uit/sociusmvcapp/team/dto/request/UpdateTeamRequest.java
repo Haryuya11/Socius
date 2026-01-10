@@ -1,19 +1,19 @@
-package com.uit.sociusmvcapp.team.dto;
+package com.uit.sociusmvcapp.team.dto.request;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Data transfer object for searching teams. */
+/**
+ * Request object for updating team information. Team lead changes should use separate Change Team
+ * Lead API.
+ */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class SearchTeamDto {
-  private String teamCode;
+public class UpdateTeamRequest {
   private String teamName;
   private String departmentCode;
 }

@@ -1,8 +1,9 @@
 package com.uit.sociusmvcapp.workforce.internal.converter;
 
 import com.uit.sociusmvcapp.iam.dto.UserTeamInfo;
+import com.uit.sociusmvcapp.shared.converter.BaseConverter;
 import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeDto;
-import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToTeamRequest;
+import com.uit.sociusmvcapp.workforce.dto.request.AddEmployeeToTeamRequest;
 import com.uit.sociusmvcapp.workforce.dto.request.TransferTeamEmployeeRequest;
 import com.uit.sociusmvcapp.workforce.internal.domain.TeamEmployee;
 import java.util.List;
@@ -11,39 +12,7 @@ import org.mapstruct.Mapping;
 
 /** Converter for TeamEmployee entity and DTO transformations. */
 @Mapper(componentModel = "spring")
-public interface TeamEmployeeConverter {
-
-  // ==================== ENTITY TO DTO (READ) ====================
-
-  /**
-   * Convert TeamEmployee entity to TeamEmployeeDto.
-   *
-   * @param teamEmployee the TeamEmployee entity
-   * @return the corresponding TeamEmployeeDto
-   */
-  @Mapping(target = "teamCode", source = "team.teamCode")
-  @Mapping(target = "teamName", source = "team.teamName")
-  @Mapping(target = "departmentCode", source = "team.departmentCode")
-  @Mapping(target = "clientId", source = "employee.clientId")
-  @Mapping(target = "userId", source = "employee.userId")
-  @Mapping(target = "firstName", source = "employee.firstName")
-  @Mapping(target = "lastName", source = "employee.lastName")
-  @Mapping(target = "systemRole", source = "employee.systemRole")
-  @Mapping(target = "imageUrl", source = "employee.imageUrl")
-  @Mapping(target = "salary", source = "employee.salary")
-  TeamEmployeeDto entityToDto(TeamEmployee teamEmployee);
-
-  /**
-   * Convert list of TeamEmployee entities to list of TeamEmployeeDto.
-   *
-   * @param entities the list of TeamEmployee entities
-   * @return the corresponding list of TeamEmployeeDto
-   */
-  List<TeamEmployeeDto> entitiesToDtos(List<TeamEmployee> entities);
-
-  // ==================== DTO TO DTO (CONVERSION) ====================
-
-  // ==================== DTO/REQUEST TO ENTITY (WRITE) ====================
+public interface TeamEmployeeConverter extends BaseConverter<TeamEmployee, TeamEmployeeDto> {
 
   /**
    * Convert TeamEmployeeAddRequest to TeamEmployee entity for insertion.
@@ -61,7 +30,7 @@ public interface TeamEmployeeConverter {
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "deletedAt", ignore = true)
   @Mapping(target = "deleteFlag", ignore = true)
-  TeamEmployee toEntity(AssignEmployeeToTeamRequest request, String teamCode);
+  TeamEmployee toEntity(AddEmployeeToTeamRequest request, String teamCode);
 
   /**
    * Converts roleCode and isLeader to a TeamEmployeeAddRequest.
@@ -69,7 +38,7 @@ public interface TeamEmployeeConverter {
    * @param request the TransferTeamEmployeeRequest
    * @return the corresponding TeamEmployeeAddRequest
    */
-  AssignEmployeeToTeamRequest toTeamEmployeeAddRequest(TransferTeamEmployeeRequest request);
+  AddEmployeeToTeamRequest toTeamEmployeeAddRequest(TransferTeamEmployeeRequest request);
 
   /**
    * Convert list of TeamEmployeeDto to list of UserTeamInfo.
@@ -85,5 +54,7 @@ public interface TeamEmployeeConverter {
    * @param dto the TeamEmployeeDto
    * @return the corresponding UserTeamInfo
    */
+  @Mapping(target = "teamCode", source = "team.teamCode")
+  @Mapping(target = "teamName", source = "team.teamName")
   UserTeamInfo toUserTeamInfo(TeamEmployeeDto dto);
 }
