@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.workforce.internal.repository;
 import com.uit.sociusmvcapp.workforce.dto.DepartmentEmployeeDto;
 import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToDepartmentRequest;
 import com.uit.sociusmvcapp.workforce.internal.converter.DepartmentEmployeeConverter;
+import com.uit.sociusmvcapp.workforce.internal.domain.DepartmentEmployee;
 import com.uit.sociusmvcapp.workforce.internal.persistence.DepartmentEmployeeMapper;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -109,5 +110,50 @@ public class DepartmentEmployeeRepository {
    */
   public List<DepartmentEmployeeDto> findByEmployeeIdIn(List<String> employeeIds) {
     return converter.entitiesToDtos(mapper.findByEmployeeIdIn(employeeIds));
+  }
+
+  /**
+   * Find employee IDs in a department from a list of employee IDs.
+   *
+   * @param departmentCode the department code
+   * @param employeeIds the list of employee user IDs
+   * @return list of employee IDs that are in the department
+   */
+  public List<String> findEmployeeIdsInDepartment(String departmentCode, List<String> employeeIds) {
+    if (employeeIds == null || employeeIds.isEmpty()) {
+      return List.of();
+    }
+    return mapper.findEmployeeIdsInDepartment(departmentCode, employeeIds);
+  }
+
+  /**
+   * Add multiple Employees to a Department in batch.
+   *
+   * @param requests the list of employee addition requests
+   * @param departmentCode the department code
+   */
+  public void addEmployeesToDepartmentBatch(
+      List<AssignEmployeeToDepartmentRequest> requests, String departmentCode) {
+    if (requests == null || requests.isEmpty()) {
+      return;
+    }
+    // Convert list request to list entity
+    List<DepartmentEmployee> entities =
+        requests.stream().map(req -> converter.toEntity(req, departmentCode)).toList();
+
+    mapper.addEmployeesToDepartmentBatch(entities);
+  }
+
+  /**
+   * Remove multiple Employees from a Department in batch.
+   *
+   * @param employeeIds the list of employee user IDs
+   * @param departmentCode the department code
+   */
+  public void removeEmployeesFromDepartmentBatch(List<String> employeeIds, String departmentCode) {
+    if (employeeIds == null || employeeIds.isEmpty()) {
+      return;
+    }
+    mapper.removeEmployeesFromDepartmentBatch(departmentCode, employeeIds);
   }
 }
