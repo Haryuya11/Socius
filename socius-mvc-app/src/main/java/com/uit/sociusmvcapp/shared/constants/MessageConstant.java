@@ -127,6 +127,9 @@ public final class MessageConstant {
   /** Cannot add employee to department. Employee already exists in department. */
   public static final String E_DEP_011 = "E_DEP_011";
 
+  /** Employee Batch insert/update error. */
+  public static final String E_DEP_012 = "E_DEP_012";
+
   /** Department created successfully. */
   public static final String S_DEP_001 = "S_DEP_001";
 
