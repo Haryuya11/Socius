@@ -1,11 +1,15 @@
 package com.uit.sociusmvcapp.team;
 
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
+import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
+import com.uit.sociusmvcapp.team.dto.SearchTeamDto;
 import com.uit.sociusmvcapp.team.dto.TeamDto;
-import com.uit.sociusmvcapp.team.dto.request.TeamCreateRequest;
-import com.uit.sociusmvcapp.team.dto.request.TeamUpdateRequest;
+import com.uit.sociusmvcapp.team.dto.request.CreateTeamRequest;
+import com.uit.sociusmvcapp.team.dto.request.SearchTeamRequest;
+import com.uit.sociusmvcapp.team.dto.request.UpdateTeamRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,7 +39,7 @@ public class TeamController {
    * @return ResponseEntity containing the created team
    */
   @PostMapping
-  public ResponseEntity<Response> create(@Valid @RequestBody TeamCreateRequest request) {
+  public ResponseEntity<Response> create(@Valid @RequestBody CreateTeamRequest request) {
     teamService.create(request);
     Response response =
         Response.builder()
@@ -76,7 +80,7 @@ public class TeamController {
    */
   @PutMapping("/{teamCode}")
   public ResponseEntity<Response> updateTeam(
-      @PathVariable String teamCode, @Valid @RequestBody TeamUpdateRequest request) {
+      @PathVariable String teamCode, @Valid @RequestBody UpdateTeamRequest request) {
     TeamDto team = teamService.update(teamCode, request);
     Response response =
         Response.builder()
@@ -104,6 +108,27 @@ public class TeamController {
             .status(HttpStatus.OK.value())
             .code(MessageConstant.S_TEAM_005)
             .message(i18nService.getMessage(MessageConstant.S_TEAM_005))
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Search for teams with pagination.
+   *
+   * @param request the pagination search request containing search criteria
+   * @return ResponseEntity containing paginated team data
+   */
+  @PostMapping("/search")
+  public ResponseEntity<Response> search(
+      @RequestBody PaginationSearchRequest<SearchTeamRequest> request) {
+    PageResponse<SearchTeamDto> teams = teamService.search(request);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_TEAM_006)
+            .message(i18nService.getMessage(MessageConstant.S_TEAM_006))
+            .data(teams)
             .build();
     return ResponseEntity.ok(response);
   }

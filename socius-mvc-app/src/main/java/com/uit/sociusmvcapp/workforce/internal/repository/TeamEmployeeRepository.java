@@ -1,7 +1,7 @@
 package com.uit.sociusmvcapp.workforce.internal.repository;
 
 import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeDto;
-import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToTeamRequest;
+import com.uit.sociusmvcapp.workforce.dto.request.AddEmployeeToTeamRequest;
 import com.uit.sociusmvcapp.workforce.internal.converter.TeamEmployeeConverter;
 import com.uit.sociusmvcapp.workforce.internal.persistence.TeamEmployeeMapper;
 import java.util.List;
@@ -47,20 +47,44 @@ public class TeamEmployeeRepository {
   }
 
   /**
-   * Add an employee to a team.
+   * Batch insert team-employee relationships.
    *
-   * @param request the TeamEmployeeAddRequest
    * @param teamCode the team code
+   * @param requests the list of add employee requests
    */
-  public void addEmployeeToTeam(AssignEmployeeToTeamRequest request, String teamCode) {
-    mapper.insert(converter.toEntity(request, teamCode));
+  public void batchInsert(String teamCode, List<AddEmployeeToTeamRequest> requests) {
+    mapper.batchInsert(requests.stream().map(req -> converter.toEntity(req, teamCode)).toList());
+  }
+
+  /**
+   * Batch reactivate soft-deleted team-employee relationships.
+   *
+   * @param teamCode the team code
+   * @param requests the list of add employee requests
+   */
+  public void batchReactivate(String teamCode, List<AddEmployeeToTeamRequest> requests) {
+    mapper.batchReactivate(
+        requests.stream().map(req -> converter.toEntity(req, teamCode)).toList());
+  }
+
+  /**
+   * Find soft-deleted team-employee relationships by team code and employee IDs.
+   *
+   * @param teamCode the team code
+   * @param employeeIds the list of employee IDs
+   * @return list of TeamEmployeeDto
+   */
+  public List<TeamEmployeeDto> findSoftDeletedByTeamCodeAndEmployeeIds(
+      String teamCode, List<String> employeeIds) {
+    return converter.entitiesToDtos(
+        mapper.findSoftDeletedByTeamCodeAndEmployeeIds(teamCode, employeeIds));
   }
 
   /**
    * Update leadership status for an employee in a team.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID (user_id)
+   * @param employeeId the employee ID
    * @param isLeader the leadership status
    */
   public void updateLeadershipStatus(String teamCode, String employeeId, Boolean isLeader) {
@@ -68,13 +92,13 @@ public class TeamEmployeeRepository {
   }
 
   /**
-   * Remove an employee from a team.
+   * Batch remove employees from a team.
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID
+   * @param employeeIds the list of employee IDs to remove
    */
-  public void removeEmployeeFromTeam(String teamCode, String employeeId) {
-    mapper.softDelete(teamCode, employeeId);
+  public void batchRemoveEmployees(String teamCode, List<String> employeeIds) {
+    mapper.batchSoftDelete(teamCode, employeeIds);
   }
 
   /**
@@ -96,7 +120,7 @@ public class TeamEmployeeRepository {
    * @param teamCode the team code
    * @param request the request containing details
    */
-  public void reactivate(String teamCode, AssignEmployeeToTeamRequest request) {
+  public void reactivate(String teamCode, AddEmployeeToTeamRequest request) {
     mapper.reactivate(converter.toEntity(request, teamCode));
   }
 

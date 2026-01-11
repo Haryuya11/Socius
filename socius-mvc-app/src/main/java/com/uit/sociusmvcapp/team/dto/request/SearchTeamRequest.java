@@ -5,15 +5,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Request object for updating team information. Team lead changes should use separate Change Team
- * Lead API.
- */
+/** Search criteria for teams. */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamUpdateRequest {
+public class SearchTeamRequest {
+  private String teamCode;
   private String teamName;
   private String departmentCode;
 }

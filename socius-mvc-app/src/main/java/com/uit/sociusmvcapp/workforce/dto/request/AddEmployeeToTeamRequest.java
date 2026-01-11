@@ -10,6 +10,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class AssignEmployeeToTeamRequest extends AssignEmployeeRequest {
+public class AddEmployeeToTeamRequest extends AssignEmployeeRequest {
   private Boolean isLeader;
 }
