@@ -7,7 +7,6 @@ import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import com.uit.sociusmvcapp.shared.service.I18nService;
 import com.uit.sociusmvcapp.workforce.DepartmentEmployeeService;
 import com.uit.sociusmvcapp.workforce.dto.BatchErrorDto;
-import com.uit.sociusmvcapp.workforce.dto.BatchProcessResultDto;
 import com.uit.sociusmvcapp.workforce.dto.DepartmentEmployeeBatchResultDto;
 import com.uit.sociusmvcapp.workforce.dto.DepartmentEmployeeDto;
 import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToDepartmentRequest;
@@ -16,11 +15,8 @@ import com.uit.sociusmvcapp.workforce.internal.constants.DepartmentEmployeeConst
 import com.uit.sociusmvcapp.workforce.internal.converter.DepartmentEmployeeConverter;
 import com.uit.sociusmvcapp.workforce.internal.repository.DepartmentEmployeeRepository;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -89,28 +85,35 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   public Map<String, String> transferEmployee(TransferEmployeeRequest request) {
-    String fromDept = request.getFromDepartmentCode();
-    String toDept = request.getToDepartmentCode();
-    String empId = request.getEmployeeId();
+    departmentService.validateExists(request.getFromDepartmentCode());
+    departmentService.validateExists(request.getToDepartmentCode());
 
-    // 1. Validation
-    departmentService.validateExists(fromDept);
-    departmentService.validateExists(toDept);
+    DepartmentEmployeeDto existingEmployeeInFromDepartment =
+        departmentEmployeeRepository.findEmployeeInDepartment(
+            request.getFromDepartmentCode(), request.getEmployeeId());
+    if (existingEmployeeInFromDepartment == null) {
+      throw ExceptionFactory.notFound(MessageConstant.E_DEP_010);
+    }
 
-    // 2. Domain Logic Check
-    validateTransferEligibility(fromDept, toDept, empId);
+    DepartmentEmployeeDto existingEmployeeInToDepartment =
+        departmentEmployeeRepository.findEmployeeInDepartment(
+            request.getToDepartmentCode(), request.getEmployeeId());
+    if (existingEmployeeInToDepartment != null) {
+      throw ExceptionFactory.badRequest(MessageConstant.E_DEP_011);
+    }
 
-    // 3. Execution
     AssignEmployeeToDepartmentRequest addRequest =
         departmentEmployeeConverter.toAssignEmployeeToDepartmentRequest(request);
-
-    departmentEmployeeRepository.removeEmployeeFromDepartment(fromDept, empId);
-    departmentEmployeeRepository.addEmployeeToDepartment(addRequest, toDept);
-
+    departmentEmployeeRepository.removeEmployeeFromDepartment(
+        request.getFromDepartmentCode(), request.getEmployeeId());
+    departmentEmployeeRepository.addEmployeeToDepartment(addRequest, request.getToDepartmentCode());
     return Map.of(
-        DepartmentEmployeeConstant.EMPLOYEE_ID, empId,
-        DepartmentEmployeeConstant.FROM_DEPARTMENT_CODE, fromDept,
-        DepartmentEmployeeConstant.TO_DEPARTMENT_CODE, toDept);
+        DepartmentEmployeeConstant.EMPLOYEE_ID,
+        request.getEmployeeId(),
+        DepartmentEmployeeConstant.FROM_DEPARTMENT_CODE,
+        request.getFromDepartmentCode(),
+        DepartmentEmployeeConstant.TO_DEPARTMENT_CODE,
+        request.getToDepartmentCode());
   }
 
   /**
@@ -125,37 +128,28 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
       List<AssignEmployeeToDepartmentRequest> requests, String departmentCode) {
     departmentService.validateExists(departmentCode);
 
-    if (requests == null || requests.isEmpty()) {
-      return DepartmentEmployeeBatchResultDto.builder()
-          .successful(Collections.emptyList())
-          .failed(Collections.emptyList())
-          .build();
+    List<String> successful = new ArrayList<>();
+    List<BatchErrorDto> failed = new ArrayList<>();
+
+    for (AssignEmployeeToDepartmentRequest request : requests) {
+      try {
+        employeeService.validateExists(request.getEmployeeId());
+
+        DepartmentEmployeeDto existingEmployeeInDepartment =
+            departmentEmployeeRepository.findEmployeeInDepartment(
+                departmentCode, request.getEmployeeId());
+        if (existingEmployeeInDepartment != null) {
+          throw ExceptionFactory.badRequest(MessageConstant.E_DEP_011);
+        }
+
+        departmentEmployeeRepository.addEmployeeToDepartment(request, departmentCode);
+        successful.add(request.getEmployeeId());
+      } catch (Exception e) {
+        String errorMessage = i18nService.getMessage(e.getMessage());
+        failed.add(buildBatchError(request.getEmployeeId(), errorMessage));
+      }
     }
-
-    // 1. Prepare Data
-    List<String> requestEmployeeIds =
-        requests.stream().map(AssignEmployeeToDepartmentRequest::getEmployeeId).toList();
-
-    Set<String> existingIds =
-        new HashSet<>(
-            departmentEmployeeRepository.findEmployeeIdsInDepartment(
-                departmentCode, requestEmployeeIds));
-
-    // 2. Process Requests
-    BatchProcessResultDto<AssignEmployeeToDepartmentRequest> result =
-        processAddBatchRequests(requests, existingIds);
-
-    // 3. Execute Valid Requests
-    if (!result.getToInsert().isEmpty()) {
-      departmentEmployeeRepository.addEmployeesToDepartmentBatch(
-          result.getToInsert(), departmentCode);
-    }
-
-    // Lưu ý: Dùng .getSuccessfulIds() và .getErrors()
-    return DepartmentEmployeeBatchResultDto.builder()
-        .successful(result.getSuccessfulIds())
-        .failed(result.getErrors())
-        .build();
+    return new DepartmentEmployeeBatchResultDto(successful, failed);
   }
 
   /**
@@ -170,31 +164,27 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
       List<String> employeeIds, String departmentCode) {
     departmentService.validateExists(departmentCode);
 
-    if (employeeIds == null || employeeIds.isEmpty()) {
-      return DepartmentEmployeeBatchResultDto.builder()
-          .successful(Collections.emptyList())
-          .failed(Collections.emptyList())
-          .build();
+    List<String> successful = new ArrayList<>();
+    List<BatchErrorDto> failed = new ArrayList<>();
+
+    for (String employeeId : employeeIds) {
+      try {
+        employeeService.validateExists(employeeId);
+
+        DepartmentEmployeeDto existingEmployeeInDepartment =
+            departmentEmployeeRepository.findEmployeeInDepartment(departmentCode, employeeId);
+        if (existingEmployeeInDepartment == null) {
+          throw ExceptionFactory.notFound(MessageConstant.E_DEP_010);
+        }
+
+        departmentEmployeeRepository.removeEmployeeFromDepartment(departmentCode, employeeId);
+        successful.add(employeeId);
+      } catch (Exception e) {
+        String errorMessage = i18nService.getMessage(e.getMessage());
+        failed.add(buildBatchError(employeeId, errorMessage));
+      }
     }
-
-    // 1. Prepare Data
-    Set<String> existingIds =
-        new HashSet<>(
-            departmentEmployeeRepository.findEmployeeIdsInDepartment(departmentCode, employeeIds));
-
-    // 2. Process Requests (Sử dụng hàm Helper mới)
-    BatchProcessResultDto<String> result = processRemoveBatchRequests(employeeIds, existingIds);
-
-    // 3. Execute Valid Requests
-    if (!result.getToInsert().isEmpty()) {
-      departmentEmployeeRepository.removeEmployeesFromDepartmentBatch(
-          result.getToInsert(), departmentCode);
-    }
-
-    return DepartmentEmployeeBatchResultDto.builder()
-        .successful(result.getSuccessfulIds())
-        .failed(result.getErrors())
-        .build();
+    return DepartmentEmployeeBatchResultDto.builder().successful(successful).failed(failed).build();
   }
 
   /**
@@ -219,77 +209,12 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
         roleCode);
   }
 
-  /** Helper to build BatchErrorDto. */
+  /** Helper method to build a BatchErrorDto. */
   private BatchErrorDto buildBatchError(String employeeId, String errorMessage) {
     return BatchErrorDto.builder()
         .clientId(employeeId)
         .errorCode(MessageConstant.S_TEAM_EMP_001)
         .errorMessage(errorMessage)
         .build();
-  }
-
-  /** Validates if an employee can be transferred. */
-  private void validateTransferEligibility(String fromDept, String toDept, String empId) {
-    boolean isInFromDept =
-        departmentEmployeeRepository.findEmployeeInDepartment(fromDept, empId) != null;
-    if (!isInFromDept) {
-      throw ExceptionFactory.notFound(MessageConstant.E_DEP_010);
-    }
-
-    boolean isInToDept =
-        departmentEmployeeRepository.findEmployeeInDepartment(toDept, empId) != null;
-    if (isInToDept) {
-      throw ExceptionFactory.badRequest(MessageConstant.E_DEP_011);
-    }
-  }
-
-  /** Helper to process add requests logic separate from DB execution. */
-  private BatchProcessResultDto<AssignEmployeeToDepartmentRequest> processAddBatchRequests(
-      List<AssignEmployeeToDepartmentRequest> requests, Set<String> existingIds) {
-
-    List<AssignEmployeeToDepartmentRequest> toInsert = new ArrayList<>();
-    List<String> successfulIds = new ArrayList<>();
-    List<BatchErrorDto> errors = new ArrayList<>();
-
-    for (AssignEmployeeToDepartmentRequest req : requests) {
-      String empId = req.getEmployeeId();
-
-      if (existingIds.contains(empId)) {
-        errors.add(buildBatchError(empId, i18nService.getMessage(MessageConstant.E_DEP_011)));
-        continue;
-      }
-
-      try {
-        // Validation check (e.g. check if user exists in system)
-        employeeService.validateExists(empId);
-
-        toInsert.add(req);
-        successfulIds.add(empId);
-      } catch (Exception e) {
-        errors.add(buildBatchError(empId, i18nService.getMessage(e.getMessage())));
-      }
-    }
-
-    return new BatchProcessResultDto<>(toInsert, successfulIds, errors);
-  }
-
-  /** Helper to process remove requests logic. */
-  private BatchProcessResultDto<String> processRemoveBatchRequests(
-      List<String> employeeIds, Set<String> existingIds) {
-
-    List<String> toDelete = new ArrayList<>();
-    List<String> successfulIds = new ArrayList<>();
-    List<BatchErrorDto> errors = new ArrayList<>();
-
-    for (String empId : employeeIds) {
-      if (existingIds.contains(empId)) {
-        toDelete.add(empId);
-        successfulIds.add(empId);
-      } else {
-        errors.add(buildBatchError(empId, i18nService.getMessage(MessageConstant.E_DEP_010)));
-      }
-    }
-
-    return new BatchProcessResultDto<>(toDelete, successfulIds, errors);
   }
 }

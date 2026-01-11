@@ -61,7 +61,7 @@ public class DepartmentRepository {
    * @param request the department activation request
    */
   public void activate(CreateDepartmentRequest request) {
-    mapper.activate(request.getDepartmentCode(), request.getDepartmentName());
+    mapper.activate(request);
   }
 
   /**
