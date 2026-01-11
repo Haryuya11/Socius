@@ -92,32 +92,4 @@ public interface DepartmentEmployeeMapper {
    * @return list of DepartmentEmployee entities
    */
   List<DepartmentEmployee> findByEmployeeIdIn(List<String> employeeIds);
-
-  /**
-   * Find employee IDs in a department from a list of employee IDs.
-   *
-   * @param departmentCode the department code
-   * @param employeeIds the list of employee IDs
-   * @return list of employee IDs present in the department
-   */
-  List<String> findEmployeeIdsInDepartment(
-      @Param("departmentCode") String departmentCode,
-      @Param("employeeIds") List<String> employeeIds);
-
-  /**
-   * Add multiple Employees to a Department in batch.
-   *
-   * @param entities the list of DepartmentEmployee entities to be added
-   */
-  void addEmployeesToDepartmentBatch(@Param("entities") List<DepartmentEmployee> entities);
-
-  /**
-   * Remove multiple Employees from a Department in batch.
-   *
-   * @param departmentCode the department code
-   * @param employeeIds the list of employee IDs to be removed
-   */
-  void removeEmployeesFromDepartmentBatch(
-      @Param("departmentCode") String departmentCode,
-      @Param("employeeIds") List<String> employeeIds);
 }

@@ -1,5 +1,6 @@
 package com.uit.sociusmvcapp.department.internal.persistence;
 
+import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
 import com.uit.sociusmvcapp.department.internal.domain.Department;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
@@ -39,10 +40,9 @@ public interface DepartmentMapper {
   /**
    * Reactivate a previously deleted Department.
    *
-   * @param departmentCode the department code
-   * @param departmentName the department name
+   * @param request the department reactivation request
    */
-  void activate(String departmentCode, String departmentName);
+  void activate(CreateDepartmentRequest request);
 
   /**
    * Get all Departments.
