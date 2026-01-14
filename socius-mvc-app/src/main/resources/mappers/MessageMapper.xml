@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.message.internal.persistence.MessageMapper">
+
+    <resultMap id="messageMap" type="com.uit.sociusmvcapp.message.internal.domain.Message">
+        <id property="id" column="id"/>
+        <result property="messageId" column="message_id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="content" column="content"/>
+        <result property="messageType" column="message_type"/>
+        <result property="parentMessageId" column="parent_message_id"/>
+        <result property="metadataJson" column="metadata_json"/>
+        <result property="isEdited" column="is_edited"/>
+        <result property="editedAt" column="edited_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <insert id="insert"
+            parameterType="com.uit.sociusmvcapp.message.internal.domain.Message"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO messages
+            (message_id, conversation_id, sender_id, content, message_type, parent_message_id, metadata_json)
+        VALUES (#{messageId}, #{conversationId}, #{senderId}, #{content}, #{messageType}, #{parentMessageId}, #{metadataJson}::jsonb)
+    </insert>
+
+    <select id="findByMessageId" resultMap="messageMap">
+        SELECT id, message_id, conversation_id, sender_id, content, message_type,
+               parent_message_id, metadata_json, is_edited, edited_at,
+               created_at, updated_at, deleted_at, delete_flag
+        FROM messages
+        WHERE message_id = #{messageId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="findByConversationId" resultMap="messageMap">
+        SELECT id, message_id, conversation_id, sender_id, content, message_type,
+               parent_message_id, metadata_json, is_edited, edited_at,
+               created_at, updated_at, deleted_at, delete_flag
+        FROM messages
+        WHERE conversation_id = #{conversationId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <if test="lastCreatedAt != null and lastId != null">
+            <![CDATA[
+            AND (
+                created_at < #{lastCreatedAt}
+                OR (created_at = #{lastCreatedAt} AND id < #{lastId})
+            )
+            ]]>
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <update id="updateContent">
+        UPDATE messages
+        SET content = #{content},
+            is_edited = true,
+            edited_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE message_id = #{messageId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="softDelete">
+        UPDATE messages
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE message_id = #{messageId}
+    </update>
+
+    <select id="countUnreadMessages" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM messages
+        WHERE conversation_id = #{conversationId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          <![CDATA[
+          AND id > COALESCE(#{lastReadMessageId}, 0)
+          ]]>
+    </select>
+
+</mapper>
