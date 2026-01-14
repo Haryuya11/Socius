@@ -53,6 +53,30 @@ public interface TeamEmployeeMapper {
   void insert(TeamEmployee teamEmployee);
 
   /**
+   * Batch insert team-employee relationships.
+   *
+   * @param teamEmployees the list of TeamEmployee entities to insert
+   */
+  void batchInsert(@Param("teamEmployees") List<TeamEmployee> teamEmployees);
+
+  /**
+   * Batch reactivate soft-deleted team-employee relationships.
+   *
+   * @param teamEmployees the list of TeamEmployee entities to reactivate
+   */
+  void batchReactivate(@Param("teamEmployees") List<TeamEmployee> teamEmployees);
+
+  /**
+   * Find soft-deleted team-employee relationships by team code and employee IDs.
+   *
+   * @param teamCode the team code
+   * @param employeeIds the list of employee IDs
+   * @return list of soft-deleted TeamEmployee entities
+   */
+  List<TeamEmployee> findSoftDeletedByTeamCodeAndEmployeeIds(
+      @Param("teamCode") String teamCode, @Param("employeeIds") List<String> employeeIds);
+
+  /**
    * Update leadership status for an employee in a team.
    *
    * @param teamCode the team code
@@ -83,6 +107,15 @@ public interface TeamEmployeeMapper {
    * @param employeeId the employee ID (user_id)
    */
   void softDelete(@Param("teamCode") String teamCode, @Param("employeeId") String employeeId);
+
+  /**
+   * Batch soft delete team-employee relationships.
+   *
+   * @param teamCode the team code
+   * @param employeeIds the list of employee IDs to remove
+   */
+  void batchSoftDelete(
+      @Param("teamCode") String teamCode, @Param("employeeIds") List<String> employeeIds);
 
   /**
    * Reactivate soft-deleted team-employee relationship.

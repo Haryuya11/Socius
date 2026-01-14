@@ -2,39 +2,41 @@ package com.uit.sociusmvcapp.workforce;
 
 import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeBatchResultDto;
 import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeDto;
-import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToTeamRequest;
-import com.uit.sociusmvcapp.workforce.dto.request.TeamEmployeeBatchAddRequest;
+import com.uit.sociusmvcapp.workforce.dto.TeamEmployeeRemovalResultDto;
+import com.uit.sociusmvcapp.workforce.dto.request.AddEmployeesToTeamRequest;
+import com.uit.sociusmvcapp.workforce.dto.request.RemoveEmployeesFromTeamRequest;
 import com.uit.sociusmvcapp.workforce.dto.request.TransferTeamEmployeeRequest;
+import java.util.List;
 
 /** Service interface for team-employee relationship operations. */
 public interface TeamEmployeeService {
 
   /**
-   * Add an employee to a team.
+   * Get all employees in a team.
    *
    * @param teamCode the team code
-   * @param request the employee addition request
-   * @return the created TeamEmployeeDto
+   * @return list of TeamEmployeeDto
    */
-  TeamEmployeeDto addEmployeeToTeam(String teamCode, AssignEmployeeToTeamRequest request);
+  List<TeamEmployeeDto> getEmployeesByTeamCode(String teamCode);
 
   /**
-   * Batch add employees to a team.
+   * Add employees to a team (supports both single and batch).
    *
    * @param teamCode the team code
-   * @param request the batch addition request
+   * @param request the batch addition request (can contain single or multiple employees)
    * @return BatchResultDto containing successful and failed operations
    */
-  TeamEmployeeBatchResultDto addEmployeesToTeam(
-      String teamCode, TeamEmployeeBatchAddRequest request);
+  TeamEmployeeBatchResultDto addEmployeesToTeam(String teamCode, AddEmployeesToTeamRequest request);
 
   /**
-   * Remove an employee from a team.
+   * Remove employees from a team (supports both single and batch).
    *
    * @param teamCode the team code
-   * @param employeeId the employee ID
+   * @param request the batch removal request (can contain single or multiple employees)
+   * @return TeamEmployeeRemovalResultDto containing removed IDs and failed operations
    */
-  void removeEmployeeFromTeam(String teamCode, String employeeId);
+  TeamEmployeeRemovalResultDto removeEmployeesFromTeam(
+      String teamCode, RemoveEmployeesFromTeamRequest request);
 
   /**
    * Change team lead.

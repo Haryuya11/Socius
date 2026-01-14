@@ -15,32 +15,49 @@
         <result property="deleteFlag" column="delete_flag"/>
     </resultMap>
 
+    <!-- Count -->
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT t.id)
+        FROM teams t
+        <where>
+            <if test="criteria != null">
+                <include refid="searchCondition"/>
+            </if>
+            AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+    </select>
+
+    <!-- Search -->
+    <select id="search" resultMap="teamResultMap">
+        SELECT
+        <include refid="baseTeamColumns"/>
+        FROM teams t
+        <where>
+            <if test="criteria != null">
+                <include refid="searchCondition"/>
+            </if>
+            AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+        <include refid="orderByClause"/>
+        <if test="limit != null">LIMIT #{limit}</if>
+        <if test="offset != null">OFFSET #{offset}</if>
+    </select>
+
     <!-- Select Queries -->
     <select id="findByTeamCode" resultMap="teamResultMap">
-        SELECT t.id,
-               t.team_code,
-               t.team_name,
-               t.department_code,
-               t.created_at,
-               t.updated_at,
-               t.deleted_at
+        SELECT
+        <include refid="baseTeamColumns"/>
         FROM teams t
         WHERE t.team_code = #{teamCode}
           AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </select>
 
     <select id="findDeletedByTeamCode" resultMap="teamResultMap">
-        SELECT id,
-               team_code,
-               team_name,
-               department_code,
-               created_at,
-               updated_at,
-               deleted_at,
-               delete_flag
-        FROM teams
-        WHERE team_code = #{teamCode}
-          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+        SELECT
+        <include refid="baseTeamColumns"/>
+        FROM teams t
+        WHERE t.team_code = #{teamCode}
+          AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
     </select>
 
     <select id="existsByTeamCode" resultType="java.lang.Boolean">
@@ -89,5 +106,57 @@
             delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
         WHERE team_code = #{teamCode}
     </update>
+
+    <!-- SQL Fragments -->
+    <!-- Fragment: Base team columns -->
+    <sql id="baseTeamColumns">
+        t.id,
+        t.team_code,
+        t.team_name,
+        t.department_code,
+        t.created_at,
+        t.updated_at,
+        t.deleted_at,
+        t.delete_flag
+    </sql>
+
+    <!-- SQL helper for search conditions -->
+    <sql id="searchCondition">
+        <!-- teamCode -->
+        <if test="criteria.teamCode != null and criteria.teamCode.trim() != ''">
+            <bind name="teamCodeLike" value="'%' + criteria.teamCode.trim() + '%'"/>
+            AND t.team_code LIKE #{teamCodeLike}
+        </if>
+        <!-- teamName -->
+        <if test="criteria.teamName != null and criteria.teamName.trim() != ''">
+            <bind name="teamNameLike" value="'%' + criteria.teamName.trim() + '%'"/>
+            AND t.team_name ILIKE #{teamNameLike}
+        </if>
+        <!-- departmentCode -->
+        <if test="criteria.departmentCode != null and criteria.departmentCode.trim() != ''">
+            AND t.department_code = #{criteria.departmentCode}
+        </if>
+    </sql>
+
+    <sql id="orderByClause">
+        <if test="sorts != null and !sorts.isEmpty()">
+            ORDER BY
+            <foreach collection="sorts" item="sort" separator=",">
+                <choose>
+                    <when test="sort.sortBy == 'team_code'">t.team_code</when>
+                    <when test="sort.sortBy == 'team_name'">t.team_name</when>
+                    <when test="sort.sortBy == 'department_code'">t.department_code</when>
+                    <otherwise>t.created_at</otherwise>
+                </choose>
+                <choose>
+                    <when test="sort.sortDirection == 'ASC'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </foreach>
+        </if>
+        <if test="sorts == null or sorts.isEmpty()">
+            ORDER BY t.created_at DESC
+        </if>
+    </sql>
 
 </mapper>

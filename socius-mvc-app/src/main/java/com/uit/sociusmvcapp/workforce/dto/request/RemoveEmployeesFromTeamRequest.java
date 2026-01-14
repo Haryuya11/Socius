@@ -9,16 +9,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Request object for adding employees to a team. Supports both single and multiple employee
- * additions.
+ * Request object for removing employees from a team. Supports both single and multiple employee
+ * removals.
  */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamEmployeeBatchAddRequest {
+public class RemoveEmployeesFromTeamRequest {
 
   @NotEmpty(message = "Employees list cannot be empty")
   @Valid
-  private List<AssignEmployeeToTeamRequest> employees;
+  private List<RemoveEmployeeFromTeamRequest> employees;
 }
