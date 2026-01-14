@@ -71,8 +71,10 @@ public class MessageServiceImpl implements MessageService {
     messageRepository.insert(message);
 
     // Update conversation's last message
-    conversationRepository.updateLastMessage(
-        request.getConversationId(), message.getId().longValue());
+    if (message.getId() != null) {
+      conversationRepository.updateLastMessage(
+          request.getConversationId(), message.getId().longValue());
+    }
 
     // Get the created message DTO
     MessageDto messageDto = messageRepository.findByMessageId(messageId);

@@ -20,6 +20,7 @@
         <result property="deleteFlag" column="delete_flag"/>
     </resultMap>
 
+    <!-- Note: Uses PostgreSQL-specific ::jsonb cast for metadata. PostgreSQL is the target database for this application. -->
     <insert id="insert"
             parameterType="com.uit.sociusmvcapp.message.internal.domain.Message"
             useGeneratedKeys="true"
