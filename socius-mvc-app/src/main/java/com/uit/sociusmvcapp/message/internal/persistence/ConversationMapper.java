@@ -70,4 +70,29 @@ public interface ConversationMapper {
    */
   void updateLastMessage(
       @Param("conversationId") String conversationId, @Param("lastMessageId") Long lastMessageId);
+
+  /**
+   * Find an existing DIRECT conversation between two users.
+   *
+   * @param employeeId1 the first employee ID
+   * @param employeeId2 the second employee ID
+   * @return the conversation if found, null otherwise
+   */
+  Conversation findDirectConversationBetweenUsers(
+      @Param("employeeId1") String employeeId1, @Param("employeeId2") String employeeId2);
+
+  /**
+   * Get all conversations for an employee with cursor-based pagination.
+   *
+   * @param employeeId the employee ID
+   * @param lastMessageAt the last message timestamp for cursor
+   * @param lastId the last conversation ID for cursor
+   * @param limit the maximum number of results
+   * @return the list of conversations
+   */
+  List<Conversation> findByEmployeeIdWithCursor(
+      @Param("employeeId") String employeeId,
+      @Param("lastMessageAt") java.time.LocalDateTime lastMessageAt,
+      @Param("lastId") Long lastId,
+      @Param("limit") int limit);
 }

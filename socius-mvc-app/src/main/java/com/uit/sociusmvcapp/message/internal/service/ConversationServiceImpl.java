@@ -5,18 +5,23 @@ import com.uit.sociusmvcapp.message.ConversationService;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
 import com.uit.sociusmvcapp.message.dto.ConversationParticipantDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantRequest;
-import com.uit.sociusmvcapp.message.dto.request.CreateConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.GetOrCreateDirectConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateParticipantSettingsRequest;
+import com.uit.sociusmvcapp.message.enums.ConversationType;
 import com.uit.sociusmvcapp.message.enums.ParticipantRole;
 import com.uit.sociusmvcapp.message.internal.domain.Conversation;
 import com.uit.sociusmvcapp.message.internal.domain.ConversationParticipant;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationParticipantRepository;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationRepository;
+import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
-import com.uit.sociusmvcapp.shared.response.PageResponse;
+import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -36,17 +41,69 @@ public class ConversationServiceImpl implements ConversationService {
 
   @Override
   @Transactional
-  public ConversationDto create(CreateConversationRequest request) {
+  public ConversationDto getOrCreateDirectConversation(
+      GetOrCreateDirectConversationRequest request) {
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String targetUserId = request.getTargetEmployeeId();
+
+    // Prevent creating conversation with self
+    if (currentUserId.equals(targetUserId)) {
+      throw ExceptionFactory.badRequest(MessageConstant.E_MSG_011);
+    }
+
+    // Check if direct conversation already exists between these two users
+    ConversationDto existingConversation =
+        conversationRepository.findDirectConversationBetweenUsers(currentUserId, targetUserId);
+
+    if (existingConversation != null) {
+      return existingConversation;
+    }
+
+    // Create new direct conversation
+    String conversationId = UUID.randomUUID().toString();
+
+    Conversation conversation =
+        Conversation.builder()
+            .conversationId(conversationId)
+            .type(ConversationType.DIRECT.getCode())
+            .createdBy(currentUserId)
+            .build();
+
+    conversationRepository.insert(conversation);
+
+    // Add both users as participants
+    List<ConversationParticipant> participants = new ArrayList<>();
+    participants.add(
+        ConversationParticipant.builder()
+            .conversationId(conversationId)
+            .employeeId(currentUserId)
+            .role(ParticipantRole.MEMBER.getCode())
+            .build());
+    participants.add(
+        ConversationParticipant.builder()
+            .conversationId(conversationId)
+            .employeeId(targetUserId)
+            .role(ParticipantRole.MEMBER.getCode())
+            .build());
+
+    participantRepository.insertBatch(participants);
+
+    return conversationRepository.findByConversationId(conversationId);
+  }
+
+  @Override
+  @Transactional
+  public ConversationDto createGroupConversation(CreateGroupConversationRequest request) {
     String currentUserId = userContentProvider.getUserContent().getClientId();
 
     // Generate unique conversation ID
     String conversationId = UUID.randomUUID().toString();
 
-    // Create conversation entity
+    // Create group conversation entity
     Conversation conversation =
         Conversation.builder()
             .conversationId(conversationId)
-            .type(request.getType())
+            .type(ConversationType.GROUP.getCode())
             .name(request.getName())
             .avatarUrl(request.getAvatarUrl())
             .createdBy(currentUserId)
@@ -135,15 +192,51 @@ public class ConversationServiceImpl implements ConversationService {
   }
 
   @Override
-  public PageResponse<ConversationDto> getConversations(int pageNumber, int pageSize) {
+  public CursorResponse<ConversationDto> getConversations(String cursor, int limit) {
     String currentUserId = userContentProvider.getUserContent().getClientId();
 
-    int offset = (pageNumber - 1) * pageSize;
-    List<ConversationDto> conversations =
-        conversationRepository.findByEmployeeId(currentUserId, pageSize, offset);
-    Integer total = conversationRepository.countByEmployeeId(currentUserId);
+    LocalDateTime lastMessageAt = null;
+    Long lastId = null;
 
-    return PageResponse.of(conversations, total, offset, pageSize);
+    // Decode cursor if provided
+    if (cursor != null && !cursor.isEmpty()) {
+      try {
+        String decoded = new String(Base64.getDecoder().decode(cursor));
+        String[] parts = decoded.split(CommonConstant.UNDERSCORE);
+        if (parts.length >= 2) {
+          lastMessageAt = LocalDateTime.parse(parts[CommonConstant.INIT_INDEX]);
+          lastId = Long.parseLong(parts[CommonConstant.ONE]);
+        }
+      } catch (IllegalArgumentException | java.time.format.DateTimeParseException e) {
+        log.warn("Invalid cursor format, ignoring cursor: {}", cursor);
+        // Continue without cursor - will return first page
+      }
+    }
+
+    List<ConversationDto> conversations =
+        conversationRepository.findByEmployeeIdWithCursor(
+            currentUserId, lastMessageAt, lastId, limit);
+
+    // Prepare next cursor
+    String nextCursor = null;
+    if (!conversations.isEmpty()) {
+      ConversationDto lastConversation =
+          conversations.get(conversations.size() - CommonConstant.ONE);
+      LocalDateTime cursorTime =
+          lastConversation.getLastMessageAt() != null
+              ? lastConversation.getLastMessageAt()
+              : lastConversation.getCreatedAt();
+      String cursorString =
+          cursorTime.toString() + CommonConstant.UNDERSCORE + lastConversation.getId();
+      nextCursor = Base64.getEncoder().encodeToString(cursorString.getBytes());
+    }
+
+    boolean hasNext = conversations.size() == limit;
+    return CursorResponse.<ConversationDto>builder()
+        .data(conversations)
+        .nextCursor(nextCursor)
+        .hasNext(hasNext)
+        .build();
   }
 
   @Override
@@ -164,6 +257,12 @@ public class ConversationServiceImpl implements ConversationService {
 
     // Verify user is a participant
     validateParticipant(conversationId, currentUserId);
+
+    // Verify this is a GROUP conversation (cannot add participants to DIRECT)
+    Conversation conversation = conversationRepository.findEntityByConversationId(conversationId);
+    if (conversation != null && ConversationType.DIRECT.getCode().equals(conversation.getType())) {
+      throw ExceptionFactory.badRequest(MessageConstant.E_MSG_012);
+    }
 
     // Check if employee is already a participant
     Boolean exists =

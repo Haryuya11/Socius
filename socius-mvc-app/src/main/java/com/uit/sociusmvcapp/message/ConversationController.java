@@ -3,11 +3,12 @@ package com.uit.sociusmvcapp.message;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
 import com.uit.sociusmvcapp.message.dto.ConversationParticipantDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantRequest;
-import com.uit.sociusmvcapp.message.dto.request.CreateConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.GetOrCreateDirectConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateParticipantSettingsRequest;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
-import com.uit.sociusmvcapp.shared.response.PageResponse;
+import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
 import jakarta.validation.Valid;
@@ -35,14 +36,37 @@ public class ConversationController {
   private final ConversationService conversationService;
 
   /**
-   * Create a new conversation.
+   * Get or create a direct conversation with another user. Implements lazy creation - returns
+   * existing conversation if it exists, creates new one otherwise.
    *
-   * @param request the conversation creation request
-   * @return ResponseEntity containing the created conversation
+   * @param request the request containing target employee ID
+   * @return ResponseEntity containing the conversation (existing or newly created)
    */
-  @PostMapping
-  public ResponseEntity<Response> create(@Valid @RequestBody CreateConversationRequest request) {
-    ConversationDto conversation = conversationService.create(request);
+  @PostMapping("/direct")
+  public ResponseEntity<Response> getOrCreateDirectConversation(
+      @Valid @RequestBody GetOrCreateDirectConversationRequest request) {
+    ConversationDto conversation = conversationService.getOrCreateDirectConversation(request);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_MSG_001)
+            .message(i18nService.getMessage(MessageConstant.S_MSG_001))
+            .data(conversation)
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Create a new group conversation explicitly.
+   *
+   * @param request the group conversation creation request
+   * @return ResponseEntity containing the created group conversation
+   */
+  @PostMapping("/group")
+  public ResponseEntity<Response> createGroupConversation(
+      @Valid @RequestBody CreateGroupConversationRequest request) {
+    ConversationDto conversation = conversationService.createGroupConversation(request);
     Response response =
         Response.builder()
             .success(true)
@@ -116,18 +140,17 @@ public class ConversationController {
   }
 
   /**
-   * Get all conversations for the current user.
+   * Get all conversations for the current user with cursor-based pagination.
    *
-   * @param pageNumber the page number
-   * @param pageSize the page size
-   * @return ResponseEntity containing paginated conversations
+   * @param cursor the cursor for pagination (optional)
+   * @param limit the number of items to retrieve
+   * @return ResponseEntity containing cursor-paginated conversations
    */
   @GetMapping
   public ResponseEntity<Response> getConversations(
-      @RequestParam(defaultValue = "1") int pageNumber,
-      @RequestParam(defaultValue = "20") int pageSize) {
-    PageResponse<ConversationDto> conversations =
-        conversationService.getConversations(pageNumber, pageSize);
+      @RequestParam(required = false) String cursor, @RequestParam(defaultValue = "20") int limit) {
+    CursorResponse<ConversationDto> conversations =
+        conversationService.getConversations(cursor, limit);
     Response response =
         Response.builder()
             .success(true)

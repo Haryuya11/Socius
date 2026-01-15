@@ -251,6 +251,12 @@ public final class MessageConstant {
   /** You have already added this reaction. */
   public static final String E_MSG_010 = "E_MSG_010";
 
+  /** Cannot create conversation with yourself. */
+  public static final String E_MSG_011 = "E_MSG_011";
+
+  /** Cannot add participants to direct conversations. */
+  public static final String E_MSG_012 = "E_MSG_012";
+
   // Success messages
   /** Conversation created successfully. */
   public static final String S_MSG_001 = "S_MSG_001";

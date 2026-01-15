@@ -83,4 +83,42 @@
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </update>
 
+    <!-- Find an existing DIRECT conversation between two users -->
+    <select id="findDirectConversationBetweenUsers" resultMap="conversationMap">
+        SELECT c.id, c.conversation_id, c.type, c.name, c.avatar_url, c.created_by,
+               c.last_message_id, c.last_message_at, c.created_at, c.updated_at, c.deleted_at, c.delete_flag
+        FROM conversations c
+        INNER JOIN conversation_participants cp1 ON c.conversation_id = cp1.conversation_id
+        INNER JOIN conversation_participants cp2 ON c.conversation_id = cp2.conversation_id
+        WHERE c.type = 'DIRECT'
+          AND c.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND cp1.employee_id = #{employeeId1}
+          AND cp1.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND cp2.employee_id = #{employeeId2}
+          AND cp2.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        LIMIT 1
+    </select>
+
+    <!-- Get conversations with cursor-based pagination -->
+    <!-- Cursor is based on COALESCE(last_message_at, created_at) for consistent ordering -->
+    <select id="findByEmployeeIdWithCursor" resultMap="conversationMap">
+        SELECT c.id, c.conversation_id, c.type, c.name, c.avatar_url, c.created_by,
+               c.last_message_id, c.last_message_at, c.created_at, c.updated_at, c.deleted_at, c.delete_flag
+        FROM conversations c
+        INNER JOIN conversation_participants cp ON c.conversation_id = cp.conversation_id
+        WHERE cp.employee_id = #{employeeId}
+          AND cp.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND c.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <if test="lastMessageAt != null and lastId != null">
+            <![CDATA[
+            AND (
+                COALESCE(c.last_message_at, c.created_at) < #{lastMessageAt}
+                OR (COALESCE(c.last_message_at, c.created_at) = #{lastMessageAt} AND c.id < #{lastId})
+            )
+            ]]>
+        </if>
+        ORDER BY COALESCE(c.last_message_at, c.created_at) DESC, c.id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

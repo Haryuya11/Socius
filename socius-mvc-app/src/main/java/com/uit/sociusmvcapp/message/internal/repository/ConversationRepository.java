@@ -98,4 +98,46 @@ public class ConversationRepository {
   public void updateLastMessage(String conversationId, Long lastMessageId) {
     conversationMapper.updateLastMessage(conversationId, lastMessageId);
   }
+
+  /**
+   * Find an existing DIRECT conversation between two users.
+   *
+   * @param employeeId1 the first employee ID
+   * @param employeeId2 the second employee ID
+   * @return the conversation DTO if found, null otherwise
+   */
+  public ConversationDto findDirectConversationBetweenUsers(
+      String employeeId1, String employeeId2) {
+    Conversation conversation =
+        conversationMapper.findDirectConversationBetweenUsers(employeeId1, employeeId2);
+    return conversationConverter.entityToDto(conversation);
+  }
+
+  /**
+   * Find an existing DIRECT conversation entity between two users.
+   *
+   * @param employeeId1 the first employee ID
+   * @param employeeId2 the second employee ID
+   * @return the conversation entity if found, null otherwise
+   */
+  public Conversation findDirectConversationEntityBetweenUsers(
+      String employeeId1, String employeeId2) {
+    return conversationMapper.findDirectConversationBetweenUsers(employeeId1, employeeId2);
+  }
+
+  /**
+   * Get all conversations for an employee with cursor-based pagination.
+   *
+   * @param employeeId the employee ID
+   * @param lastMessageAt the last message timestamp for cursor
+   * @param lastId the last conversation ID for cursor
+   * @param limit the maximum number of results
+   * @return the list of conversation DTOs
+   */
+  public List<ConversationDto> findByEmployeeIdWithCursor(
+      String employeeId, java.time.LocalDateTime lastMessageAt, Long lastId, int limit) {
+    List<Conversation> conversations =
+        conversationMapper.findByEmployeeIdWithCursor(employeeId, lastMessageAt, lastId, limit);
+    return conversationConverter.entitiesToDtos(conversations);
+  }
 }
