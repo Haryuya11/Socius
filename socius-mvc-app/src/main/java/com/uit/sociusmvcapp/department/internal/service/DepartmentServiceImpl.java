@@ -3,10 +3,15 @@ package com.uit.sociusmvcapp.department.internal.service;
 import com.uit.sociusmvcapp.department.DepartmentActionGuard;
 import com.uit.sociusmvcapp.department.DepartmentService;
 import com.uit.sociusmvcapp.department.dto.DepartmentDto;
+import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.SearchDepartmentRequest;
 import com.uit.sociusmvcapp.department.enums.DepartmentActionType;
 import com.uit.sociusmvcapp.department.internal.repository.DepartmentRepository;
+import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
+import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -95,16 +100,6 @@ public class DepartmentServiceImpl implements DepartmentService {
   }
 
   /**
-   * Get all departments.
-   *
-   * @return List of DepartmentDto representing all departments
-   */
-  @Override
-  public List<DepartmentDto> findAll() {
-    return departmentRepository.findAll();
-  }
-
-  /**
    * Validate if a department exists by its code.
    *
    * @param departmentCode the code of the department
@@ -114,5 +109,26 @@ public class DepartmentServiceImpl implements DepartmentService {
     if (!departmentRepository.existsByDepartmentCode(departmentCode)) {
       throw ExceptionFactory.notFound(MessageConstant.W_DEP_001);
     }
+  }
+
+  @Override
+  public PageResponse<SearchDepartmentDto> search(
+      PaginationSearchRequest<SearchDepartmentRequest> request) {
+    int limit = request.getPageRequest().getPageSize();
+    int offset = (request.getPageRequest().getPageNumber() - 1) * limit;
+    SearchDepartmentRequest criteria = request.getCondition();
+
+    // 1. Đếm tổng số bản ghi thỏa điều kiện
+    int total = departmentRepository.count(criteria);
+    if (total == CommonConstant.INIT_INDEX) {
+      log.info("No departments found matching the search criteria.");
+      return PageResponse.empty();
+    }
+
+    // 2. Tìm kiếm chi tiết với phân trang và sắp xếp
+    List<SearchDepartmentDto> result =
+        departmentRepository.search(criteria, request.getSortRequests(), limit, offset);
+
+    return PageResponse.of(result, total, offset, limit);
   }
 }

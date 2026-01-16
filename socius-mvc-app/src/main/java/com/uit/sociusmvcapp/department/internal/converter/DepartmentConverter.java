@@ -1,9 +1,11 @@
 package com.uit.sociusmvcapp.department.internal.converter;
 
 import com.uit.sociusmvcapp.department.dto.DepartmentDto;
+import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
 import com.uit.sociusmvcapp.department.internal.domain.Department;
 import com.uit.sociusmvcapp.shared.converter.BaseConverter;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -22,4 +24,20 @@ public interface DepartmentConverter extends BaseConverter<Department, Departmen
   @Mapping(target = "deletedAt", ignore = true)
   @Mapping(target = "deleteFlag", ignore = true)
   Department createRequestToEntity(CreateDepartmentRequest request);
+
+  /**
+   * Converts a Department entity to a SearchDepartmentDto.
+   *
+   * @param department The Department entity.
+   * @return The corresponding SearchDepartmentDto.
+   */
+  SearchDepartmentDto entityToSearchDto(Department department);
+
+  /**
+   * Converts a list of Department entities to a list of SearchDepartmentDtos.
+   *
+   * @param departments The list of Department entities.
+   * @return The corresponding list of SearchDepartmentDtos.
+   */
+  List<SearchDepartmentDto> entitiesToSearchDto(List<Department> departments);
 }
