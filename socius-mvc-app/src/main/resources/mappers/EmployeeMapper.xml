@@ -1,1 +1,247 @@
-<?xml version="1.0" encoding="UTF-8" ?><!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"        "http://mybatis.org/dtd/mybatis-3-mapper.dtd"><mapper namespace="com.uit.sociusmvcapp.employee.internal.persistence.EmployeeMapper">    <resultMap id="findAllEmployeeMap" type="com.uit.sociusmvcapp.employee.internal.domain.Employee">        <id property="id" column="id"/>        <result property="clientId" column="client_id"/>        <result property="userId" column="user_id"/>        <result property="firstName" column="first_name"/>        <result property="lastName" column="last_name"/>        <result property="systemRole" column="system_role"/>        <result property="imageUrl" column="image_url"/>        <result property="salary" column="salary"/>        <result property="createdAt" column="created_at"/>        <result property="updatedAt" column="updated_at"/>        <result property="deletedAt" column="deleted_at"/>        <result property="deleteFlag" column="delete_flag"/>    </resultMap>    <!-- Count -->    <select id="count" resultType="java.lang.Integer">        SELECT COUNT(DISTINCT e.id)        FROM employees e        <where>            <if test="criteria != null">                <include refid="searchCondition"/>            </if>            AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}        </where>    </select>    <!-- Select -->    <select id="search" resultMap="findAllEmployeeMap">        SELECT        <include refid="baseEmployeeColumns"/>        FROM employees e        <where>            <if test="criteria != null">                <include refid="searchCondition"/>            </if>            AND e.delete_flag = 0        </where>        <include refid="orderByClause"/>        <if test="limit != null">LIMIT #{limit}</if>        <if test="offset != null">OFFSET #{offset}</if>    </select>    <!-- Get By id -->    <select id="findByClientId" resultMap="findAllEmployeeMap">        SELECT            <include refid="baseEmployeeColumns"/>        FROM employees e        WHERE e.client_id = #{clientId}        AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}    </select>    <!-- Get Deleted By User id -->    <select id="findDeletedByUserId" resultMap="findAllEmployeeMap">        SELECT            <include refid="baseEmployeeColumns"/>        FROM employees e        WHERE user_id = #{userId}          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}    </select>    <!-- Get By User id -->    <select id="findByUserId" resultMap="findAllEmployeeMap">        SELECT            <include refid="baseEmployeeColumns"/>        FROM employees e        WHERE e.user_id = #{userId}          AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}    </select>    <select id="existsByClientId" resultType="java.lang.Boolean">        SELECT EXISTS(            SELECT 1            FROM employees            WHERE client_id = #{clientId}              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}        )    </select>    <!-- Create -->    <insert id="create">        INSERT INTO employees        (client_id,         user_id,         first_name,         last_name,         system_role,         image_url,         salary)        VALUES (#{clientId},                #{userId},                #{firstName},                #{lastName},                #{systemRole},                #{imageUrl},                #{salary})    </insert>    <!-- Update -->    <update id="update">        UPDATE employees        SET first_name  = #{firstName},            last_name   = #{lastName},            system_role = #{systemRole},            image_url   = #{imageUrl},            salary      = #{salary},            updated_at  = CURRENT_TIMESTAMP        WHERE client_id = #{clientId}          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}    </update>    <!-- Deactivate -->    <update id="deactivate">        UPDATE employees        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},            deleted_at  = CURRENT_TIMESTAMP,            updated_at  = CURRENT_TIMESTAMP        WHERE client_id = #{clientId}          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}    </update>    <update id="reactivate">        UPDATE employees        SET first_name  = #{firstName},            last_name   = #{lastName},            system_role = #{systemRole},            image_url   = #{imageUrl},            salary      = #{salary},            delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value},            deleted_at  = NULL,            updated_at  = CURRENT_TIMESTAMP        WHERE client_id = #{request.clientId}          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}    </update>    <!-- Sql Fragments -->    <!-- Fragment: Base employee columns -->    <sql id="baseEmployeeColumns">        e.id,        e.client_id,        e.user_id,        e.first_name,        e.last_name,        e.system_role,        e.image_url,        e.salary,        e.created_at,        e.updated_at,        e.deleted_at,        e.delete_flag    </sql>    <!-- Sql helper for search conditions -->    <sql id="searchCondition">        <!-- clientId -->        <if test="criteria.clientId != null and criteria.clientId.trim() != ''">            <bind name="clientIdLike"                  value="'%' + criteria.clientId.trim() + '%'"/>            AND e.client_id LIKE #{clientIdLike}        </if>        <!-- userId -->        <if test="criteria.userId != null and criteria.userId.trim() != ''">            <bind name="userIdLike"                  value="'%' + criteria.userId.trim() + '%'"/>            AND e.user_id LIKE #{userIdLike}        </if>        <!-- firstName -->        <if test="criteria.fullName != null and criteria.fullName.trim() != ''">            <bind name="fullNameLike" value="'%' + criteria.fullName.trim() + '%'"/>            AND concat_ws(' ', e.first_name, e.last_name) ILIKE #{fullNameLike}        </if>        <!-- systemRole -->        <if test="criteria.systemRole != null and criteria.systemRole.trim() != ''">            AND e.system_role = #{criteria.systemRole}        </if>        <!-- departmentCode -->        <if test="criteria.departmentCode != null and criteria.departmentCode.trim() != ''">            AND EXISTS (            SELECT 1            FROM department_employees de            WHERE de.employee_id = e.client_id            AND de.department_code = #{criteria.departmentCode}            AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value} )        </if>        <!-- teamCode -->        <if test="criteria.teamCode != null and criteria.teamCode.trim() != ''">            AND EXISTS (            SELECT 1            FROM team_employees te            WHERE te.employee_id = e.client_id            AND te.team_code = #{criteria.teamCode}            AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value})        </if>    </sql>    <sql id="orderByClause">        ORDER BY        <foreach collection="sorts" item="sort" separator=",">            <choose>                <when test="sort.sortBy == 'client_id'">client_id</when>                <when test="sort.sortBy == 'user_id'">user_id</when>                <when test="sort.sortBy == 'first_name'">first_name</when>                <when test="sort.sortBy == 'last_name'">last_name</when>                <when test="sort.sortBy == 'system_role'">system_role</when>                <when test="sort.sortBy == 'department_code'">                    (SELECT d.department_code                        FROM department_employees de                    INNER JOIN departments d ON de.department_code = d.department_code                        AND d.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}                    WHERE de.employee_id = e.client_id                        AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}                    LIMIT 1)                </when>                <when test="sort.sortBy == 'team_code'">                    (SELECT t.team_code                        FROM team_employees te                    INNER JOIN teams t ON te.team_code = t.team_code                        AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}                    WHERE te.employee_id = e.client_id                        AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}                    LIMIT 1)                </when>                <otherwise>created_at</otherwise>            </choose>            <choose>                <when test="sort.sortDirection == 'ASC'">ASC</when>                <otherwise>DESC</otherwise>            </choose>        </foreach>    </sql></mapper>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.employee.internal.persistence.EmployeeMapper">
+
+    <resultMap id="findAllEmployeeMap" type="com.uit.sociusmvcapp.employee.internal.domain.Employee">
+        <id property="id" column="id"/>
+        <result property="clientId" column="client_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="firstName" column="first_name"/>
+        <result property="lastName" column="last_name"/>
+        <result property="systemRole" column="system_role"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="salary" column="salary"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <!-- Count -->
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT e.id)
+        FROM employees e
+        <where>
+            <if test="criteria != null">
+                <include refid="searchCondition"/>
+            </if>
+            AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+    </select>
+
+    <!-- Select -->
+    <select id="search" resultMap="findAllEmployeeMap">
+        SELECT
+        <include refid="baseEmployeeColumns"/>
+        FROM employees e
+        <where>
+            <if test="criteria != null">
+                <include refid="searchCondition"/>
+            </if>
+            AND e.delete_flag = 0
+        </where>
+        <include refid="orderByClause"/>
+        <if test="limit != null">LIMIT #{limit}</if>
+        <if test="offset != null">OFFSET #{offset}</if>
+    </select>
+
+    <!-- Get By id -->
+    <select id="findByClientId" resultMap="findAllEmployeeMap">
+        SELECT
+            <include refid="baseEmployeeColumns"/>
+        FROM employees e
+        WHERE e.client_id = #{clientId}
+        AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Get Deleted By User id -->
+    <select id="findDeletedByUserId" resultMap="findAllEmployeeMap">
+        SELECT
+            <include refid="baseEmployeeColumns"/>
+        FROM employees e
+        WHERE user_id = #{userId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    </select>
+
+    <!-- Get By User id -->
+    <select id="findByUserId" resultMap="findAllEmployeeMap">
+        SELECT
+            <include refid="baseEmployeeColumns"/>
+        FROM employees e
+        WHERE e.user_id = #{userId}
+          AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <select id="existsByClientId" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM employees
+            WHERE client_id = #{clientId}
+              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+    <!-- Batch find employees by client IDs -->
+    <select id="findByClientIds" resultMap="findAllEmployeeMap">
+        SELECT
+        <include refid="baseEmployeeColumns"/>
+        FROM employees e
+        WHERE e.client_id IN
+        <foreach item="id" collection="clientIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND e.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Create -->
+    <insert id="create">
+        INSERT INTO employees
+        (client_id,
+         user_id,
+         first_name,
+         last_name,
+         system_role,
+         image_url,
+         salary)
+        VALUES (#{clientId},
+                #{userId},
+                #{firstName},
+                #{lastName},
+                #{systemRole},
+                #{imageUrl},
+                #{salary})
+    </insert>
+
+    <!-- Update -->
+    <update id="update">
+        UPDATE employees
+        SET first_name  = #{firstName},
+            last_name   = #{lastName},
+            system_role = #{systemRole},
+            image_url   = #{imageUrl},
+            salary      = #{salary},
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Deactivate -->
+    <update id="deactivate">
+        UPDATE employees
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at  = CURRENT_TIMESTAMP,
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="reactivate">
+        UPDATE employees
+        SET first_name  = #{firstName},
+            last_name   = #{lastName},
+            system_role = #{systemRole},
+            image_url   = #{imageUrl},
+            salary      = #{salary},
+            delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value},
+            deleted_at  = NULL,
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{request.clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    </update>
+    <!-- Sql Fragments -->
+    <!-- Fragment: Base employee columns -->
+    <sql id="baseEmployeeColumns">
+        e.id,
+        e.client_id,
+        e.user_id,
+        e.first_name,
+        e.last_name,
+        e.system_role,
+        e.image_url,
+        e.salary,
+        e.created_at,
+        e.updated_at,
+        e.deleted_at,
+        e.delete_flag
+    </sql>
+
+    <!-- Sql helper for search conditions -->
+    <sql id="searchCondition">
+        <!-- clientId -->
+        <if test="criteria.clientId != null and criteria.clientId.trim() != ''">
+            <bind name="clientIdLike"
+                  value="'%' + criteria.clientId.trim() + '%'"/>
+            AND e.client_id LIKE #{clientIdLike}
+        </if>
+        <!-- userId -->
+        <if test="criteria.userId != null and criteria.userId.trim() != ''">
+            <bind name="userIdLike"
+                  value="'%' + criteria.userId.trim() + '%'"/>
+            AND e.user_id LIKE #{userIdLike}
+        </if>
+        <!-- firstName -->
+        <if test="criteria.fullName != null and criteria.fullName.trim() != ''">
+            <bind name="fullNameLike" value="'%' + criteria.fullName.trim() + '%'"/>
+            AND concat_ws(' ', e.first_name, e.last_name) ILIKE #{fullNameLike}
+        </if>
+        <!-- systemRole -->
+        <if test="criteria.systemRole != null and criteria.systemRole.trim() != ''">
+            AND e.system_role = #{criteria.systemRole}
+        </if>
+        <!-- departmentCode -->
+        <if test="criteria.departmentCode != null and criteria.departmentCode.trim() != ''">
+            AND EXISTS (
+            SELECT 1
+            FROM department_employees de
+            WHERE de.employee_id = e.client_id
+            AND de.department_code = #{criteria.departmentCode}
+            AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value} )
+        </if>
+        <!-- teamCode -->
+        <if test="criteria.teamCode != null and criteria.teamCode.trim() != ''">
+            AND EXISTS (
+            SELECT 1
+            FROM team_employees te
+            WHERE te.employee_id = e.client_id
+            AND te.team_code = #{criteria.teamCode}
+            AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value})
+        </if>
+    </sql>
+
+    <sql id="orderByClause">
+        ORDER BY
+        <foreach collection="sorts" item="sort" separator=",">
+            <choose>
+                <when test="sort.sortBy == 'client_id'">client_id</when>
+                <when test="sort.sortBy == 'user_id'">user_id</when>
+                <when test="sort.sortBy == 'first_name'">first_name</when>
+                <when test="sort.sortBy == 'last_name'">last_name</when>
+                <when test="sort.sortBy == 'system_role'">system_role</when>
+                <when test="sort.sortBy == 'department_code'">
+                    (SELECT d.department_code
+                        FROM department_employees de
+                    INNER JOIN departments d ON de.department_code = d.department_code
+                        AND d.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+                    WHERE de.employee_id = e.client_id
+                        AND de.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+                    LIMIT 1)
+                </when>
+                <when test="sort.sortBy == 'team_code'">
+                    (SELECT t.team_code
+                        FROM team_employees te
+                    INNER JOIN teams t ON te.team_code = t.team_code
+                        AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+                    WHERE te.employee_id = e.client_id
+                        AND te.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+                    LIMIT 1)
+                </when>
+                <otherwise>created_at</otherwise>
+            </choose>
+            <choose>
+                <when test="sort.sortDirection == 'ASC'">ASC</when>
+                <otherwise>DESC</otherwise>
+            </choose>
+        </foreach>
+    </sql>
+</mapper>

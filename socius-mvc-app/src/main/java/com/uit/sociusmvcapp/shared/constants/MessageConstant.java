@@ -218,4 +218,95 @@ public final class MessageConstant {
 
   /** Team employees batch add result. */
   public static final String S_TEAM_EMP_005 = "S_TEAM_EMP_005";
+
+  // ================= TASK MODULE =================
+  /** Task created successfully. */
+  public static final String S_TASK_001 = "S_TASK_001";
+
+  /** Sub-task created successfully. */
+  public static final String S_TASK_002 = "S_TASK_002";
+
+  /** Task retrieved successfully. */
+  public static final String S_TASK_003 = "S_TASK_003";
+
+  /** Task updated successfully. */
+  public static final String S_TASK_004 = "S_TASK_004";
+
+  /** Task deleted successfully. */
+  public static final String S_TASK_005 = "S_TASK_005";
+
+  /** Tasks search completed successfully. */
+  public static final String S_TASK_006 = "S_TASK_006";
+
+  /** Sub-tasks retrieved successfully. */
+  public static final String S_TASK_007 = "S_TASK_007";
+
+  /** Task submitted for review successfully. */
+  public static final String S_TASK_008 = "S_TASK_008";
+
+  /** Task approved successfully. */
+  public static final String S_TASK_009 = "S_TASK_009";
+
+  /** Task rejected successfully. */
+  public static final String S_TASK_010 = "S_TASK_010";
+
+  /** Task cancelled successfully. */
+  public static final String S_TASK_011 = "S_TASK_011";
+
+  /** Task reopened successfully. */
+  public static final String S_TASK_012 = "S_TASK_012";
+
+  /** Task not found. */
+  public static final String E_TASK_001 = "E_TASK_001";
+
+  /** Task creation failed. */
+  public static final String E_TASK_002 = "E_TASK_002";
+
+  /** Task update failed. */
+  public static final String E_TASK_003 = "E_TASK_003";
+
+  /** Task deletion failed. */
+  public static final String E_TASK_004 = "E_TASK_004";
+
+  /** Parent task not found. */
+  public static final String E_TASK_005 = "E_TASK_005";
+
+  /** Invalid task status transition. */
+  public static final String E_TASK_006 = "E_TASK_006";
+
+  /** Only receiver can submit task for review. */
+  public static final String E_TASK_007 = "E_TASK_007";
+
+  /** Only sender can approve/reject task. */
+  public static final String E_TASK_008 = "E_TASK_008";
+
+  /** Parent task must be approved before approval. */
+  public static final String E_TASK_009 = "E_TASK_009";
+
+  /** All sub-tasks must be approved before parent approval. */
+  public static final String E_TASK_010 = "E_TASK_010";
+
+  /** Cannot delete task with approved status. */
+  public static final String E_TASK_011 = "E_TASK_011";
+
+  /** Sub-task date range must be within parent date range. */
+  public static final String E_TASK_012 = "E_TASK_012";
+
+  /** Parent task cannot be created for already existing parent. */
+  public static final String E_TASK_013 = "E_TASK_013";
+
+  /** Cannot cancel approved task. */
+  public static final String E_TASK_014 = "E_TASK_014";
+
+  /** Task activity logging failed. */
+  public static final String E_TASK_015 = "E_TASK_015";
+
+  /** Cannot reopen task that is not overdue or rejected. */
+  public static final String E_TASK_016 = "E_TASK_016";
+
+  /** Only sender or receiver can reopen task. */
+  public static final String E_TASK_017 = "E_TASK_017";
+
+  /** Cannot create sub-task of a sub-task (only 2 levels allowed). */
+  public static final String E_TASK_018 = "E_TASK_018";
 }

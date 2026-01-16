@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.task.internal.persistence.TaskActivityMapper">
+
+    <!-- Result Map -->
+    <resultMap id="TaskActivityResultMap" type="com.uit.sociusmvcapp.task.internal.domain.TaskActivity">
+        <id property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="activityType" column="activity_type" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="actorId" column="actor_id"/>
+        <result property="note" column="note"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="TaskActivityDtoResultMap" type="com.uit.sociusmvcapp.task.dto.TaskActivityDto">
+        <id property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="activityType" column="activity_type" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="actorId" column="actor_id"/>
+        <result property="actorName" column="actor_name"/>
+        <result property="note" column="note"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- Insert Activity -->
+    <insert id="insert" parameterType="com.uit.sociusmvcapp.task.internal.domain.TaskActivity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO task_activities (
+            task_id, activity_type, actor_id, note, created_at
+        ) VALUES (
+            #{taskId},
+            #{activityType, typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler},
+            #{actorId},
+            #{note},
+            NOW()
+        )
+    </insert>
+
+    <!-- Find By Task ID -->
+    <select id="findByTaskId" resultMap="TaskActivityDtoResultMap">
+        SELECT 
+            ta.*,
+            e.first_name || ' ' || e.last_name as actor_name
+        FROM task_activities ta
+        LEFT JOIN employees e ON ta.actor_id = e.client_id
+        WHERE ta.task_id = #{taskId}
+        ORDER BY ta.created_at DESC
+    </select>
+
+</mapper>
