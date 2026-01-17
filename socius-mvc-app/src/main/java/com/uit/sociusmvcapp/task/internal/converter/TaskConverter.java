@@ -19,6 +19,19 @@ import org.mapstruct.MappingConstants;
 public interface TaskConverter extends BaseConverter<Task, TaskDto> {
 
   /**
+   * Override entityToDto to explicitly ignore enriched fields that are populated separately in
+   * TaskRepository.
+   *
+   * @param entity the Task entity
+   * @return the corresponding TaskDto
+   */
+  @Override
+  @Mapping(target = "receiverName", ignore = true)
+  @Mapping(target = "senderName", ignore = true)
+  @Mapping(target = "subTaskCount", ignore = true)
+  TaskDto entityToDto(Task entity);
+
+  /**
    * Converts a CreateTaskRequest to a Task entity. Normalizes LocalDate to LocalDateTime: - Start
    * date: 00:00:01 - Due date: 23:59:59
    *

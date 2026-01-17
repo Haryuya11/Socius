@@ -40,12 +40,15 @@
     <!-- Find By Task ID -->
     <select id="findByTaskId" resultMap="TaskActivityDtoResultMap">
         SELECT 
-            ta.*,
-            e.first_name || ' ' || e.last_name as actor_name
-        FROM task_activities ta
-        LEFT JOIN employees e ON ta.actor_id = e.client_id
-        WHERE ta.task_id = #{taskId}
-        ORDER BY ta.created_at DESC
+            id,
+            task_id,
+            activity_type,
+            actor_id,
+            note,
+            created_at
+        FROM task_activities
+        WHERE task_id = #{taskId}
+        ORDER BY created_at DESC
     </select>
 
 </mapper>

@@ -33,6 +33,8 @@ import com.uit.sociusmvcapp.task.internal.repository.TaskRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -234,14 +236,17 @@ public class TaskServiceImpl implements TaskService {
     }
     List<TaskActivityDto> activities = taskRepository.getActivities(taskId);
 
-    // Enrich with actor names
-    activities.forEach(
-        activity -> {
-          if (activity.getActorId() != null) {
-            String actorName = employeeGateway.getEmployeeName(activity.getActorId());
-            activity.setActorName(actorName);
-          }
-        });
+    // Batch enrich actor names via gateway (avoid N+1 query)
+    Set<String> actorIds =
+        activities.stream()
+            .map(TaskActivityDto::getActorId)
+            .filter(java.util.Objects::nonNull)
+            .collect(java.util.stream.Collectors.toSet());
+
+    if (!actorIds.isEmpty()) {
+      Map<String, String> actorNames = employeeGateway.getEmployeeNames(actorIds);
+      activities.forEach(activity -> activity.setActorName(actorNames.get(activity.getActorId())));
+    }
 
     return activities;
   }
