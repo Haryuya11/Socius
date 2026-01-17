@@ -3,4 +3,10 @@
         "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
         "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
+    <!-- Suppress AbbreviationAsWordInName check for test method names -->
+    <suppress checks="AbbreviationAsWordInName" files=".*Test\.java$"/>
+    <!-- Suppress MethodName check for test methods to allow underscore naming -->
+    <suppress checks="MethodName" files=".*Test\.java$"/>
+    <!-- Suppress VariableDeclarationUsageDistance check for test files -->
+    <suppress checks="VariableDeclarationUsageDistance" files=".*Test\.java$"/>
 </suppressions>

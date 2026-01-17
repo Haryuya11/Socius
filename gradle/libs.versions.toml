@@ -8,6 +8,7 @@ springModulith = "1.4.3"
 # Database & Persistence
 mybatis = "3.0.5"
 postgresql = "42.7.8"
+h2 = "2.2.224"
 
 # Mapping & Utils
 mapstruct = "1.5.5.Final"
@@ -54,6 +55,7 @@ mybatis-spring-boot-starter-test = { module = "org.mybatis.spring.boot:mybatis-s
 
 # Database
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
 
 # MapStruct
 mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
