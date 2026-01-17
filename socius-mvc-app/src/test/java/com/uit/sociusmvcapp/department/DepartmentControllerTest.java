@@ -17,8 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,7 +27,19 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /** Unit tests for DepartmentController. Tests all endpoints with success scenarios. */
-@WebMvcTest(DepartmentController.class)
+@WebMvcTest(
+    controllers = DepartmentController.class,
+    excludeAutoConfiguration = {
+      org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
+      org.springframework.boot.autoconfigure.security.oauth2.client.servlet
+          .OAuth2ClientAutoConfiguration.class,
+      org.springframework.boot.autoconfigure.security.oauth2.resource.servlet
+          .OAuth2ResourceServerAutoConfiguration.class
+    },
+    excludeFilters =
+        @ComponentScan.Filter(
+            type = FilterType.REGEX,
+            pattern = "com\\.uit\\.sociusmvcapp\\.iam\\..*"))
 @ActiveProfiles("test")
 class DepartmentControllerTest {
 
@@ -57,7 +70,6 @@ class DepartmentControllerTest {
   }
 
   @Test
-  @WithMockUser
   void findByDepartmentCode_SUCCESS1() throws Exception {
     // Given
     String departmentCode = "IT";
@@ -81,7 +93,6 @@ class DepartmentControllerTest {
   }
 
   @Test
-  @WithMockUser
   void create_SUCCESS1() throws Exception {
     // Given
     Mockito.doNothing().when(departmentService).create(Mockito.any(CreateDepartmentRequest.class));
@@ -101,7 +112,6 @@ class DepartmentControllerTest {
   }
 
   @Test
-  @WithMockUser
   void update_SUCCESS1() throws Exception {
     // Given
     String departmentCode = "IT";
@@ -125,7 +135,6 @@ class DepartmentControllerTest {
   }
 
   @Test
-  @WithMockUser
   void deactivate_SUCCESS1() throws Exception {
     // Given
     String departmentCode = "IT";
@@ -145,7 +154,6 @@ class DepartmentControllerTest {
   }
 
   @Test
-  @WithMockUser
   void search_SUCCESS1() throws Exception {
     // Given
     SearchDepartmentDto searchDto1 =
