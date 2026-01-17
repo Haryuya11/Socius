@@ -79,8 +79,12 @@ public class MessageServiceImpl implements MessageService {
     // Get the created message DTO
     MessageDto messageDto = messageRepository.findByMessageId(messageId);
 
+    // Get participants for realtime event
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(request.getConversationId());
+
     // Publish real-time event
-    messagePublisher.publishNewMessage(messageDto);
+    messagePublisher.publishNewMessage(messageDto, targetUserIds);
 
     return messageDto;
   }
@@ -157,8 +161,12 @@ public class MessageServiceImpl implements MessageService {
 
     MessageDto updatedMessage = messageRepository.findByMessageId(messageId);
 
+    // Get participants for realtime event
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
+
     // Publish real-time event
-    messagePublisher.publishMessageUpdated(updatedMessage);
+    messagePublisher.publishMessageUpdated(updatedMessage, targetUserIds);
 
     return updatedMessage;
   }
@@ -181,8 +189,12 @@ public class MessageServiceImpl implements MessageService {
     String conversationId = message.getConversationId();
     messageRepository.softDelete(messageId);
 
+    // Get participants for realtime event
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(conversationId);
+
     // Publish real-time event
-    messagePublisher.publishMessageDeleted(conversationId, messageId);
+    messagePublisher.publishMessageDeleted(conversationId, messageId, targetUserIds);
   }
 
   @Override

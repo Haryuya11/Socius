@@ -3,10 +3,12 @@ package com.uit.sociusmvcapp.message.internal.service;
 import com.uit.sociusmvcapp.message.MessagePublisher;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageEventPayload;
+import com.uit.sociusmvcapp.message.dto.TypingIndicatorPayload;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.enums.RealtimeEventType;
 import com.uit.sociusmvcapp.shared.event.RealtimeEvent;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -28,35 +30,37 @@ public class MessagePublisherImpl implements MessagePublisher {
   private String routingKey;
 
   @Override
-  public void publishNewMessage(MessageDto message) {
+  public void publishNewMessage(MessageDto message, List<String> targetUserIds) {
     MessageEventPayload payload = MessageEventPayload.forMessage(message);
     RealtimeEvent<MessageEventPayload> event =
-        RealtimeEvent.message(RealtimeEventType.NEW_MESSAGE, payload);
+        RealtimeEvent.message(RealtimeEventType.NEW_MESSAGE, payload, targetUserIds);
     publish(event, RealtimeEventType.NEW_MESSAGE);
   }
 
   @Override
-  public void publishMessageUpdated(MessageDto message) {
+  public void publishMessageUpdated(MessageDto message, List<String> targetUserIds) {
     MessageEventPayload payload = MessageEventPayload.forMessage(message);
     RealtimeEvent<MessageEventPayload> event =
-        RealtimeEvent.message(RealtimeEventType.MESSAGE_UPDATED, payload);
+        RealtimeEvent.message(RealtimeEventType.MESSAGE_UPDATED, payload, targetUserIds);
     publish(event, RealtimeEventType.MESSAGE_UPDATED);
   }
 
   @Override
-  public void publishMessageDeleted(String conversationId, String messageId) {
+  public void publishMessageDeleted(
+      String conversationId, String messageId, List<String> targetUserIds) {
     MessageEventPayload payload = MessageEventPayload.forDeletion(conversationId, messageId);
     RealtimeEvent<MessageEventPayload> event =
-        RealtimeEvent.message(RealtimeEventType.MESSAGE_DELETED, payload);
+        RealtimeEvent.message(RealtimeEventType.MESSAGE_DELETED, payload, targetUserIds);
     publish(event, RealtimeEventType.MESSAGE_DELETED);
   }
 
   @Override
-  public void publishTypingIndicator(String conversationId, String employeeId, boolean isTyping) {
-    MessageEventPayload payload =
-        MessageEventPayload.forTyping(conversationId, employeeId, isTyping);
-    RealtimeEvent<MessageEventPayload> event =
-        RealtimeEvent.message(RealtimeEventType.TYPING_INDICATOR, payload);
+  public void publishTypingIndicator(
+      String conversationId, String employeeId, boolean isTyping, List<String> targetUserIds) {
+    TypingIndicatorPayload payload =
+        TypingIndicatorPayload.of(conversationId, employeeId, isTyping);
+    RealtimeEvent<TypingIndicatorPayload> event =
+        RealtimeEvent.message(RealtimeEventType.TYPING_INDICATOR, payload, targetUserIds);
     publish(event, RealtimeEventType.TYPING_INDICATOR);
   }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.uit.sociusmvcapp.shared.enums.RealtimeDomain;
 import com.uit.sociusmvcapp.shared.enums.RealtimeEventType;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,7 +34,13 @@ public class RealtimeEvent<T> {
   /** The type of event (NEW_MESSAGE, MESSAGE_UPDATED, etc.). Optional for some events. */
   private RealtimeEventType eventType;
 
-  /** The event payload - can be MessageDto, NotificationDto, or any other DTO. */
+  /**
+   * Target user IDs - determines who should receive this event. MESSAGE -> participants of
+   * conversation NOTIFICATION -> size = 1 (receiver) SYSTEM -> multiple users or entire system
+   */
+  private List<String> targetUserIds;
+
+  /** The event payload - can be MessageEventPayload, NotificationEventPayload, etc. */
   private T payload;
 
   /** Timestamp when the event was created. */
@@ -46,13 +53,16 @@ public class RealtimeEvent<T> {
    *
    * @param eventType the event type
    * @param payload the message payload
+   * @param targetUserIds the list of target user IDs
    * @param <T> the payload type
    * @return the realtime event
    */
-  public static <T> RealtimeEvent<T> message(RealtimeEventType eventType, T payload) {
+  public static <T> RealtimeEvent<T> message(
+      RealtimeEventType eventType, T payload, List<String> targetUserIds) {
     return RealtimeEvent.<T>builder()
         .domain(RealtimeDomain.MESSAGE)
         .eventType(eventType)
+        .targetUserIds(targetUserIds)
         .payload(payload)
         .build();
   }
@@ -62,13 +72,16 @@ public class RealtimeEvent<T> {
    *
    * @param eventType the event type
    * @param payload the notification payload
+   * @param targetUserIds the list of target user IDs
    * @param <T> the payload type
    * @return the realtime event
    */
-  public static <T> RealtimeEvent<T> notification(RealtimeEventType eventType, T payload) {
+  public static <T> RealtimeEvent<T> notification(
+      RealtimeEventType eventType, T payload, List<String> targetUserIds) {
     return RealtimeEvent.<T>builder()
         .domain(RealtimeDomain.NOTIFICATION)
         .eventType(eventType)
+        .targetUserIds(targetUserIds)
         .payload(payload)
         .build();
   }
@@ -78,13 +91,16 @@ public class RealtimeEvent<T> {
    *
    * @param eventType the event type
    * @param payload the system payload
+   * @param targetUserIds the list of target user IDs
    * @param <T> the payload type
    * @return the realtime event
    */
-  public static <T> RealtimeEvent<T> system(RealtimeEventType eventType, T payload) {
+  public static <T> RealtimeEvent<T> system(
+      RealtimeEventType eventType, T payload, List<String> targetUserIds) {
     return RealtimeEvent.<T>builder()
         .domain(RealtimeDomain.SYSTEM)
         .eventType(eventType)
+        .targetUserIds(targetUserIds)
         .payload(payload)
         .build();
   }

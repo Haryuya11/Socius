@@ -19,17 +19,11 @@ public class MessageEventPayload {
   /** The conversation ID. */
   private String conversationId;
 
-  /** The full message data (for NEW_MESSAGE, MESSAGE_UPDATED). */
-  private MessageDto message;
-
-  /** The message ID (for MESSAGE_DELETED). */
+  /** The message ID (for MESSAGE_DELETED or references). */
   private String messageId;
 
-  /** The employee ID (for TYPING_INDICATOR). */
-  private String employeeId;
-
-  /** Whether the user is typing (for TYPING_INDICATOR). */
-  private Boolean isTyping;
+  /** The full message data (for NEW_MESSAGE, MESSAGE_UPDATED). */
+  private MessageDto message;
 
   /**
    * Creates a payload for new message or message update events.
@@ -40,6 +34,7 @@ public class MessageEventPayload {
   public static MessageEventPayload forMessage(MessageDto message) {
     return MessageEventPayload.builder()
         .conversationId(message.getConversationId())
+        .messageId(message.getMessageId())
         .message(message)
         .build();
   }
@@ -55,23 +50,6 @@ public class MessageEventPayload {
     return MessageEventPayload.builder()
         .conversationId(conversationId)
         .messageId(messageId)
-        .build();
-  }
-
-  /**
-   * Creates a payload for typing indicator events.
-   *
-   * @param conversationId the conversation ID
-   * @param employeeId the employee ID
-   * @param isTyping whether the user is typing
-   * @return the payload
-   */
-  public static MessageEventPayload forTyping(
-      String conversationId, String employeeId, boolean isTyping) {
-    return MessageEventPayload.builder()
-        .conversationId(conversationId)
-        .employeeId(employeeId)
-        .isTyping(isTyping)
         .build();
   }
 }
