@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.task.internal.persistence.TaskMapper">
+
+    <!-- Result Maps -->
+    <resultMap id="TaskResultMap" type="com.uit.sociusmvcapp.task.internal.domain.Task">
+        <id property="id" column="id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="teamCode" column="team_code"/>
+        <result property="departmentCode" column="department_code"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="status" column="status" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="priority" column="priority" typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+        <result property="startDate" column="start_date"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+
+
+    <!-- SQL Fragments -->
+    <!-- Fragment: Base task entity columns -->
+    <sql id="baseTaskColumns">
+        t.id,
+        t.parent_id,
+        t.receiver_id,
+        t.sender_id,
+        t.team_code,
+        t.department_code,
+        t.title,
+        t.description,
+        t.delivery_type,
+        t.status,
+        t.priority,
+        t.start_date,
+        t.due_date,
+        t.created_at,
+        t.updated_at,
+        t.deleted_at,
+        t.delete_flag
+    </sql>
+
+
+
+    <!-- Fragment: Order by clause -->
+    <sql id="orderByClause">
+        <if test="sorts != null and !sorts.isEmpty()">
+            ORDER BY
+            <foreach collection="sorts" item="sort" separator=",">
+                <choose>
+                    <when test="sort.sortBy == 'dueDate'">t.due_date</when>
+                    <when test="sort.sortBy == 'priority'">t.priority</when>
+                    <when test="sort.sortBy == 'status'">t.status</when>
+                    <when test="sort.sortBy == 'startDate'">t.start_date</when>
+                    <when test="sort.sortBy == 'title'">t.title</when>
+                    <otherwise>t.created_at</otherwise>
+                </choose>
+                <choose>
+                    <when test="sort.sortDirection == 'ASC'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </foreach>
+        </if>
+        <if test="sorts == null or sorts.isEmpty()">
+            ORDER BY t.created_at DESC
+        </if>
+    </sql>
+
+    <!-- Insert Task -->
+    <insert id="insert" parameterType="com.uit.sociusmvcapp.task.internal.domain.Task" 
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tasks (
+            parent_id, receiver_id, sender_id, team_code, department_code,
+            title, description, delivery_type, status, priority,
+            start_date, due_date, created_at, updated_at, delete_flag
+        ) VALUES (
+            #{parentId}, #{receiverId}, #{senderId}, #{teamCode}, #{departmentCode},
+            #{title}, #{description}, #{deliveryType}, 
+            #{status, typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler},
+            #{priority, typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler},
+            #{startDate}, #{dueDate}, NOW(), NOW(), ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </insert>
+
+    <!-- Update Task -->
+    <update id="update" parameterType="com.uit.sociusmvcapp.task.internal.domain.Task">
+        UPDATE tasks
+        SET receiver_id = #{receiverId},
+            title = #{title},
+            description = #{description},
+            delivery_type = #{deliveryType},
+            priority = #{priority, typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler},
+            start_date = #{startDate},
+            due_date = #{dueDate},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Soft Delete -->
+    <update id="softDelete">
+        UPDATE tasks
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Find By ID -->
+    <select id="findById" resultMap="TaskResultMap">
+        SELECT
+        <include refid="baseTaskColumns"/>
+        FROM tasks t
+        WHERE t.id = #{id}
+          AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Check if task exists by ID -->
+    <select id="existsById" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM tasks
+            WHERE id = #{id}
+              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+
+
+    <!-- Find By Parent ID -->
+    <select id="findByParentId" resultMap="TaskResultMap">
+        SELECT
+        <include refid="baseTaskColumns"/>
+        FROM tasks t
+        WHERE t.parent_id = #{parentId}
+          AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        ORDER BY t.created_at DESC
+    </select>
+
+    <!-- Search Tasks -->
+    <select id="search" resultMap="TaskResultMap">
+        SELECT
+        <include refid="baseTaskColumns"/>
+        FROM tasks t
+        <where>
+            <if test="request != null">
+                <include refid="searchFilters"/>
+            </if>
+            AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+        <include refid="orderByClause"/>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- Count Tasks -->
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM tasks t
+        <where>
+            <if test="request != null">
+                <include refid="searchFilters"/>
+            </if>
+            AND t.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+    </select>
+
+    <!-- Search Filters SQL Fragment -->
+    <sql id="searchFilters">
+        <!-- Filter by receiver -->
+        <if test="request.receiverId != null">
+            <choose>
+                <when test="request.receiverId == 'me'">
+                    AND t.receiver_id = #{currentUserId}
+                </when>
+                <otherwise>
+                    AND t.receiver_id = #{request.receiverId}
+                </otherwise>
+            </choose>
+        </if>
+
+        <!-- Filter by sender -->
+        <if test="request.senderId != null">
+            <choose>
+                <when test="request.senderId == 'me'">
+                    AND t.sender_id = #{currentUserId}
+                </when>
+                <otherwise>
+                    AND t.sender_id = #{request.senderId}
+                </otherwise>
+            </choose>
+        </if>
+
+        <!-- Filter by team -->
+        <if test="request.teamCode != null">
+            AND t.team_code = #{request.teamCode}
+        </if>
+
+        <!-- Filter by department -->
+        <if test="request.departmentCode != null">
+            AND t.department_code = #{request.departmentCode}
+        </if>
+
+        <!-- Filter by status -->
+        <if test="request.status != null and request.status.size() > 0">
+            AND t.status IN
+            <foreach item="s" collection="request.status" open="(" separator="," close=")">
+                #{s, javaType=com.uit.sociusmvcapp.task.enums.TaskStatus, typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler}
+            </foreach>
+        </if>
+
+        <!-- Filter by priority -->
+        <if test="request.priority != null">
+            AND t.priority = #{request.priority, javaType=com.uit.sociusmvcapp.task.enums.TaskPriority, typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler}
+        </if>
+
+        <!-- Filter by parent -->
+        <if test="request.parentId != null">
+            AND t.parent_id = #{request.parentId}
+        </if>
+
+        <!-- Only parent tasks -->
+        <if test="request.isParent != null and request.isParent == true">
+            AND t.parent_id IS NULL
+        </if>
+
+        <!-- Filter overdue -->
+        <if test="request.overdue != null and request.overdue == true">
+            AND t.due_date &lt; NOW() 
+            AND t.status IN (0, 1)
+        </if>
+
+        <!-- Filter by due date range -->
+        <if test="request.dueDateFrom != null">
+            AND t.due_date &gt;= #{request.dueDateFrom}
+        </if>
+        <if test="request.dueDateTo != null">
+            AND t.due_date &lt;= #{request.dueDateTo}
+        </if>
+
+        <!-- Search in title/description -->
+        <if test="request.search != null and request.search != ''">
+            AND (
+                LOWER(t.title) LIKE LOWER(CONCAT('%', #{request.search}, '%'))
+                OR LOWER(t.description) LIKE LOWER(CONCAT('%', #{request.search}, '%'))
+            )
+        </if>
+    </sql>
+
+    <!-- Update Status -->
+    <update id="updateStatus">
+        UPDATE tasks
+        SET status = #{statusCode},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Mark Overdue Tasks (Scheduled Job) -->
+    <update id="markOverdueTasks">
+        UPDATE tasks
+        SET status = 4,
+            updated_at = NOW()
+        WHERE delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND status IN (0, 1)
+          AND due_date &lt; NOW()
+    </update>
+
+    <!-- Check if Has Children -->
+    <select id="hasChildren" resultType="boolean">
+        SELECT COUNT(*) &gt; 0
+        FROM tasks
+        WHERE parent_id = #{taskId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Count Children -->
+    <select id="countChildren" resultType="int">
+        SELECT COUNT(*)
+        FROM tasks
+        WHERE parent_id = #{parentId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <!-- Check All Children Approved -->
+    <select id="areAllChildrenApproved" resultType="boolean">
+        SELECT COUNT(*) = 0
+        FROM tasks
+        WHERE parent_id = #{parentId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND status != 2
+    </select>
+
+    <!-- Cascade Delete Children -->
+    <update id="cascadeDeleteChildren">
+        UPDATE tasks
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = NOW()
+        WHERE parent_id = #{parentId}
+    </update>
+
+    <!-- Cascade Cancel Children -->
+    <update id="cascadeCancelChildren">
+        UPDATE tasks
+        SET status = 5,
+            updated_at = NOW()
+        WHERE parent_id = #{parentId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+</mapper>
