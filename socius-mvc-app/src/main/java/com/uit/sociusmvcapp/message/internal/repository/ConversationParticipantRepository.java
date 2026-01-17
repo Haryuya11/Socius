@@ -61,6 +61,18 @@ public class ConversationParticipantRepository {
   }
 
   /**
+   * Get all employee IDs for participants in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @return the list of employee IDs
+   */
+  public List<String> findEmployeeIdsByConversationId(String conversationId) {
+    List<ConversationParticipant> participants =
+        participantMapper.findByConversationId(conversationId);
+    return participants.stream().map(ConversationParticipant::getEmployeeId).toList();
+  }
+
+  /**
    * Update participant settings (mute, pin).
    *
    * @param conversationId the conversation ID
