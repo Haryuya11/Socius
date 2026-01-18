@@ -1,11 +1,15 @@
 package com.uit.sociusmvcapp.department;
 
 import com.uit.sociusmvcapp.department.dto.DepartmentDto;
+import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.SearchDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
+import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,7 +82,7 @@ public class DepartmentController {
    */
   @PutMapping("/{departmentCode}")
   public ResponseEntity<Response> update(
-      @RequestBody CreateDepartmentRequest request, @PathVariable String departmentCode) {
+      @RequestBody UpdateDepartmentRequest request, @PathVariable String departmentCode) {
     departmentService.update(request, departmentCode);
     Response response =
         Response.builder()
@@ -111,13 +115,15 @@ public class DepartmentController {
   }
 
   /**
-   * Get all departments.
+   * Search for departments with pagination.
    *
-   * @return ResponseEntity containing the list of all departments
+   * @param request the pagination search request containing search criteria
+   * @return ResponseEntity containing paginated department data
    */
-  @GetMapping
-  public ResponseEntity<Response> findAll() {
-    List<DepartmentDto> departments = departmentService.findAll();
+  @PostMapping("/search")
+  public ResponseEntity<Response> search(
+      @RequestBody PaginationSearchRequest<SearchDepartmentRequest> request) {
+    PageResponse<SearchDepartmentDto> departments = departmentService.search(request);
 
     Response response =
         Response.builder()

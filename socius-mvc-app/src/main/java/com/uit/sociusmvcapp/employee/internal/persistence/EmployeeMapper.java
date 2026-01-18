@@ -4,6 +4,7 @@ import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.employee.internal.domain.Employee;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
 import java.util.List;
+import java.util.Set;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -93,4 +94,12 @@ public interface EmployeeMapper {
    * @return true if the employee exists, false otherwise
    */
   boolean existsByClientId(String clientId);
+
+  /**
+   * Batch find employees by client IDs.
+   *
+   * @param clientIds set of employee client IDs
+   * @return list of Employee entities
+   */
+  List<Employee> findByClientIds(@Param("clientIds") Set<String> clientIds);
 }

@@ -8,6 +8,7 @@ import com.uit.sociusmvcapp.employee.internal.converter.EmployeeConverter;
 import com.uit.sociusmvcapp.employee.internal.persistence.EmployeeMapper;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -119,5 +120,18 @@ public class EmployeeRepository {
    */
   public boolean existsByClientId(String clientId) {
     return employeeMapper.existsByClientId(clientId);
+  }
+
+  /**
+   * Batch find employees by client IDs.
+   *
+   * @param clientIds set of employee client IDs
+   * @return list of EmployeeDtos matching the client IDs
+   */
+  public List<EmployeeDto> findByClientIds(Set<String> clientIds) {
+    if (clientIds == null || clientIds.isEmpty()) {
+      return List.of();
+    }
+    return employeeConverter.entitiesToDtos(employeeMapper.findByClientIds(clientIds));
   }
 }

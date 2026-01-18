@@ -51,6 +51,18 @@ public final class ExceptionFactory {
   }
 
   /**
+   * Creates a {@link BusinessException} representing a <b>403 Forbidden</b> error. Used when a user
+   * lacks permission to access a resource.
+   *
+   * @param code the i18n message code
+   * @param args optional message arguments (nullable)
+   * @return a {@link BusinessException} with status {@link HttpStatus#FORBIDDEN}
+   */
+  public static BusinessException forbidden(String code, Object... args) {
+    return createBusinessException(HttpStatus.FORBIDDEN, code, args);
+  }
+
+  /**
    * Creates a {@link BusinessException} representing a <b>500 Internal Server Error</b>. Used for
    * unexpected or unhandled failures.
    *

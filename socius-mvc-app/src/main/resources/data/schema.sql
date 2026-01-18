@@ -107,16 +107,34 @@ CREATE TABLE IF NOT EXISTS department_employees
 
 CREATE TABLE IF NOT EXISTS tasks
 (
-    id            SERIAL PRIMARY KEY,
-    receiver_id   SERIAL NOT NULL,
-    sender_id     SERIAL NOT NULL,
-    payload       TEXT   NOT NULL,
-    status        SMALLINT  DEFAULT 0,
-    delivery_type SMALLINT  DEFAULT 0,
-    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at    TIMESTAMP,
-    delete_flag   SMALLINT  DEFAULT 0
+    id               SERIAL PRIMARY KEY,
+    parent_id        INTEGER NULL,
+    receiver_id      VARCHAR(50) NOT NULL,
+    sender_id        VARCHAR(50) NOT NULL,
+    team_code        VARCHAR(10) NOT NULL,
+    department_code  VARCHAR(10) NOT NULL,
+    title            VARCHAR(200) NOT NULL,
+    description      TEXT,
+    delivery_type    SMALLINT DEFAULT 0,
+    status           SMALLINT DEFAULT 0,   -- 0=IN_PROGRESS, 1=PENDING, 2=APPROVED, 3=REJECTED, 4=OVERDUE, 5=CANCELLED
+    priority         SMALLINT DEFAULT 1,   -- 0=LOW, 1=MEDIUM, 2=HIGH
+    start_date       TIMESTAMP NOT NULL,
+    due_date         TIMESTAMP NOT NULL,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at       TIMESTAMP,
+    delete_flag      SMALLINT DEFAULT 0
+);
+
+-- Task Activities History
+CREATE TABLE IF NOT EXISTS task_activities
+(
+    id              SERIAL PRIMARY KEY,
+    task_id         INTEGER NOT NULL,
+    activity_type   SMALLINT NOT NULL,           -- 0=SUBMIT, 1=APPROVE, 2=REJECT, 3=CANCEL, 4=REOPEN
+    actor_id        VARCHAR(50) NOT NULL,
+    note            TEXT,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS notifications

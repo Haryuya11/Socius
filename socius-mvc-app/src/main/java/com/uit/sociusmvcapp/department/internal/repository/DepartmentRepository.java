@@ -1,9 +1,13 @@
 package com.uit.sociusmvcapp.department.internal.repository;
 
 import com.uit.sociusmvcapp.department.dto.DepartmentDto;
+import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.SearchDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.department.internal.converter.DepartmentConverter;
 import com.uit.sociusmvcapp.department.internal.persistence.DepartmentMapper;
+import com.uit.sociusmvcapp.shared.request.SortRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -41,9 +45,10 @@ public class DepartmentRepository {
    * Update an existing department record.
    *
    * @param request the department update request
+   * @param departmentCode the department code
    */
-  public void update(CreateDepartmentRequest request) {
-    mapper.update(converter.createRequestToEntity(request));
+  public void update(UpdateDepartmentRequest request, String departmentCode) {
+    mapper.update(converter.updateRequestToEntity(request, departmentCode));
   }
 
   /**
@@ -65,15 +70,6 @@ public class DepartmentRepository {
   }
 
   /**
-   * Get all Departments.
-   *
-   * @return list of DepartmentDto representing all departments
-   */
-  public List<DepartmentDto> findAll() {
-    return converter.entitiesToDtos(mapper.findAll());
-  }
-
-  /**
    * Get deleted DepartmentDto by department code.
    *
    * @param departmentCode the department code
@@ -91,5 +87,29 @@ public class DepartmentRepository {
    */
   public boolean existsByDepartmentCode(String departmentCode) {
     return mapper.existsByDepartmentCode(departmentCode);
+  }
+
+  /**
+   * Search for departments based on criteria, sorting, limit, and offset.
+   *
+   * @param criteria the search criteria
+   * @param sorts the sorting options
+   * @param limit the maximum number of records to return
+   * @param offset the starting point for records to return
+   * @return list of SearchDepartmentDto matching the search criteria
+   */
+  public List<SearchDepartmentDto> search(
+      SearchDepartmentRequest criteria, List<SortRequest> sorts, int limit, int offset) {
+    return converter.entitiesToSearchDto(mapper.search(criteria, sorts, limit, offset));
+  }
+
+  /**
+   * Count the number of departments matching the search criteria.
+   *
+   * @param criteria the search criteria
+   * @return the count of matching departments
+   */
+  public int count(SearchDepartmentRequest criteria) {
+    return mapper.count(criteria);
   }
 }

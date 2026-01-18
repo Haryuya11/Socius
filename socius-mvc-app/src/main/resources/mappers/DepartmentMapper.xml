@@ -3,7 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.uit.sociusmvcapp.department.internal.persistence.DepartmentMapper">
 
-    <resultMap id="findAllDepartmentMap" type="com.uit.sociusmvcapp.department.internal.domain.Department">
+    <resultMap id="departmentResultMap" type="com.uit.sociusmvcapp.department.internal.domain.Department">
         <id property="id" column="id"/>
         <result property="departmentCode" column="department_code"/>
         <result property="departmentName" column="department_name"/>
@@ -13,17 +13,38 @@
         <result property="deleteFlag" column="delete_flag"/>
     </resultMap>
 
+    <select id="count" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT d.id)
+        FROM departments d
+        <where>
+            <if test="criteria != null">
+                <include refid="searchCondition"/>
+            </if>
+            AND d.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+    </select>
+
     <!-- Get By department code -->
-    <select id="findByDepartmentCode" resultMap="findAllDepartmentMap">
-        SELECT id,
-               department_code,
-               department_name,
-               created_at,
-               updated_at,
-               deleted_at,
-               delete_flag
-        FROM departments
-        WHERE department_code = #{departmentCode}
+    <select id="findByDepartmentCode" resultMap="departmentResultMap">
+        SELECT
+        <include refid="baseDepartmentColumns"/>
+        FROM departments d
+        WHERE d.department_code = #{departmentCode}
+    </select>
+
+    <select id="search" resultMap="departmentResultMap">
+        SELECT
+        <include refid="baseDepartmentColumns"/>
+        FROM departments d
+        <where>
+            <if test="criteria != null">
+                <include refid="searchCondition"/>
+            </if>
+            AND d.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        </where>
+        <include refid="orderByClause"/>
+        <if test="limit != null">LIMIT #{limit}</if>
+        <if test="offset != null">OFFSET #{offset}</if>
     </select>
 
     <!-- Create -->
@@ -65,30 +86,13 @@
         AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
     </update>
 
-    <!-- Get All Departments -->
-    <select id="findAll" resultMap="findAllDepartmentMap">
-        SELECT id,
-               department_code,
-               department_name,
-               created_at,
-               updated_at,
-               deleted_at,
-               delete_flag
-        FROM departments
-    </select>
-
     <!-- Find Deleted Department By department code -->
-    <select id="findDeletedByDepartmentCode" resultMap="findAllDepartmentMap">
-        SELECT id,
-               department_code,
-               department_name,
-               created_at,
-               updated_at,
-               deleted_at,
-               delete_flag
-        FROM departments
-        WHERE department_code = #{departmentCode}
-        AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    <select id="findDeletedByDepartmentCode" resultMap="departmentResultMap">
+        SELECT
+        <include refid="baseDepartmentColumns"/>
+        FROM departments d
+        WHERE d.department_code = #{departmentCode}
+        AND d.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
     </select>
 
 
@@ -99,4 +103,45 @@
             WHERE department_code = #{departmentCode}
               AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value})
     </select>
+
+    <sql id="baseDepartmentColumns">
+        d.id,
+        d.department_code,
+        d.department_name,
+        d.created_at,
+        d.updated_at,
+        d.deleted_at,
+        d.delete_flag
+    </sql>
+
+    <sql id="searchCondition">
+        <if test="criteria.departmentCode != null and criteria.departmentCode.trim() != ''">
+            <bind name="codeLike" value="'%' + criteria.departmentCode.trim() + '%'"/>
+            AND d.department_code LIKE #{codeLike}
+        </if>
+        <if test="criteria.departmentName != null and criteria.departmentName.trim() != ''">
+            <bind name="nameLike" value="'%' + criteria.departmentName.trim() + '%'"/>
+            AND d.department_name ILIKE #{nameLike}
+        </if>
+    </sql>
+
+    <sql id="orderByClause">
+        <if test="sorts != null and !sorts.isEmpty()">
+            ORDER BY
+            <foreach collection="sorts" item="sort" separator=",">
+                <choose>
+                    <when test="sort.sortBy == 'department_code'">d.department_code</when>
+                    <when test="sort.sortBy == 'department_name'">d.department_name</when>
+                    <otherwise>d.created_at</otherwise>
+                </choose>
+                <choose>
+                    <when test="sort.sortDirection == 'ASC'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </foreach>
+        </if>
+        <if test="sorts == null or sorts.isEmpty()">
+            ORDER BY d.created_at DESC
+        </if>
+    </sql>
 </mapper>
