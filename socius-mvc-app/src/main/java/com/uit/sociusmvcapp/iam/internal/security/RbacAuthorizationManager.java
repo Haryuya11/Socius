@@ -4,6 +4,7 @@ import com.uit.sociusmvcapp.iam.ApiPermissionService;
 import com.uit.sociusmvcapp.iam.internal.dto.ApiPermissionDto;
 import com.uit.sociusmvcapp.shared.constants.AuthConstant;
 import com.uit.sociusmvcapp.shared.constants.SecurityConstant;
+import java.util.Map;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +31,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
   private final ApiPermissionService apiPermissionService;
   private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-  private static final String SYSTEM_FULL_PERMISSION = "system.full";
-
   @Override
   public AuthorizationDecision check(
       Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
@@ -40,7 +39,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     String httpMethod = context.getRequest().getMethod();
 
     // Skip OPTIONS requests (CORS preflight)
-    if ("OPTIONS".equalsIgnoreCase(httpMethod)) {
+    if (AuthConstant.HTTP_METHOD_OPTIONS.equalsIgnoreCase(httpMethod)) {
       return new AuthorizationDecision(true);
     }
 
@@ -58,7 +57,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     }
 
     // Check if user has system.full permission (SYS_ADMIN)
-    if (hasAuthority(authentication, SYSTEM_FULL_PERMISSION)) {
+    if (hasAuthority(authentication, AuthConstant.PERMISSION_SYSTEM_FULL)) {
       log.debug(
           "Access granted: User has system.full permission for [{} {}]", httpMethod, requestUri);
       return new AuthorizationDecision(true);
@@ -130,10 +129,15 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     // For team-scoped permissions, extract team code and check scoped authority
     if (AuthConstant.SCOPE_TEAM.equalsIgnoreCase(resource)) {
       String teamCode =
-          extractPathVariable(requiredPermission.getUrlPattern(), requestUri, "teamCode");
+          extractPathVariable(
+              requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_TEAM_CODE);
       if (teamCode != null) {
         String scopedAuthority =
-            String.format("%s:%s:%s", AuthConstant.SCOPE_TEAM, teamCode, permissionCode);
+            String.format(
+                AuthConstant.SCOPED_AUTHORITY_FORMAT,
+                AuthConstant.SCOPE_TEAM,
+                teamCode,
+                permissionCode);
         return hasAuthority(authentication, scopedAuthority);
       }
     }
@@ -141,13 +145,22 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     // For department-scoped permissions, extract department code and check scoped authority
     if (AuthConstant.SCOPE_DEPARTMENT.equalsIgnoreCase(resource)) {
       String deptCode =
-          extractPathVariable(requiredPermission.getUrlPattern(), requestUri, "departmentCode");
+          extractPathVariable(
+              requiredPermission.getUrlPattern(),
+              requestUri,
+              AuthConstant.PATH_VAR_DEPARTMENT_CODE);
       if (deptCode == null) {
-        deptCode = extractPathVariable(requiredPermission.getUrlPattern(), requestUri, "deptCode");
+        deptCode =
+            extractPathVariable(
+                requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_DEPT_CODE);
       }
       if (deptCode != null) {
         String scopedAuthority =
-            String.format("%s:%s:%s", AuthConstant.SCOPE_DEPARTMENT, deptCode, permissionCode);
+            String.format(
+                AuthConstant.SCOPED_AUTHORITY_FORMAT,
+                AuthConstant.SCOPE_DEPARTMENT,
+                deptCode,
+                permissionCode);
         return hasAuthority(authentication, scopedAuthority);
       }
     }
@@ -178,7 +191,8 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
    */
   private String extractPathVariable(String urlPattern, String requestUri, String variableName) {
     try {
-      var variables = pathMatcher.extractUriTemplateVariables(urlPattern, requestUri);
+      Map<String, String> variables =
+          pathMatcher.extractUriTemplateVariables(urlPattern, requestUri);
       return variables.get(variableName);
     } catch (Exception e) {
       log.debug(
