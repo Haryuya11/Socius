@@ -219,6 +219,108 @@ public final class MessageConstant {
   /** Team employees batch add result. */
   public static final String S_TEAM_EMP_005 = "S_TEAM_EMP_005";
 
+  // ================= MESSAGE MODULE =================
+  // Error messages
+  /** Failed to publish message event. */
+  public static final String E_MSG_001 = "E_MSG_001";
+
+  /** Conversation not found. */
+  public static final String E_MSG_002 = "E_MSG_002";
+
+  /** Only the owner can delete this conversation. */
+  public static final String E_MSG_003 = "E_MSG_003";
+
+  /** Employee is already a participant in this conversation. */
+  public static final String E_MSG_004 = "E_MSG_004";
+
+  /** Cannot remove the owner from the conversation. */
+  public static final String E_MSG_005 = "E_MSG_005";
+
+  /** The owner cannot leave the conversation. */
+  public static final String E_MSG_006 = "E_MSG_006";
+
+  /** You are not a participant of this conversation. */
+  public static final String E_MSG_007 = "E_MSG_007";
+
+  /** Message not found. */
+  public static final String E_MSG_008 = "E_MSG_008";
+
+  /** You can only edit or delete your own messages. */
+  public static final String E_MSG_009 = "E_MSG_009";
+
+  /** You have already added this reaction. */
+  public static final String E_MSG_010 = "E_MSG_010";
+
+  /** Cannot create conversation with yourself. */
+  public static final String E_MSG_011 = "E_MSG_011";
+
+  /** Cannot add participants to direct conversations. */
+  public static final String E_MSG_012 = "E_MSG_012";
+
+  /** Duplicate employeeId in request. */
+  public static final String E_MSG_013 = "E_MSG_013";
+
+  // Success messages
+  /** Conversation created successfully. */
+  public static final String S_MSG_001 = "S_MSG_001";
+
+  /** Conversation retrieved successfully. */
+  public static final String S_MSG_002 = "S_MSG_002";
+
+  /** Conversation updated successfully. */
+  public static final String S_MSG_003 = "S_MSG_003";
+
+  /** Conversation deleted successfully. */
+  public static final String S_MSG_004 = "S_MSG_004";
+
+  /** Conversations retrieved successfully. */
+  public static final String S_MSG_005 = "S_MSG_005";
+
+  /** Participants retrieved successfully. */
+  public static final String S_MSG_006 = "S_MSG_006";
+
+  /** Participant added successfully. */
+  public static final String S_MSG_007 = "S_MSG_007";
+
+  /** Participant removed successfully. */
+  public static final String S_MSG_008 = "S_MSG_008";
+
+  /** Left conversation successfully. */
+  public static final String S_MSG_009 = "S_MSG_009";
+
+  /** Conversation settings updated successfully. */
+  public static final String S_MSG_010 = "S_MSG_010";
+
+  /** Messages marked as read successfully. */
+  public static final String S_MSG_011 = "S_MSG_011";
+
+  /** Message sent successfully. */
+  public static final String S_MSG_012 = "S_MSG_012";
+
+  /** Message retrieved successfully. */
+  public static final String S_MSG_013 = "S_MSG_013";
+
+  /** Messages retrieved successfully. */
+  public static final String S_MSG_014 = "S_MSG_014";
+
+  /** Message updated successfully. */
+  public static final String S_MSG_015 = "S_MSG_015";
+
+  /** Message deleted successfully. */
+  public static final String S_MSG_016 = "S_MSG_016";
+
+  /** Reaction added successfully. */
+  public static final String S_MSG_017 = "S_MSG_017";
+
+  /** Reaction removed successfully. */
+  public static final String S_MSG_018 = "S_MSG_018";
+
+  /** Reactions retrieved successfully. */
+  public static final String S_MSG_019 = "S_MSG_019";
+
+  /** Uploaded file successfully. */
+  public static final String S_MSG_020 = "S_MSG_020";
+
   // ================= TASK MODULE =================
   /** Task created successfully. */
   public static final String S_TASK_001 = "S_TASK_001";

@@ -2,8 +2,12 @@ package com.uit.sociusmvcapp.notification.internal.service;
 
 import com.uit.sociusmvcapp.notification.NotificationPublisher;
 import com.uit.sociusmvcapp.notification.dto.NotificationDto;
+import com.uit.sociusmvcapp.notification.dto.NotificationEventPayload;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.enums.RealtimeEventType;
+import com.uit.sociusmvcapp.shared.event.RealtimeEvent;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -35,8 +39,15 @@ public class NotificationPublisherImpl implements NotificationPublisher {
   @Override
   public void publishNotification(NotificationDto notification) {
     try {
-      rabbitTemplate.convertAndSend(exchangeName, routingKey, notification);
-      log.info("Published notification: {}", notification);
+      NotificationEventPayload payload = NotificationEventPayload.fromNotificationDto(notification);
+      List<String> targetUserIds = List.of(notification.getReceiverId());
+      RealtimeEvent<NotificationEventPayload> event =
+          RealtimeEvent.notification(RealtimeEventType.NEW_NOTIFICATION, payload, targetUserIds);
+      rabbitTemplate.convertAndSend(exchangeName, routingKey, event);
+      log.info(
+          "Published notification event: {} for receiver: {}",
+          RealtimeEventType.NEW_NOTIFICATION.getCode(),
+          notification.getReceiverId());
     } catch (Exception e) {
       log.error("Failed to publish notification", e);
       throw ExceptionFactory.badRequest(MessageConstant.E_NOTIFY_001);

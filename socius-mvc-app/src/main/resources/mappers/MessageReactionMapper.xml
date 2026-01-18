@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.message.internal.persistence.MessageReactionMapper">
+
+    <resultMap id="reactionMap" type="com.uit.sociusmvcapp.message.internal.domain.MessageReaction">
+        <id property="id" column="id"/>
+        <result property="messageId" column="message_id"/>
+        <result property="employeeId" column="employee_id"/>
+        <result property="reaction" column="reaction"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <insert id="insert"
+            parameterType="com.uit.sociusmvcapp.message.internal.domain.MessageReaction"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO message_reactions
+            (message_id, employee_id, reaction)
+        VALUES (#{messageId}, #{employeeId}, #{reaction})
+    </insert>
+
+    <select id="findByMessageId" resultMap="reactionMap">
+        SELECT id, message_id, employee_id, reaction, created_at, delete_flag
+        FROM message_reactions
+        WHERE message_id = #{messageId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        ORDER BY created_at ASC
+    </select>
+
+    <update id="softDelete">
+        UPDATE message_reactions
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+        WHERE message_id = #{messageId}
+          AND employee_id = #{employeeId}
+          AND reaction = #{reaction}
+    </update>
+
+    <select id="exists" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM message_reactions
+            WHERE message_id = #{messageId}
+              AND employee_id = #{employeeId}
+              AND reaction = #{reaction}
+              AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        )
+    </select>
+
+</mapper>

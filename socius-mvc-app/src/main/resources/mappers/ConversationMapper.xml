@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uit.sociusmvcapp.message.internal.persistence.ConversationMapper">
+
+    <resultMap id="conversationMap" type="com.uit.sociusmvcapp.message.internal.domain.Conversation">
+        <id property="id" column="id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="type" column="type"/>
+        <result property="name" column="name"/>
+        <result property="avatarUrl" column="avatar_url"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="lastMessageId" column="last_message_id"/>
+        <result property="lastMessageAt" column="last_message_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="deleteFlag" column="delete_flag"/>
+    </resultMap>
+
+    <insert id="insert"
+            parameterType="com.uit.sociusmvcapp.message.internal.domain.Conversation"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO conversations
+            (conversation_id, type, name, avatar_url, created_by)
+        VALUES (#{conversationId}, #{type}, #{name}, #{avatarUrl}, #{createdBy})
+    </insert>
+
+    <select id="findByConversationId" resultMap="conversationMap">
+        SELECT id, conversation_id, type, name, avatar_url, created_by,
+               last_message_id, last_message_at, created_at, updated_at, deleted_at, delete_flag
+        FROM conversations
+        WHERE conversation_id = #{conversationId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <update id="update">
+        UPDATE conversations
+        SET name = #{conversation.name},
+            avatar_url = #{conversation.avatarUrl},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE conversation_id = #{conversationId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <update id="softDelete">
+        UPDATE conversations
+        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value},
+            deleted_at = CURRENT_TIMESTAMP
+        WHERE conversation_id = #{conversationId}
+    </update>
+
+    <select id="findByEmployeeId" resultMap="conversationMap">
+        SELECT c.id, c.conversation_id, c.type, c.name, c.avatar_url, c.created_by,
+               c.last_message_id, c.last_message_at, c.created_at, c.updated_at, c.deleted_at, c.delete_flag
+        FROM conversations c
+        INNER JOIN conversation_participants cp ON c.conversation_id = cp.conversation_id
+        WHERE cp.employee_id = #{employeeId}
+          AND cp.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND c.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        ORDER BY c.last_message_at DESC NULLS LAST, c.created_at DESC
+        <if test="limit != null">LIMIT #{limit}</if>
+        <if test="offset != null">OFFSET #{offset}</if>
+    </select>
+
+    <select id="countByEmployeeId" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT c.id)
+        FROM conversations c
+        INNER JOIN conversation_participants cp ON c.conversation_id = cp.conversation_id
+        WHERE cp.employee_id = #{employeeId}
+          AND cp.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND c.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
+    <update id="updateLastMessage">
+        UPDATE conversations
+        SET last_message_id = #{lastMessageId},
+            last_message_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE conversation_id = #{conversationId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Find an existing DIRECT conversation between two users -->
+    <select id="findDirectConversationBetweenUsers" resultMap="conversationMap">
+        SELECT c.id, c.conversation_id, c.type, c.name, c.avatar_url, c.created_by,
+               c.last_message_id, c.last_message_at, c.created_at, c.updated_at, c.deleted_at, c.delete_flag
+        FROM conversations c
+        INNER JOIN conversation_participants cp1 ON c.conversation_id = cp1.conversation_id
+        INNER JOIN conversation_participants cp2 ON c.conversation_id = cp2.conversation_id
+        WHERE c.type = 'DIRECT'
+          AND c.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND cp1.employee_id = #{employeeId1}
+          AND cp1.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND cp2.employee_id = #{employeeId2}
+          AND cp2.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        LIMIT 1
+    </select>
+
+    <!-- Get conversations with cursor-based pagination -->
+    <!-- Cursor is based on COALESCE(last_message_at, created_at) for consistent ordering -->
+    <select id="findByEmployeeIdWithCursor" resultMap="conversationMap">
+        SELECT c.id, c.conversation_id, c.type, c.name, c.avatar_url, c.created_by,
+               c.last_message_id, c.last_message_at, c.created_at, c.updated_at, c.deleted_at, c.delete_flag
+        FROM conversations c
+        INNER JOIN conversation_participants cp ON c.conversation_id = cp.conversation_id
+        WHERE cp.employee_id = #{employeeId}
+          AND cp.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND c.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        <if test="lastMessageAt != null and lastId != null">
+            <![CDATA[
+            AND (
+                COALESCE(c.last_message_at, c.created_at) < #{lastMessageAt}
+                OR (COALESCE(c.last_message_at, c.created_at) = #{lastMessageAt} AND c.id < #{lastId})
+            )
+            ]]>
+        </if>
+        ORDER BY COALESCE(c.last_message_at, c.created_at) DESC, c.id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
