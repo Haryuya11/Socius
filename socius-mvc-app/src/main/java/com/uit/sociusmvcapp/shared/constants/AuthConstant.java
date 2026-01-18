@@ -24,9 +24,6 @@ public final class AuthConstant {
   /** System full permission code for admin access. */
   public static final String PERMISSION_SYSTEM_FULL = "system.full";
 
-  /** HTTP OPTIONS method for CORS preflight. */
-  public static final String HTTP_METHOD_OPTIONS = "OPTIONS";
-
   /** Path variable name for team code. */
   public static final String PATH_VAR_TEAM_CODE = "teamCode";
 

@@ -3,7 +3,6 @@ package com.uit.sociusmvcapp.iam.internal.security;
 import com.uit.sociusmvcapp.iam.ApiPermissionService;
 import com.uit.sociusmvcapp.iam.internal.dto.ApiPermissionDto;
 import com.uit.sociusmvcapp.shared.constants.AuthConstant;
-import com.uit.sociusmvcapp.shared.constants.SecurityConstant;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +21,9 @@ import org.springframework.util.AntPathMatcher;
  *
  * <p>This implementation does not hardcode permissions in code - all permission mappings are
  * fetched from the api_permissions table.
+ *
+ * <p>Note: Public endpoints and CORS preflight (OPTIONS) requests are already handled by
+ * SecurityConfig's permitAll() rules. This manager only handles authenticated requests.
  */
 @Slf4j
 @Component
@@ -37,16 +39,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     String requestUri = context.getRequest().getRequestURI();
     String httpMethod = context.getRequest().getMethod();
-
-    // Skip OPTIONS requests (CORS preflight)
-    if (AuthConstant.HTTP_METHOD_OPTIONS.equalsIgnoreCase(httpMethod)) {
-      return new AuthorizationDecision(true);
-    }
-
-    // Skip public endpoints
-    if (isPublicEndpoint(requestUri)) {
-      return new AuthorizationDecision(true);
-    }
 
     Authentication authentication = authenticationSupplier.get();
 
@@ -66,15 +58,11 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     // Look up required permission from database
     ApiPermissionDto requiredPermission = apiPermissionService.matchRequest(httpMethod, requestUri);
 
-    // If no permission mapping found, allow authenticated access
-    // This means endpoints without explicit permission mapping are accessible to any authenticated
-    // user
+    // If no permission mapping found, DENY access for security
+    // All protected endpoints must have explicit permission mappings
     if (requiredPermission == null) {
-      log.debug(
-          "No permission mapping found for [{} {}], allowing authenticated access",
-          httpMethod,
-          requestUri);
-      return new AuthorizationDecision(true);
+      log.debug("Access denied: No permission mapping found for [{} {}]", httpMethod, requestUri);
+      return new AuthorizationDecision(false);
     }
 
     // Check if user has the required permission
@@ -89,21 +77,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
         requestUri);
 
     return new AuthorizationDecision(hasPermission);
-  }
-
-  /**
-   * Check if the request URI matches any public endpoint pattern.
-   *
-   * @param requestUri the request URI
-   * @return true if the endpoint is public
-   */
-  private boolean isPublicEndpoint(String requestUri) {
-    for (String pattern : SecurityConstant.PUBLIC_ENDPOINTS) {
-      if (pathMatcher.match(pattern, requestUri)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**
