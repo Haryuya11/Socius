@@ -20,7 +20,7 @@ public class ConversationParticipant extends BaseEntity {
   private String role;
   private LocalDateTime joinedAt;
   private LocalDateTime leftAt;
-  private Long lastReadMessageId;
+  private String lastReadMessageId;
   private LocalDateTime lastReadAt;
   private Boolean isMuted;
   private Boolean isPinned;

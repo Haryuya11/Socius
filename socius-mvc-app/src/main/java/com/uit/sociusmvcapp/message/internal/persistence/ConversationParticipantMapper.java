@@ -2,6 +2,7 @@ package com.uit.sociusmvcapp.message.internal.persistence;
 
 import com.uit.sociusmvcapp.message.internal.domain.ConversationParticipant;
 import java.util.List;
+import java.util.Set;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -65,7 +66,7 @@ public interface ConversationParticipantMapper {
   void updateLastReadMessage(
       @Param("conversationId") String conversationId,
       @Param("employeeId") String employeeId,
-      @Param("lastReadMessageId") Long lastReadMessageId);
+      @Param("lastReadMessageId") String lastReadMessageId);
 
   /**
    * Soft delete a participant (leave conversation).
@@ -85,4 +86,65 @@ public interface ConversationParticipantMapper {
    */
   Boolean existsByConversationIdAndEmployeeId(
       @Param("conversationId") String conversationId, @Param("employeeId") String employeeId);
+
+  /**
+   * Find a deleted participant.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeId the employee ID
+   * @return the deleted participant if found, null otherwise
+   */
+  ConversationParticipant findDeletedByConversationIdAndEmployeeId(
+      @Param("conversationId") String conversationId, @Param("employeeId") String employeeId);
+
+  /**
+   * Revive a deleted participant.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeId the employee ID
+   */
+  void reviveParticipant(
+      @Param("conversationId") String conversationId, @Param("employeeId") String employeeId);
+
+  /**
+   * Soft delete multiple participants in batch.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeIds the list of employee IDs
+   */
+  void softDeleteBatch(
+      @Param("conversationId") String conversationId,
+      @Param("employeeIds") List<String> employeeIds);
+
+  /**
+   * Find all participants by conversation ID and a list of employee IDs.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeIds the list of employee IDs
+   * @return the list of participants
+   */
+  List<ConversationParticipant> findAllByConversationIdAndEmployeeIds(
+      @Param("conversationId") String conversationId,
+      @Param("employeeIds") Set<String> employeeIds);
+
+  /**
+   * Revive multiple deleted participants in batch.
+   *
+   * @param conversationId the conversation ID
+   * @param toReviveEmployeeIds the list of employee IDs to revive
+   */
+  void reviveParticipantBatch(
+      @Param("conversationId") String conversationId,
+      @Param("toReviveEmployeeIds") List<String> toReviveEmployeeIds);
+
+  /**
+   * Find all participants including deleted ones by conversation ID and a set of employee IDs.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeIds the set of employee IDs
+   * @return the list of participants including deleted ones
+   */
+  List<ConversationParticipant> findAllIncludingDeletedByConversationIdAndEmployeeIds(
+      @Param("conversationId") String conversationId,
+      @Param("employeeIds") Set<String> employeeIds);
 }

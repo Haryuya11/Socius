@@ -78,12 +78,15 @@
 
     <select id="countUnreadMessages" resultType="java.lang.Integer">
         SELECT COUNT(*)
-        FROM messages
-        WHERE conversation_id = #{conversationId}
-          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
-          <![CDATA[
-          AND id > COALESCE(#{lastReadMessageId}, 0)
-          ]]>
+        FROM messages m
+                 JOIN conversation_participants cp
+                      ON cp.conversation_id = m.conversation_id
+                          AND cp.employee_id = #{employeeId}
+                          AND cp.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+        WHERE m.conversation_id = #{conversationId}
+          AND m.delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+          AND (cp.last_read_at IS NULL
+            OR m.created_at > cp.last_read_at)
     </select>
 
 </mapper>

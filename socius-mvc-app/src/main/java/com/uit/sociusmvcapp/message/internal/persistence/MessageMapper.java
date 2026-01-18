@@ -59,10 +59,9 @@ public interface MessageMapper {
    * Count unread messages for a participant.
    *
    * @param conversationId the conversation ID
-   * @param lastReadMessageId the last read message ID
+   * @param employeeId the employee ID
    * @return the count of unread messages
    */
   Integer countUnreadMessages(
-      @Param("conversationId") String conversationId,
-      @Param("lastReadMessageId") Long lastReadMessageId);
+      @Param("conversationId") String conversationId, @Param("employeeId") String employeeId);
 }

@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.message.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class MessageDto {
-  private Long id;
+  @JsonIgnore private Long id;
   private String messageId;
   private String conversationId;
   private String senderId;

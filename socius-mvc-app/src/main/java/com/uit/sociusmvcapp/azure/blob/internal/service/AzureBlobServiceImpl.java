@@ -127,15 +127,15 @@ public class AzureBlobServiceImpl implements AzureBlobService {
   }
 
   /**
-   * Build the blob path using user ID, current timestamp, and filename.
+   * Build the blob path using target ID, current timestamp, and filename.
    *
-   * @param userId the ID of the user uploading the file
+   * @param id the ID of the user/conversation/message uploading the file
    * @param filename the name of the file being uploaded
    * @return the constructed blob path
    */
-  private String generateBlobName(String userId, String filename) {
+  private String generateBlobName(String id, String filename) {
     long timestamp = System.currentTimeMillis();
-    return String.format("%s/%d/%s", userId, timestamp, filename);
+    return String.format("%s/%d/%s", id, timestamp, filename);
   }
 
   /**

@@ -1,4 +1,4 @@
-package com.uit.sociusmvcapp.notification.internal.config;
+package com.uit.sociusmvcapp.shared.config;
 
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;

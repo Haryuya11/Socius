@@ -257,6 +257,9 @@ public final class MessageConstant {
   /** Cannot add participants to direct conversations. */
   public static final String E_MSG_012 = "E_MSG_012";
 
+  /** Duplicate employeeId in request. */
+  public static final String E_MSG_013 = "E_MSG_013";
+
   // Success messages
   /** Conversation created successfully. */
   public static final String S_MSG_001 = "S_MSG_001";
@@ -314,4 +317,7 @@ public final class MessageConstant {
 
   /** Reactions retrieved successfully. */
   public static final String S_MSG_019 = "S_MSG_019";
+
+  /** Uploaded file successfully. */
+  public static final String S_MSG_020 = "S_MSG_020";
 }

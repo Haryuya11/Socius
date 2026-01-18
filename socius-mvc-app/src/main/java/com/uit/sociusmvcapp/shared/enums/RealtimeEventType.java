@@ -23,9 +23,6 @@ public enum RealtimeEventType {
   /** A new notification was created. */
   NEW_NOTIFICATION("NEW_NOTIFICATION", "New notification event"),
 
-  /** Notification was read. */
-  NOTIFICATION_READ("NOTIFICATION_READ", "Notification read event"),
-
   // System events
   /** System broadcast event. */
   SYSTEM_BROADCAST("SYSTEM_BROADCAST", "System broadcast event");

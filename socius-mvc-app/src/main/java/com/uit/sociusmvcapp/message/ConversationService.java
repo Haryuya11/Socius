@@ -1,14 +1,15 @@
 package com.uit.sociusmvcapp.message;
 
+import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
 import com.uit.sociusmvcapp.message.dto.ConversationParticipantDto;
-import com.uit.sociusmvcapp.message.dto.request.AddParticipantRequest;
+import com.uit.sociusmvcapp.message.dto.request.AddParticipantsRequest;
 import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
-import com.uit.sociusmvcapp.message.dto.request.GetOrCreateDirectConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateParticipantSettingsRequest;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Service interface for Conversation-related operations. */
 public interface ConversationService {
@@ -17,10 +18,10 @@ public interface ConversationService {
    * Get or create a direct conversation between current user and target user. Implements lazy
    * creation pattern - returns existing conversation if it exists, or creates a new one.
    *
-   * @param request the request containing target employee ID
+   * @param targetEmployeeId the target employee ID
    * @return the conversation DTO (existing or newly created)
    */
-  ConversationDto getOrCreateDirectConversation(GetOrCreateDirectConversationRequest request);
+  ConversationDto getOrCreateDirectConversation(String targetEmployeeId);
 
   /**
    * Create a new group conversation explicitly.
@@ -78,15 +79,16 @@ public interface ConversationService {
    * @param request the request containing participant details
    * @return the added participant DTO
    */
-  ConversationParticipantDto addParticipant(String conversationId, AddParticipantRequest request);
+  List<ConversationParticipantDto> addParticipant(
+      String conversationId, AddParticipantsRequest request);
 
   /**
    * Remove a participant from a conversation (group only).
    *
    * @param conversationId the conversation ID
-   * @param employeeId the employee ID to remove
+   * @param employeeIds the list of employee IDs to remove
    */
-  void removeParticipant(String conversationId, String employeeId);
+  void removeParticipant(String conversationId, List<String> employeeIds);
 
   /**
    * Leave a conversation (current user).
@@ -109,5 +111,14 @@ public interface ConversationService {
    * @param conversationId the conversation ID
    * @param messageId the last read message ID
    */
-  void markAsRead(String conversationId, Long messageId);
+  void markAsRead(String conversationId, String messageId);
+
+  /**
+   * Upload a file to a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param file the file to upload
+   * @return metadata of the uploaded file
+   */
+  UploadFileDto uploadFile(String conversationId, MultipartFile file);
 }

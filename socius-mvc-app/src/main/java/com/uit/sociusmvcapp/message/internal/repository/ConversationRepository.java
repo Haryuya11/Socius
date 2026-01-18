@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.message.internal.repository;
 
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
+import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.internal.converter.ConversationConverter;
 import com.uit.sociusmvcapp.message.internal.domain.Conversation;
 import com.uit.sociusmvcapp.message.internal.persistence.ConversationMapper;
@@ -21,8 +22,8 @@ public class ConversationRepository {
    *
    * @param conversation the conversation to insert
    */
-  public void insert(Conversation conversation) {
-    conversationMapper.insert(conversation);
+  public void insert(ConversationDto conversation) {
+    conversationMapper.insert(conversationConverter.dtoToEntity(conversation));
   }
 
   /**
@@ -37,23 +38,13 @@ public class ConversationRepository {
   }
 
   /**
-   * Find conversation entity by its unique conversation ID.
-   *
-   * @param conversationId the unique conversation ID
-   * @return the conversation entity if found, null otherwise
-   */
-  public Conversation findEntityByConversationId(String conversationId) {
-    return conversationMapper.findByConversationId(conversationId);
-  }
-
-  /**
    * Update a conversation.
    *
    * @param conversationId the unique conversation ID
-   * @param conversation the updated conversation data
+   * @param request the updated conversation request
    */
-  public void update(String conversationId, Conversation conversation) {
-    conversationMapper.update(conversationId, conversation);
+  public void update(String conversationId, UpdateConversationRequest request) {
+    conversationMapper.update(conversationId, conversationConverter.updateRequestToEntity(request));
   }
 
   /**
@@ -95,7 +86,7 @@ public class ConversationRepository {
    * @param conversationId the conversation ID
    * @param lastMessageId the last message ID
    */
-  public void updateLastMessage(String conversationId, Long lastMessageId) {
+  public void updateLastMessage(String conversationId, String lastMessageId) {
     conversationMapper.updateLastMessage(conversationId, lastMessageId);
   }
 

@@ -5,6 +5,7 @@ import com.uit.sociusmvcapp.message.internal.converter.ConversationParticipantCo
 import com.uit.sociusmvcapp.message.internal.domain.ConversationParticipant;
 import com.uit.sociusmvcapp.message.internal.persistence.ConversationParticipantMapper;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -30,8 +31,8 @@ public class ConversationParticipantRepository {
    *
    * @param participants the list of participants to insert
    */
-  public void insertBatch(List<ConversationParticipant> participants) {
-    participantMapper.insertBatch(participants);
+  public void insertBatch(List<ConversationParticipantDto> participants) {
+    participantMapper.insertBatch(participantConverter.dtosToEntities(participants));
   }
 
   /**
@@ -46,6 +47,19 @@ public class ConversationParticipantRepository {
     ConversationParticipant participant =
         participantMapper.findByConversationIdAndEmployeeId(conversationId, employeeId);
     return participantConverter.entityToDto(participant);
+  }
+
+  /**
+   * Find all participants by conversation ID and a set of employee IDs.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeIds the set of employee IDs
+   * @return the list of participants
+   */
+  public List<ConversationParticipantDto> findAllByConversationIdAndEmployeeIds(
+      String conversationId, Set<String> employeeIds) {
+    return participantConverter.entitiesToDtos(
+        participantMapper.findAllByConversationIdAndEmployeeIds(conversationId, employeeIds));
   }
 
   /**
@@ -93,7 +107,7 @@ public class ConversationParticipantRepository {
    * @param lastReadMessageId the last read message ID
    */
   public void updateLastReadMessage(
-      String conversationId, String employeeId, Long lastReadMessageId) {
+      String conversationId, String employeeId, String lastReadMessageId) {
     participantMapper.updateLastReadMessage(conversationId, employeeId, lastReadMessageId);
   }
 
@@ -116,5 +130,62 @@ public class ConversationParticipantRepository {
    */
   public Boolean existsByConversationIdAndEmployeeId(String conversationId, String employeeId) {
     return participantMapper.existsByConversationIdAndEmployeeId(conversationId, employeeId);
+  }
+
+  /**
+   * Find a deleted participant.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeId the employee ID
+   * @return the deleted participant if found, null otherwise
+   */
+  public ConversationParticipantDto findDeletedByConversationIdAndEmployeeId(
+      String conversationId, String employeeId) {
+    return participantConverter.entityToDto(
+        participantMapper.findDeletedByConversationIdAndEmployeeId(conversationId, employeeId));
+  }
+
+  /**
+   * Revive a deleted participant.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeId the employee ID
+   */
+  public void reviveParticipant(String conversationId, String employeeId) {
+    participantMapper.reviveParticipant(conversationId, employeeId);
+  }
+
+  /**
+   * Soft delete multiple participants in batch.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeIds the list of employee IDs
+   */
+  public void softDeleteBatch(String conversationId, List<String> employeeIds) {
+    participantMapper.softDeleteBatch(conversationId, employeeIds);
+  }
+
+  /**
+   * Revive multiple deleted participants in batch.
+   *
+   * @param conversationId the conversation ID
+   * @param toReviveEmployeeIds the list of employee IDs to revive
+   */
+  public void reviveParticipantBatch(String conversationId, List<String> toReviveEmployeeIds) {
+    participantMapper.reviveParticipantBatch(conversationId, toReviveEmployeeIds);
+  }
+
+  /**
+   * Find all participants by conversation ID and a set of employee IDs, including deleted ones.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeIds the set of employee IDs
+   * @return the list of participants
+   */
+  public List<ConversationParticipantDto> findAllIncludingDeletedByConversationIdAndEmployeeIds(
+      String conversationId, Set<String> employeeIds) {
+    return participantConverter.entitiesToDtos(
+        participantMapper.findAllIncludingDeletedByConversationIdAndEmployeeIds(
+            conversationId, employeeIds));
   }
 }

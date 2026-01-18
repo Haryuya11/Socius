@@ -69,7 +69,7 @@ public interface ConversationMapper {
    * @param lastMessageId the last message ID
    */
   void updateLastMessage(
-      @Param("conversationId") String conversationId, @Param("lastMessageId") Long lastMessageId);
+      @Param("conversationId") String conversationId, @Param("lastMessageId") String lastMessageId);
 
   /**
    * Find an existing DIRECT conversation between two users.

@@ -8,8 +8,6 @@ import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
-import com.uit.sociusmvcapp.message.internal.converter.MessageConverter;
-import com.uit.sociusmvcapp.message.internal.domain.Message;
 import com.uit.sociusmvcapp.message.internal.domain.MessageReaction;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationParticipantRepository;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationRepository;
@@ -22,7 +20,6 @@ import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,46 +35,26 @@ public class MessageServiceImpl implements MessageService {
   private final MessageReactionRepository reactionRepository;
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository participantRepository;
-  private final MessageConverter messageConverter;
   private final MessagePublisher messagePublisher;
   private final UserContentProvider userContentProvider;
 
+  /**
+   * Sends a message in a conversation.
+   *
+   * @param request the send message request
+   * @return the sent message DTO
+   */
   @Override
   @Transactional
   public MessageDto sendMessage(SendMessageRequest request) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
+    validateParticipant(request.getConversationId(), currentClientId);
 
-    // Verify user is a participant
-    validateParticipant(request.getConversationId(), currentUserId);
-
-    // Generate unique message ID
-    String messageId = UUID.randomUUID().toString();
-
-    // Convert metadata to JSON
-    String metadataJson = messageConverter.metadataToJson(request.getMetadata());
-
-    // Create message entity
-    Message message =
-        Message.builder()
-            .messageId(messageId)
-            .conversationId(request.getConversationId())
-            .senderId(currentUserId)
-            .content(request.getContent())
-            .messageType(request.getMessageType())
-            .parentMessageId(request.getParentMessageId())
-            .metadataJson(metadataJson)
-            .build();
-
-    messageRepository.insert(message);
+    MessageDto messageDto = messageRepository.createMessage(request, currentClientId);
 
     // Update conversation's last message
-    if (message.getId() != null) {
-      conversationRepository.updateLastMessage(
-          request.getConversationId(), message.getId().longValue());
-    }
-
-    // Get the created message DTO
-    MessageDto messageDto = messageRepository.findByMessageId(messageId);
+    conversationRepository.updateLastMessage(
+        request.getConversationId(), messageDto.getMessageId());
 
     // Get participants for realtime event
     List<String> targetUserIds =
@@ -89,9 +66,15 @@ public class MessageServiceImpl implements MessageService {
     return messageDto;
   }
 
+  /**
+   * Retrieves a message by its ID.
+   *
+   * @param messageId the message ID
+   * @return the message DTO
+   */
   @Override
   public MessageDto getByMessageId(String messageId) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
 
     MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
@@ -99,11 +82,19 @@ public class MessageServiceImpl implements MessageService {
     }
 
     // Verify user is a participant
-    validateParticipant(message.getConversationId(), currentUserId);
+    validateParticipant(message.getConversationId(), currentClientId);
 
     return message;
   }
 
+  /**
+   * Retrieves messages from a conversation with cursor-based pagination.
+   *
+   * @param conversationId the conversation ID
+   * @param cursor the pagination cursor
+   * @param limit the maximum number of messages to retrieve
+   * @return a cursor response containing the messages
+   */
   @Override
   public CursorResponse<MessageDto> getMessages(String conversationId, String cursor, int limit) {
     String currentUserId = userContentProvider.getUserContent().getClientId();
@@ -134,7 +125,7 @@ public class MessageServiceImpl implements MessageService {
       nextCursor = Base64.getEncoder().encodeToString(cursorString.getBytes());
     }
 
-    boolean hasNext = messages.size() >= limit;
+    boolean hasNext = messages.size() == limit;
     return CursorResponse.<MessageDto>builder()
         .data(messages)
         .nextCursor(nextCursor)
@@ -142,18 +133,25 @@ public class MessageServiceImpl implements MessageService {
         .build();
   }
 
+  /**
+   * Updates a message's content.
+   *
+   * @param messageId the message ID
+   * @param request the update message request
+   * @return the updated message
+   */
   @Override
   @Transactional
   public MessageDto updateMessage(String messageId, UpdateMessageRequest request) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    Message message = messageRepository.findEntityByMessageId(messageId);
+    MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
     // Verify user is the sender
-    if (!message.getSenderId().equals(currentUserId)) {
+    if (!message.getSenderId().equals(currentClientId)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_009);
     }
 
@@ -171,18 +169,23 @@ public class MessageServiceImpl implements MessageService {
     return updatedMessage;
   }
 
+  /**
+   * Deletes a message.
+   *
+   * @param messageId the message ID
+   */
   @Override
   @Transactional
   public void deleteMessage(String messageId) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    Message message = messageRepository.findEntityByMessageId(messageId);
+    MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
     // Verify user is the sender
-    if (!message.getSenderId().equals(currentUserId)) {
+    if (!message.getSenderId().equals(currentClientId)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_009);
     }
 
@@ -197,22 +200,28 @@ public class MessageServiceImpl implements MessageService {
     messagePublisher.publishMessageDeleted(conversationId, messageId, targetUserIds);
   }
 
+  /**
+   * Adds a reaction to a message.
+   *
+   * @param request the reaction request
+   * @return the added message reaction
+   */
   @Override
   @Transactional
   public MessageReactionDto addReaction(MessageReactionRequest request) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    Message message = messageRepository.findEntityByMessageId(request.getMessageId());
+    MessageDto message = messageRepository.findByMessageId(request.getMessageId());
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
     // Verify user is a participant
-    validateParticipant(message.getConversationId(), currentUserId);
+    validateParticipant(message.getConversationId(), currentClientId);
 
     // Check if reaction already exists
     Boolean exists =
-        reactionRepository.exists(request.getMessageId(), currentUserId, request.getReaction());
+        reactionRepository.exists(request.getMessageId(), currentClientId, request.getReaction());
     if (Boolean.TRUE.equals(exists)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_010);
     }
@@ -220,7 +229,7 @@ public class MessageServiceImpl implements MessageService {
     MessageReaction reaction =
         MessageReaction.builder()
             .messageId(request.getMessageId())
-            .employeeId(currentUserId)
+            .employeeId(currentClientId)
             .reaction(request.getReaction())
             .build();
 
@@ -230,35 +239,52 @@ public class MessageServiceImpl implements MessageService {
     return reactions.stream()
         .filter(
             r ->
-                r.getEmployeeId().equals(currentUserId)
+                r.getEmployeeId().equals(currentClientId)
                     && r.getReaction().equals(request.getReaction()))
         .findFirst()
         .orElse(null);
   }
 
+  /**
+   * Removes a reaction from a message.
+   *
+   * @param request the reaction request
+   */
   @Override
   @Transactional
   public void removeReaction(MessageReactionRequest request) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    reactionRepository.softDelete(request.getMessageId(), currentUserId, request.getReaction());
+    reactionRepository.softDelete(request.getMessageId(), currentClientId, request.getReaction());
   }
 
+  /**
+   * Gets reactions for a message.
+   *
+   * @param messageId the message ID
+   * @return list of message reactions
+   */
   @Override
   public List<MessageReactionDto> getReactions(String messageId) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    Message message = messageRepository.findEntityByMessageId(messageId);
+    MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
     // Verify user is a participant
-    validateParticipant(message.getConversationId(), currentUserId);
+    validateParticipant(message.getConversationId(), currentClientId);
 
     return reactionRepository.findByMessageId(messageId);
   }
 
+  /**
+   * Validates that the employee is a participant in the conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param employeeId the employee ID
+   */
   private void validateParticipant(String conversationId, String employeeId) {
     Boolean isParticipant =
         participantRepository.existsByConversationIdAndEmployeeId(conversationId, employeeId);

@@ -1,11 +1,13 @@
 package com.uit.sociusmvcapp.message.internal.repository;
 
 import com.uit.sociusmvcapp.message.dto.MessageDto;
+import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.internal.converter.MessageConverter;
 import com.uit.sociusmvcapp.message.internal.domain.Message;
 import com.uit.sociusmvcapp.message.internal.persistence.MessageMapper;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -20,10 +22,25 @@ public class MessageRepository {
   /**
    * Insert a new message.
    *
-   * @param message the message to insert
+   * @param request the send message request
+   * @param messageId the unique message ID
+   * @param senderId the sender ID
    */
-  public void insert(Message message) {
-    messageMapper.insert(message);
+  public void insert(SendMessageRequest request, String messageId, String senderId) {
+    messageMapper.insert(messageConverter.sendRequestToEntity(request, messageId, senderId));
+  }
+
+  /**
+   * Create a new message and return its DTO.
+   *
+   * @param request the send message request
+   * @param senderId the sender ID
+   * @return the created message DTO
+   */
+  public MessageDto createMessage(SendMessageRequest request, String senderId) {
+    String messageId = UUID.randomUUID().toString();
+    insert(request, messageId, senderId);
+    return findByMessageId(messageId);
   }
 
   /**
@@ -33,18 +50,7 @@ public class MessageRepository {
    * @return the message DTO if found, null otherwise
    */
   public MessageDto findByMessageId(String messageId) {
-    Message message = messageMapper.findByMessageId(messageId);
-    return messageConverter.entityToDto(message);
-  }
-
-  /**
-   * Find message entity by its unique message ID.
-   *
-   * @param messageId the unique message ID
-   * @return the message entity if found, null otherwise
-   */
-  public Message findEntityByMessageId(String messageId) {
-    return messageMapper.findByMessageId(messageId);
+    return messageConverter.entityToDto(messageMapper.findByMessageId(messageId));
   }
 
   /**
@@ -86,10 +92,10 @@ public class MessageRepository {
    * Count unread messages for a participant.
    *
    * @param conversationId the conversation ID
-   * @param lastReadMessageId the last read message ID
+   * @param employeeId the employee ID
    * @return the count of unread messages
    */
-  public Integer countUnreadMessages(String conversationId, Long lastReadMessageId) {
-    return messageMapper.countUnreadMessages(conversationId, lastReadMessageId);
+  public Integer countUnreadMessages(String conversationId, String employeeId) {
+    return messageMapper.countUnreadMessages(conversationId, employeeId);
   }
 }

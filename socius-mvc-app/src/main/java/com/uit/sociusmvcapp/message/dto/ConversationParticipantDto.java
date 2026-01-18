@@ -15,7 +15,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class ConversationParticipantDto {
-  private Long id;
   private String conversationId;
   private String employeeId;
   private String role;
@@ -26,11 +25,13 @@ public class ConversationParticipantDto {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime leftAt;
 
-  private Long lastReadMessageId;
+  private String lastReadMessageId;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
   private LocalDateTime lastReadAt;
 
   private Boolean isMuted;
   private Boolean isPinned;
+
+  private Integer deleteFlag;
 }

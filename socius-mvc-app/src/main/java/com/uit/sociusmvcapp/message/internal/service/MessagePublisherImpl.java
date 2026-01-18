@@ -26,7 +26,7 @@ public class MessagePublisherImpl implements MessagePublisher {
   @Value("${rabbitmq.exchange.name}")
   private String exchangeName;
 
-  @Value("${message.routing.key:message.realtime}")
+  @Value("${message.routing.key}")
   private String routingKey;
 
   @Override
@@ -34,7 +34,7 @@ public class MessagePublisherImpl implements MessagePublisher {
     MessageEventPayload payload = MessageEventPayload.forMessage(message);
     RealtimeEvent<MessageEventPayload> event =
         RealtimeEvent.message(RealtimeEventType.NEW_MESSAGE, payload, targetUserIds);
-    publish(event, RealtimeEventType.NEW_MESSAGE);
+    publish(event);
   }
 
   @Override
@@ -42,7 +42,7 @@ public class MessagePublisherImpl implements MessagePublisher {
     MessageEventPayload payload = MessageEventPayload.forMessage(message);
     RealtimeEvent<MessageEventPayload> event =
         RealtimeEvent.message(RealtimeEventType.MESSAGE_UPDATED, payload, targetUserIds);
-    publish(event, RealtimeEventType.MESSAGE_UPDATED);
+    publish(event);
   }
 
   @Override
@@ -51,7 +51,7 @@ public class MessagePublisherImpl implements MessagePublisher {
     MessageEventPayload payload = MessageEventPayload.forDeletion(conversationId, messageId);
     RealtimeEvent<MessageEventPayload> event =
         RealtimeEvent.message(RealtimeEventType.MESSAGE_DELETED, payload, targetUserIds);
-    publish(event, RealtimeEventType.MESSAGE_DELETED);
+    publish(event);
   }
 
   @Override
@@ -61,13 +61,18 @@ public class MessagePublisherImpl implements MessagePublisher {
         TypingIndicatorPayload.of(conversationId, employeeId, isTyping);
     RealtimeEvent<TypingIndicatorPayload> event =
         RealtimeEvent.message(RealtimeEventType.TYPING_INDICATOR, payload, targetUserIds);
-    publish(event, RealtimeEventType.TYPING_INDICATOR);
+    publish(event);
   }
 
-  private void publish(RealtimeEvent<?> event, RealtimeEventType eventType) {
+  /**
+   * Publish a realtime event to RabbitMQ.
+   *
+   * @param event the event to be published
+   */
+  private void publish(RealtimeEvent<?> event) {
     try {
       rabbitTemplate.convertAndSend(exchangeName, routingKey, event);
-      log.info("Published message event: {}", eventType.getCode());
+      log.info("Published message event: {}", event.getEventType().getCode());
     } catch (Exception e) {
       log.error("Failed to publish message event", e);
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_001);

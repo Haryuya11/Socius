@@ -6,7 +6,6 @@ import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
-import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
 import jakarta.validation.Valid;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** MessageController handles HTTP requests related to messages. */
@@ -69,31 +67,6 @@ public class MessageController {
             .code(MessageConstant.S_MSG_013)
             .message(i18nService.getMessage(MessageConstant.S_MSG_013))
             .data(message)
-            .build();
-    return ResponseEntity.ok(response);
-  }
-
-  /**
-   * Get messages in a conversation.
-   *
-   * @param conversationId the conversation ID
-   * @param cursor the pagination cursor
-   * @param limit the number of items to retrieve
-   * @return ResponseEntity containing the messages
-   */
-  @GetMapping("/conversation/{conversationId}")
-  public ResponseEntity<Response> getMessages(
-      @PathVariable String conversationId,
-      @RequestParam(required = false) String cursor,
-      @RequestParam(defaultValue = "20") int limit) {
-    CursorResponse<MessageDto> messages = messageService.getMessages(conversationId, cursor, limit);
-    Response response =
-        Response.builder()
-            .success(true)
-            .status(HttpStatus.OK.value())
-            .code(MessageConstant.S_MSG_014)
-            .message(i18nService.getMessage(MessageConstant.S_MSG_014))
-            .data(messages)
             .build();
     return ResponseEntity.ok(response);
   }

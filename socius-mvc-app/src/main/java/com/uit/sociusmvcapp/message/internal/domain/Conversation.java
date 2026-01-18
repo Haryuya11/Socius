@@ -20,6 +20,6 @@ public class Conversation extends BaseEntity {
   private String name;
   private String avatarUrl;
   private String createdBy;
-  private Long lastMessageId;
+  private String lastMessageId;
   private LocalDateTime lastMessageAt;
 }
