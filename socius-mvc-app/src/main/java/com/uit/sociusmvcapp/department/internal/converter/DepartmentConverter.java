@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.department.internal.converter;
 import com.uit.sociusmvcapp.department.dto.DepartmentDto;
 import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.department.internal.domain.Department;
 import com.uit.sociusmvcapp.shared.converter.BaseConverter;
 import java.util.List;
@@ -40,4 +41,20 @@ public interface DepartmentConverter extends BaseConverter<Department, Departmen
    * @return The corresponding list of SearchDepartmentDtos.
    */
   List<SearchDepartmentDto> entitiesToSearchDto(List<Department> departments);
+
+  /**
+   * Converts a DepartmentUpdateRequest to a Department entity for updating.
+   *
+   * @param request The department update request DTO.
+   * @param departmentCode The code of the department to be updated.
+   * @return The corresponding Department entity.
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "createdAt", ignore = true)
+  @Mapping(target = "updatedAt", ignore = true)
+  @Mapping(target = "deletedAt", ignore = true)
+  @Mapping(target = "deleteFlag", ignore = true)
+  @Mapping(target = "departmentCode", source = "departmentCode")
+  @Mapping(target = "departmentName", source = "request.departmentName")
+  Department updateRequestToEntity(UpdateDepartmentRequest request, String departmentCode);
 }

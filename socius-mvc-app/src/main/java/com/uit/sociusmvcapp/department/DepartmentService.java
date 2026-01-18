@@ -4,6 +4,7 @@ import com.uit.sociusmvcapp.department.dto.DepartmentDto;
 import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
 import com.uit.sociusmvcapp.department.dto.request.SearchDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
 
@@ -30,7 +31,7 @@ public interface DepartmentService {
    * @param request the request containing department update details
    * @param departmentCode the code of the department to be updated
    */
-  void update(CreateDepartmentRequest request, String departmentCode);
+  void update(UpdateDepartmentRequest request, String departmentCode);
 
   /**
    * Deactivate a department.
