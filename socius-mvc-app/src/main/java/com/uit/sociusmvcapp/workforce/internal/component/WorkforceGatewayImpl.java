@@ -70,7 +70,8 @@ public class WorkforceGatewayImpl implements WorkforceGateway {
     return entities.stream()
         .collect(
             Collectors.groupingBy(
-                DepartmentEmployeeDto::getClientId,
+                // SỬA Ở ĐÂY: Thay DepartmentEmployeeDto::getClientId bằng lambda
+                dto -> dto.getEmployee().getClientId(),
                 Collectors.mapping(
                     departmentEmployeeConverter::toUserDepartmentInfo, Collectors.toList())));
   }

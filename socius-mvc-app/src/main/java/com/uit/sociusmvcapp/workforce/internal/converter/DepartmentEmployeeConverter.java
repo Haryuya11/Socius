@@ -15,27 +15,11 @@ import org.mapstruct.Mapping;
 public interface DepartmentEmployeeConverter
     extends BaseConverter<DepartmentEmployee, DepartmentEmployeeDto> {
 
-  /**
-   * Converts a {@link DepartmentEmployee} entity to a {@link DepartmentEmployee}.
-   *
-   * @param entity the {@link DepartmentEmployee} entity
-   * @return the corresponding {@link DepartmentEmployee}
-   */
+  /** Converts a {@link DepartmentEmployee} entity to a {@link DepartmentEmployeeDto}. */
   @Override
-  @Mapping(target = "departmentCode", source = "department.departmentCode")
-  @Mapping(target = "departmentName", source = "department.departmentName")
-  @Mapping(target = "clientId", source = "employee.clientId")
-  @Mapping(target = "userId", source = "employee.userId")
-  @Mapping(target = "firstName", source = "employee.firstName")
-  @Mapping(target = "lastName", source = "employee.lastName")
-  @Mapping(target = "systemRole", source = "employee.systemRole")
-  @Mapping(target = "imageUrl", source = "employee.imageUrl")
-  @Mapping(target = "salary", source = "employee.salary")
   DepartmentEmployeeDto entityToDto(DepartmentEmployee entity);
 
   @Override
-  @Mapping(target = "department", ignore = true)
-  @Mapping(target = "employee", ignore = true)
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
@@ -43,13 +27,7 @@ public interface DepartmentEmployeeConverter
   @Mapping(target = "deleteFlag", ignore = true)
   DepartmentEmployee dtoToEntity(DepartmentEmployeeDto dto);
 
-  /**
-   * Converts an EmployeeAddRequest to a DepartmentEmployees entity for adding an employee to a
-   * department.
-   *
-   * @param request The employee addition request DTO.
-   * @return The corresponding DepartmentEmployees entity.
-   */
+  /** Converts an EmployeeAddRequest to a DepartmentEmployees entity. */
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "employee.clientId", source = "request.employeeId")
   @Mapping(target = "roleCode", source = "request.roleCode")
@@ -62,10 +40,10 @@ public interface DepartmentEmployeeConverter
   DepartmentEmployee toEntity(AssignEmployeeToDepartmentRequest request, String departmentCode);
 
   /**
-   * Converts a TransferEmployeeRequest to an AssignEmployeeToDepartmentRequest.
+   * Converts roleCode and isPrimary to an AssignEmployeeToDepartmentRequest.
    *
-   * @param request the transfer employee request
-   * @return the corresponding assign employee to department request
+   * @param request the TransferEmployeeRequest
+   * @return the corresponding AssignEmployeeToDepartmentRequest
    */
   AssignEmployeeToDepartmentRequest toAssignEmployeeToDepartmentRequest(
       TransferEmployeeRequest request);
@@ -73,9 +51,10 @@ public interface DepartmentEmployeeConverter
   /**
    * Convert DepartmentEmployeeDto to UserDepartmentInfo.
    *
-   * @param dto the DepartmentEmployeeDto
-   * @return the corresponding UserDepartmentInfo
+   * <p>Added mappings because DTO is now nested, but UserDepartmentInfo likely expects flat fields.
    */
+  @Mapping(target = "departmentCode", source = "department.departmentCode")
+  @Mapping(target = "departmentName", source = "department.departmentName")
   UserDepartmentInfo toUserDepartmentInfo(DepartmentEmployeeDto dto);
 
   /**
