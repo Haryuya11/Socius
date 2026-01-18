@@ -18,7 +18,7 @@ public final class MessageConstant {
   public static final String E_SYS_004 = "E_SYS_004";
 
   /** Token invalid or expired error message key. */
-  public  static final String E_SYS_005 = "E_SYS_005";
+  public static final String E_SYS_005 = "E_SYS_005";
 
   /** Employee creation error message key. */
   public static final String E_EMP_001 = "E_EMP_001";

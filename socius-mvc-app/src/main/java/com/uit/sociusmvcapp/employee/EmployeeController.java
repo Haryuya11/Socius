@@ -8,6 +8,7 @@ import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.UpdateSalaryRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateSystemRoleRequest;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
@@ -108,7 +109,7 @@ public class EmployeeController {
   /**
    * Update an employee's salary.
    *
-   * <p>This is a separate endpoint requiring 'employee.salary.update' permission to prevent
+   * <p>This is a separate endpoint requiring 'system.full' permission (SYS_ADMIN only) to prevent
    * unauthorized salary modifications through the general update endpoint.
    *
    * @param request the salary update request
@@ -119,6 +120,30 @@ public class EmployeeController {
   public ResponseEntity<Response> updateSalary(
       @RequestBody UpdateSalaryRequest request, @PathVariable String clientId) {
     employeeService.updateSalary(request, clientId);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_EMP_002)
+            .message(i18nService.getMessage(MessageConstant.S_EMP_002))
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Update an employee's system role.
+   *
+   * <p>This is a separate endpoint requiring 'system.full' permission (SYS_ADMIN only) as only
+   * system administrators should be able to change user roles.
+   *
+   * @param request the system role update request
+   * @param clientId the client ID of the employee whose system role is being updated
+   * @return ResponseEntity indicating the result of the operation
+   */
+  @PutMapping("/{clientId}/system-role")
+  public ResponseEntity<Response> updateSystemRole(
+      @RequestBody UpdateSystemRoleRequest request, @PathVariable String clientId) {
+    employeeService.updateSystemRole(request, clientId);
     Response response =
         Response.builder()
             .success(true)

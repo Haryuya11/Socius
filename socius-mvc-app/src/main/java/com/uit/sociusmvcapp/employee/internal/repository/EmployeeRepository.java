@@ -78,6 +78,18 @@ public class EmployeeRepository {
   }
 
   /**
+   * Update employee system role.
+   *
+   * <p>Separated from profile updates for security - only SYS_ADMIN can change system roles.
+   *
+   * @param systemRole the new system role
+   * @param clientId the client ID of the employee
+   */
+  public void updateSystemRole(String systemRole, String clientId) {
+    employeeMapper.updateSystemRole(systemRole, clientId);
+  }
+
+  /**
    * Deactivate an employee record by client ID.
    *
    * @param clientId the client ID of the employee to deactivate

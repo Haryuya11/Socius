@@ -133,6 +133,15 @@
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </update>
 
+    <!-- Update System Role (separate for security - only SYS_ADMIN can change roles) -->
+    <update id="updateSystemRole">
+        UPDATE employees
+        SET system_role = #{systemRole},
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
     <!-- Deactivate -->
     <update id="deactivate">
         UPDATE employees

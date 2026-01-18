@@ -12,15 +12,16 @@ import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.UpdateSalaryRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateSystemRoleRequest;
 import com.uit.sociusmvcapp.employee.internal.adapter.EmployeeBlobAdapter;
 import com.uit.sociusmvcapp.employee.internal.adapter.EmployeeGraphAdapter;
 import com.uit.sociusmvcapp.employee.internal.constants.EmployeeConstant;
 import com.uit.sociusmvcapp.employee.internal.repository.EmployeeRepository;
+import com.uit.sociusmvcapp.iam.PermissionSecurityService;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.iam.dto.UserDepartmentInfo;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.iam.dto.UserTeamInfo;
-import com.uit.sociusmvcapp.iam.internal.security.PermissionSecurityService;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
@@ -158,7 +159,7 @@ public class EmployeeServiceImpl implements EmployeeService {
   /**
    * Update an employee's salary.
    *
-   * <p>This is a separate endpoint requiring 'employee.salary.update' permission to prevent
+   * <p>This is a separate endpoint requiring 'system.full' permission (SYS_ADMIN only) to prevent
    * unauthorized salary modifications through the general update endpoint.
    *
    * @param request the request containing the new salary value
@@ -173,6 +174,26 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
     employeeRepository.updateSalary(request.getSalary(), clientId);
     // Note: No notification sent for salary updates to avoid exposing sensitive information
+  }
+
+  /**
+   * Update an employee's system role.
+   *
+   * <p>This is a separate endpoint requiring 'system.full' permission (SYS_ADMIN only) as only
+   * system administrators should be able to change user roles.
+   *
+   * @param request the request containing the new system role
+   * @param clientId the client ID of the employee whose system role is being updated
+   */
+  @Override
+  @Transactional
+  public void updateSystemRole(UpdateSystemRoleRequest request, String clientId) {
+    EmployeeDto user = employeeRepository.findByClientId(clientId);
+    if (user == null) {
+      throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
+    }
+    employeeRepository.updateSystemRole(request.getSystemRole(), clientId);
+    // Note: System role changes are sensitive operations, no notification sent
   }
 
   /**
