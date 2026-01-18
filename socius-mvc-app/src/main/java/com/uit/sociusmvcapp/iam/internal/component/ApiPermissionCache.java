@@ -2,7 +2,6 @@ package com.uit.sociusmvcapp.iam.internal.component;
 
 import com.uit.sociusmvcapp.iam.internal.config.ApiPermissionCacheConfig;
 import com.uit.sociusmvcapp.iam.internal.dto.ApiPermissionDto;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,8 +38,8 @@ public class ApiPermissionCache {
       log.debug("API permission cache expired or empty");
       return null;
     }
-    List<ApiPermissionDto> cached = cache.get(CACHE_KEY);
-    return cached != null ? Collections.unmodifiableList(cached) : null;
+    // Return cached list directly - already immutable via List.copyOf() in put()
+    return cache.get(CACHE_KEY);
   }
 
   /**
