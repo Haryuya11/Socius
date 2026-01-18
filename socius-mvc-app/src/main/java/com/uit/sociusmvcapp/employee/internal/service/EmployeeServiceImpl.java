@@ -172,13 +172,7 @@ public class EmployeeServiceImpl implements EmployeeService {
       throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
     }
     employeeRepository.updateSalary(request.getSalary(), clientId);
-    eventPublisher.publishEvent(
-        new NotificationSendEvent(
-            this,
-            clientId,
-            "Salary Updated",
-            "Your salary information has been updated.",
-            "/employees/profile"));
+    // Note: No notification sent for salary updates to avoid exposing sensitive information
   }
 
   /**
