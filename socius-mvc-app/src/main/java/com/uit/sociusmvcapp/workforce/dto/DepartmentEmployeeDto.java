@@ -1,5 +1,7 @@
 package com.uit.sociusmvcapp.workforce.dto;
 
+import com.uit.sociusmvcapp.workforce.internal.domain.summary.DepartmentSummary;
+import com.uit.sociusmvcapp.workforce.internal.domain.summary.EmployeeSummary;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,18 +16,9 @@ public class DepartmentEmployeeDto {
   private String roleCode;
   private Boolean isPrimary;
 
-  /** Associated Department information. */
-  private String departmentCode;
+  /** Associated Department summary. */
+  private DepartmentSummary department;
 
-  private String departmentName;
-
-  /** Associated Employee information. */
-  private String clientId;
-
-  private String userId;
-  private String firstName;
-  private String lastName;
-  private String systemRole;
-  private String imageUrl;
-  private Long salary;
+  /** Associated Employee summary. */
+  private EmployeeSummary employee;
 }

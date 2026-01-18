@@ -5,7 +5,8 @@ import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
 import com.uit.sociusmvcapp.workforce.dto.DepartmentEmployeeBatchResultDto;
 import com.uit.sociusmvcapp.workforce.dto.DepartmentEmployeeDto;
-import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToDepartmentRequest;
+import com.uit.sociusmvcapp.workforce.dto.request.BulkAssignEmployeeRequest;
+import com.uit.sociusmvcapp.workforce.dto.request.BulkRemoveEmployeeRequest;
 import com.uit.sociusmvcapp.workforce.dto.request.TransferEmployeeRequest;
 import java.util.List;
 import java.util.Map;
@@ -41,10 +42,9 @@ public class DepartmentEmployeeController {
    */
   @PostMapping("/{departmentCode}/employees")
   public ResponseEntity<Response> addEmployeeToDepartment(
-      @PathVariable String departmentCode,
-      @RequestBody List<AssignEmployeeToDepartmentRequest> request) {
+      @PathVariable String departmentCode, @RequestBody BulkAssignEmployeeRequest request) {
     DepartmentEmployeeBatchResultDto employees =
-        departmentEmployeeService.addEmployeesToDepartment(request, departmentCode);
+        departmentEmployeeService.addEmployeesToDepartment(request.getEmployees(), departmentCode);
 
     Response response =
         Response.builder()
@@ -105,15 +105,16 @@ public class DepartmentEmployeeController {
    * Remove multiple employees from a department.
    *
    * @param departmentCode the code of the department
-   * @param employeeIds the list of employee IDs to remove
+   * @param request the list of employee IDs to remove
    * @return ResponseEntity containing the removed employees information
    */
   @DeleteMapping("/{departmentCode}/employees")
   public ResponseEntity<Response> removeMultipleEmployeesFromDepartment(
-      @PathVariable String departmentCode, @RequestBody List<String> employeeIds) {
+      @PathVariable String departmentCode, @RequestBody BulkRemoveEmployeeRequest request) {
 
     DepartmentEmployeeBatchResultDto employees =
-        departmentEmployeeService.removeEmployeesFromDepartmentBatch(employeeIds, departmentCode);
+        departmentEmployeeService.removeEmployeesFromDepartmentBatch(
+            request.getEmployeeIds(), departmentCode);
 
     Response response =
         Response.builder()
