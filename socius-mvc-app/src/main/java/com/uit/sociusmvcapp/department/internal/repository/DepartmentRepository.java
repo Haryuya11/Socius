@@ -4,6 +4,7 @@ import com.uit.sociusmvcapp.department.dto.DepartmentDto;
 import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
 import com.uit.sociusmvcapp.department.dto.request.SearchDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.department.internal.converter.DepartmentConverter;
 import com.uit.sociusmvcapp.department.internal.persistence.DepartmentMapper;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
@@ -44,9 +45,10 @@ public class DepartmentRepository {
    * Update an existing department record.
    *
    * @param request the department update request
+   * @param departmentCode the department code
    */
-  public void update(CreateDepartmentRequest request) {
-    mapper.update(converter.createRequestToEntity(request));
+  public void update(UpdateDepartmentRequest request, String departmentCode) {
+    mapper.update(converter.updateRequestToEntity(request, departmentCode));
   }
 
   /**

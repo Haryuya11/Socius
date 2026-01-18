@@ -4,6 +4,7 @@ import com.uit.sociusmvcapp.department.dto.DepartmentDto;
 import com.uit.sociusmvcapp.department.dto.SearchDepartmentDto;
 import com.uit.sociusmvcapp.department.dto.request.CreateDepartmentRequest;
 import com.uit.sociusmvcapp.department.dto.request.SearchDepartmentRequest;
+import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
@@ -81,7 +82,7 @@ public class DepartmentController {
    */
   @PutMapping("/{departmentCode}")
   public ResponseEntity<Response> update(
-      @RequestBody CreateDepartmentRequest request, @PathVariable String departmentCode) {
+      @RequestBody UpdateDepartmentRequest request, @PathVariable String departmentCode) {
     departmentService.update(request, departmentCode);
     Response response =
         Response.builder()
