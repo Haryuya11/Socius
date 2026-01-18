@@ -48,8 +48,8 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         Response.builder()
             .success(false)
             .status(HttpStatus.UNAUTHORIZED.value())
-            .code(MessageConstant.E_SYS_003)
-            .message(i18nService.getMessage(MessageConstant.E_SYS_003))
+            .code(MessageConstant.E_SYS_005)
+            .message(i18nService.getMessage(MessageConstant.E_SYS_005))
             .data(null)
             .build();
 
