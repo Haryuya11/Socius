@@ -107,23 +107,28 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       String teamCode =
           extractPathVariable(
               requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_TEAM_CODE);
-      if (teamCode != null) {
-        // Only check scoped authority (TEAM:{teamCode}:{permissionCode})
-        String scopedAuthority =
-            String.format(
-                AuthConstant.SCOPED_AUTHORITY_FORMAT,
-                AuthConstant.SCOPE_TEAM,
-                teamCode,
-                permissionCode);
-        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
-        if (!hasAccess) {
-          log.debug(
-              "Access denied: User does not belong to team [{}] or lacks permission [{}]",
+      if (teamCode == null) {
+        log.debug(
+            "Access denied: Could not extract team code from URL [{}] with pattern [{}]",
+            requestUri,
+            requiredPermission.getUrlPattern());
+        return false;
+      }
+      // Only check scoped authority (TEAM:{teamCode}:{permissionCode})
+      String scopedAuthority =
+          String.format(
+              AuthConstant.SCOPED_AUTHORITY_FORMAT,
+              AuthConstant.SCOPE_TEAM,
               teamCode,
               permissionCode);
-        }
-        return hasAccess;
+      boolean hasAccess = hasAuthority(authentication, scopedAuthority);
+      if (!hasAccess) {
+        log.debug(
+            "Access denied: User does not belong to team [{}] or lacks permission [{}]",
+            teamCode,
+            permissionCode);
       }
+      return hasAccess;
     }
 
     // For department-scoped resources, user MUST belong to the specific department
@@ -139,23 +144,28 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             extractPathVariable(
                 requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_DEPT_CODE);
       }
-      if (deptCode != null) {
-        // Only check scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
-        String scopedAuthority =
-            String.format(
-                AuthConstant.SCOPED_AUTHORITY_FORMAT,
-                AuthConstant.SCOPE_DEPARTMENT,
-                deptCode,
-                permissionCode);
-        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
-        if (!hasAccess) {
-          log.debug(
-              "Access denied: User does not belong to department [{}] or lacks permission [{}]",
+      if (deptCode == null) {
+        log.debug(
+            "Access denied: Could not extract department code from URL [{}] with pattern [{}]",
+            requestUri,
+            requiredPermission.getUrlPattern());
+        return false;
+      }
+      // Only check scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
+      String scopedAuthority =
+          String.format(
+              AuthConstant.SCOPED_AUTHORITY_FORMAT,
+              AuthConstant.SCOPE_DEPARTMENT,
               deptCode,
               permissionCode);
-        }
-        return hasAccess;
+      boolean hasAccess = hasAuthority(authentication, scopedAuthority);
+      if (!hasAccess) {
+        log.debug(
+            "Access denied: User does not belong to department [{}] or lacks permission [{}]",
+            deptCode,
+            permissionCode);
       }
+      return hasAccess;
     }
 
     // For non-scoped resources (employee, role, notification, self, etc.)

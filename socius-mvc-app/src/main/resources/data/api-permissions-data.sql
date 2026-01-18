@@ -14,10 +14,10 @@ TRUNCATE TABLE api_permissions CASCADE;
 INSERT INTO api_permissions (permission_code, resource, action, http_method, url_pattern)
 VALUES
 -- Own profile management
-('/employees/profile', 'self', 'read', 'GET', '/employees/profile'),
-('/employees/change-password', 'self', 'update', 'PUT', '/employees/change-password'),
-('/employees/upload-avatar', 'self', 'update', 'POST', '/employees/upload-avatar'),
-('/employees/avatar-url', 'self', 'read', 'GET', '/employees/avatar-url'),
+('self.profile.view', 'self', 'read', 'GET', '/employees/profile'),
+('self.password.update', 'self', 'update', 'PUT', '/employees/change-password'),
+('self.avatar.upload', 'self', 'update', 'POST', '/employees/upload-avatar'),
+('self.profile.view', 'self', 'read', 'GET', '/employees/avatar-url'),
 
 -- Employee CRUD (admin operations)
 ('employee.view.basic', 'employee', 'read', 'GET', '/employees/{clientId}'),

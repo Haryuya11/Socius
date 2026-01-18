@@ -1,6 +1,8 @@
 package com.uit.sociusmvcapp.iam.internal.config;
 
 import com.uit.sociusmvcapp.iam.internal.component.JwtAuthenticationConverter;
+import com.uit.sociusmvcapp.iam.internal.security.CustomAccessDeniedHandler;
+import com.uit.sociusmvcapp.iam.internal.security.CustomAuthenticationEntryPoint;
 import com.uit.sociusmvcapp.iam.internal.security.RbacAuthorizationManager;
 import com.uit.sociusmvcapp.shared.constants.SecurityConstant;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,8 @@ public class SecurityConfig {
 
   private final JwtAuthenticationConverter jwtAuthenticationConverter;
   private final RbacAuthorizationManager rbacAuthorizationManager;
+  private final CustomAccessDeniedHandler customAccessDeniedHandler;
+  private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
   @Value("${azure.graph.jwk-set-uri}")
   private String jwkSetUri;
@@ -57,6 +61,11 @@ public class SecurityConfig {
         .csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(
+            exception ->
+                exception
+                    .accessDeniedHandler(customAccessDeniedHandler)
+                    .authenticationEntryPoint(customAuthenticationEntryPoint))
         .authorizeHttpRequests(
             authz ->
                 authz

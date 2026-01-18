@@ -24,7 +24,7 @@ public abstract class TtlCache<T> {
   private final ConcurrentHashMap<String, List<T>> cache = new ConcurrentHashMap<>();
 
   /** Timestamp when cache was last updated. */
-  private final AtomicLong lastUpdatedAt = new AtomicLong(CommonConstant.INIT_TIMESTAMP);
+  private final AtomicLong lastUpdatedAt = new AtomicLong(CommonConstant.UNINITIALIZED_TIMESTAMP);
 
   /**
    * Constructor for TtlCache.
@@ -74,7 +74,7 @@ public abstract class TtlCache<T> {
   /** Clear the cache and reset timestamp. */
   public void clear() {
     cache.clear();
-    lastUpdatedAt.set(CommonConstant.INIT_TIMESTAMP);
+    lastUpdatedAt.set(CommonConstant.UNINITIALIZED_TIMESTAMP);
     log.debug("{} cache cleared", cacheName);
   }
 
@@ -94,7 +94,7 @@ public abstract class TtlCache<T> {
    */
   private boolean isCacheExpired() {
     long lastUpdate = lastUpdatedAt.get();
-    if (lastUpdate == CommonConstant.INIT_TIMESTAMP) {
+    if (lastUpdate == CommonConstant.UNINITIALIZED_TIMESTAMP) {
       return true;
     }
     long elapsed = System.currentTimeMillis() - lastUpdate;

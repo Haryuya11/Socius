@@ -24,6 +24,6 @@ public final class CommonConstant {
   /** Constant representing the number one. */
   public static final int ONE = 1;
 
-  /** Initial timestamp value (zero) for cache expiration tracking. */
-  public static final long INIT_TIMESTAMP = 0L;
+  /** Sentinel value representing an uninitialized or absent timestamp (zero). */
+  public static final long UNINITIALIZED_TIMESTAMP = 0L;
 }
