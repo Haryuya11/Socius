@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.iam.internal.config;
 
 import com.uit.sociusmvcapp.iam.internal.component.JwtAuthenticationConverter;
+import com.uit.sociusmvcapp.iam.internal.security.RbacAuthorizationManager;
 import com.uit.sociusmvcapp.shared.constants.SecurityConstant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +27,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * SecurityConfig configures the security settings for the application, including CORS and
- * authorization filters.
+ * authorization filters. Uses RbacAuthorizationManager for database-driven RBAC authorization.
  */
 @Configuration
 @EnableWebSecurity
@@ -35,6 +36,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationConverter jwtAuthenticationConverter;
+  private final RbacAuthorizationManager rbacAuthorizationManager;
 
   @Value("${azure.graph.jwk-set-uri}")
   private String jwkSetUri;
@@ -43,7 +45,7 @@ public class SecurityConfig {
   private String issuerUri;
 
   /**
-   * Configures the security filter chain.
+   * Configures the security filter chain with database-driven RBAC authorization.
    *
    * @param http the HttpSecurity object
    * @return the configured SecurityFilterChain
@@ -63,7 +65,7 @@ public class SecurityConfig {
                     .requestMatchers(SecurityConstant.PUBLIC_ENDPOINTS.toArray(String[]::new))
                     .permitAll()
                     .anyRequest()
-                    .authenticated())
+                    .access(rbacAuthorizationManager))
         .oauth2ResourceServer(
             oauth2 ->
                 oauth2.jwt(

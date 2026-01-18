@@ -149,3 +149,19 @@ CREATE TABLE IF NOT EXISTS notifications
     deleted_at    TIMESTAMP,
     delete_flag   SMALLINT  DEFAULT 0
 );
+
+-- API Permissions for DB-driven RBAC authorization
+CREATE TABLE IF NOT EXISTS api_permissions
+(
+    id              SERIAL PRIMARY KEY,
+    permission_code VARCHAR(50) NOT NULL,
+    resource        VARCHAR(50) NOT NULL,
+    action          VARCHAR(20) NOT NULL,
+    http_method     VARCHAR(10) NOT NULL,
+    url_pattern     VARCHAR(200) NOT NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at      TIMESTAMP,
+    delete_flag     SMALLINT  DEFAULT 0,
+    UNIQUE (http_method, url_pattern, delete_flag)
+);
