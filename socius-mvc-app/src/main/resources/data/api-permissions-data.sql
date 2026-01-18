@@ -22,6 +22,7 @@ VALUES
 -- Employee CRUD (admin operations)
 ('employee.view.basic', 'employee', 'read', 'GET', '/employees/{clientId}'),
 ('employee.profile.update', 'employee', 'update', 'PUT', '/employees/{clientId}'),
+('employee.salary.update', 'employee', 'update', 'PUT', '/employees/{clientId}/salary'),
 ('employee.profile.update', 'employee', 'delete', 'DELETE', '/employees/{clientId}'),
 ('employee.profile.update', 'employee', 'create', 'POST', '/employees'),
 ('employee.view.basic', 'employee', 'read', 'POST', '/employees/search');

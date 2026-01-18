@@ -13,4 +13,13 @@ public final class EmployeeConstant {
 
   /** Key for client ID. */
   public static final String CLIENT_ID = "clientId";
+
+  /** Permission code for viewing employee salary. */
+  public static final String PERMISSION_VIEW_SALARY = "employee.view.salary";
+
+  /**
+   * Masked salary value returned when user doesn't have permission to view salary. Using -1 to
+   * indicate restricted/hidden value.
+   */
+  public static final Long MASKED_SALARY = -1L;
 }

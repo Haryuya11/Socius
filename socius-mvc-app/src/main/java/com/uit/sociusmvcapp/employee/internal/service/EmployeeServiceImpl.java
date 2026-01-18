@@ -10,6 +10,8 @@ import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateSalaryRequest;
 import com.uit.sociusmvcapp.employee.internal.adapter.EmployeeBlobAdapter;
 import com.uit.sociusmvcapp.employee.internal.adapter.EmployeeGraphAdapter;
 import com.uit.sociusmvcapp.employee.internal.constants.EmployeeConstant;
@@ -18,6 +20,7 @@ import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.iam.dto.UserDepartmentInfo;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.iam.dto.UserTeamInfo;
+import com.uit.sociusmvcapp.iam.internal.security.PermissionSecurityService;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
@@ -57,6 +60,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
   /** Adapter for Azure Blob operations specific to Employee module. */
   private final EmployeeBlobAdapter employeeBlobAdapter;
+
+  /** Service for checking user permissions. */
+  private final PermissionSecurityService permissionSecurityService;
 
   // ========================= EMPLOYEE SERVICE MAIN METHODS =========================
   /**
@@ -123,27 +129,55 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
   /**
-   * Update an existing user profile.
+   * Update an existing user profile (excluding salary).
    *
-   * @param request the request containing user update details
+   * <p>This method intentionally excludes salary updates to prevent mass assignment
+   * vulnerabilities. Use updateSalary() for salary modifications with proper authorization.
+   *
+   * @param request the request containing user update details (excludes salary)
    * @param clientId the client ID of the user to be updated
    */
   @Override
   @Transactional
-  public void update(CreateEmployeeRequest request, String clientId) {
+  public void update(UpdateEmployeeRequest request, String clientId) {
     EmployeeDto user = employeeRepository.findByClientId(clientId);
     if (user == null) {
       throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
     }
     employeeGraphAdapter.updateUser(clientId, request);
-    request.setClientId(clientId);
-    employeeRepository.update(request);
+    employeeRepository.updateProfile(request, clientId);
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             userContentProvider.getUserContent().getClientId(),
             "Account Updated",
             "Your account information has been updated.",
+            "/employees/profile"));
+  }
+
+  /**
+   * Update an employee's salary.
+   *
+   * <p>This is a separate endpoint requiring 'employee.salary.update' permission to prevent
+   * unauthorized salary modifications through the general update endpoint.
+   *
+   * @param request the request containing the new salary value
+   * @param clientId the client ID of the employee whose salary is being updated
+   */
+  @Override
+  @Transactional
+  public void updateSalary(UpdateSalaryRequest request, String clientId) {
+    EmployeeDto user = employeeRepository.findByClientId(clientId);
+    if (user == null) {
+      throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
+    }
+    employeeRepository.updateSalary(request.getSalary(), clientId);
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            clientId,
+            "Salary Updated",
+            "Your salary information has been updated.",
             "/employees/profile"));
   }
 
@@ -219,10 +253,19 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
   /**
-   * Find an employee by ID.
+   * Find an employee by ID. The salary field will be masked (set to -1) if the current user does
+   * not have permission to view it.
+   *
+   * <p>Salary visibility rules:
+   *
+   * <ul>
+   *   <li>User viewing their own profile: salary is visible
+   *   <li>User with 'employee.view.salary' permission: salary is visible
+   *   <li>Otherwise: salary is masked as -1
+   * </ul>
    *
    * @param id the employee ID
-   * @return the corresponding EmployeeDto
+   * @return the corresponding EmployeeDto with salary masked if unauthorized
    */
   @Override
   public EmployeeDto findByClientId(String id) {
@@ -230,7 +273,31 @@ public class EmployeeServiceImpl implements EmployeeService {
     if (employee == null) {
       throw ExceptionFactory.notFound(MessageConstant.W_EMP_002);
     }
+
+    // Mask salary if user doesn't have permission
+    if (!canViewSalary(id)) {
+      employee.setSalary(EmployeeConstant.MASKED_SALARY);
+    }
+
     return employee;
+  }
+
+  /**
+   * Checks if the current user can view the salary of the specified employee.
+   *
+   * @param targetClientId the client ID of the employee whose salary is being viewed
+   * @return true if the current user can view the salary, false otherwise
+   */
+  private boolean canViewSalary(String targetClientId) {
+    String currentUserClientId = userContentProvider.getUserContent().getClientId();
+
+    // User can always view their own salary
+    if (currentUserClientId.equals(targetClientId)) {
+      return true;
+    }
+
+    // Check if user has employee.view.salary permission in any scope
+    return permissionSecurityService.hasAnyPermission(EmployeeConstant.PERMISSION_VIEW_SALARY);
   }
 
   /**
