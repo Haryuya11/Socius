@@ -67,14 +67,14 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     // Look up required permission from database
     ApiPermissionDto requiredPermission = apiPermissionService.matchRequest(httpMethod, requestUri);
 
-    // If no permission mapping found, deny by default for security
+    // If no permission mapping found, allow authenticated access
+    // This means endpoints without explicit permission mapping are accessible to any authenticated
+    // user
     if (requiredPermission == null) {
       log.debug(
-          "Access denied: No permission mapping found for [{} {}], "
-              + "defaulting to authenticated access",
+          "No permission mapping found for [{} {}], allowing authenticated access",
           httpMethod,
           requestUri);
-      // Allow authenticated users if no specific permission is required
       return new AuthorizationDecision(true);
     }
 

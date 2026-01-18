@@ -74,6 +74,9 @@ VALUES
 ('report.view', 'View Reports', 'report', 'read', 'View reports'),
 ('report.export', 'Export Reports', 'report', 'export', 'Export reports'),
 
+-- ===== ROLE permissions =====
+('role.view', 'View Roles', 'role', 'read', 'View role information'),
+
 -- ===== SYSTEM permissions =====
 ('system.full', 'Full System Access', 'system', 'all', 'Complete system access');
 
@@ -102,6 +105,7 @@ VALUES
 -- View basic info
 ('USER', 'department.view'),
 ('USER', 'team.view'),
+('USER', 'role.view'),
 ('USER', 'task.view.self'),
 ('USER', 'task.update.self');
 

@@ -91,10 +91,10 @@ VALUES
 -- =====================================================
 INSERT INTO api_permissions (permission_code, resource, action, http_method, url_pattern)
 VALUES
--- Role viewing (available to authenticated users)
-('self.profile.view', 'role', 'read', 'GET', '/roles'),
-('self.profile.view', 'role', 'read', 'GET', '/roles/{roleCode}'),
-('self.profile.view', 'role', 'read', 'GET', '/roles/type/{roleType}');
+-- Role viewing (available to authenticated users with basic permissions)
+('role.view', 'role', 'read', 'GET', '/roles'),
+('role.view', 'role', 'read', 'GET', '/roles/{roleCode}'),
+('role.view', 'role', 'read', 'GET', '/roles/type/{roleType}');
 
 -- =====================================================
 -- 8. NOTIFICATION ENDPOINTS

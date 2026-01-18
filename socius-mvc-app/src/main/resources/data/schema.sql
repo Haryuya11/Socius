@@ -162,6 +162,10 @@ CREATE TABLE IF NOT EXISTS api_permissions
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_at      TIMESTAMP,
-    delete_flag     SMALLINT  DEFAULT 0,
-    UNIQUE (http_method, url_pattern, delete_flag)
+    delete_flag     SMALLINT  DEFAULT 0
 );
+
+-- Unique constraint for active API permissions only (delete_flag = 0)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_permissions_method_pattern_active
+    ON api_permissions (http_method, url_pattern)
+    WHERE delete_flag = 0;

@@ -63,7 +63,7 @@ public class ApiPermissionServiceImpl implements ApiPermissionService {
   }
 
   @Override
-  public synchronized void refreshCache() {
+  public void refreshCache() {
     log.info("Refreshing API permissions cache");
     List<ApiPermissionDto> permissions = repository.findAll();
     cachedPermissions.clear();
