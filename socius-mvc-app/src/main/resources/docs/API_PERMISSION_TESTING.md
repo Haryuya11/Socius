@@ -13,7 +13,20 @@ The RBAC (Role-Based Access Control) system uses database-driven permission mapp
 3. If user has `system.full` permission → **ALLOW** (SYS_ADMIN)
 4. Lookup permission from database by HTTP method + URL pattern
 5. If no mapping found → **DENY** (secure by default)
-6. Check if user has required permission (global or scoped) → **ALLOW/DENY**
+6. For **team/department scoped resources**:
+   - User **MUST** belong to the specific team/department
+   - Global permissions do **NOT** override scope requirements
+   - Check for `SCOPE:CODE:permission` format in user authorities
+7. For **non-scoped resources** (employee, role, notification, self):
+   - Check for global permission in user authorities
+
+### Scope Enforcement
+
+**Important**: For team and department resources, users can only access resources within scopes they belong to.
+
+- A user who belongs to `DEPT01` can access `/departments/DEPT01/employees` but NOT `/departments/DEPT02/employees`
+- A user who belongs to team `T01` can access `/teams/T01/tasks` but NOT `/teams/T02/tasks`
+- SYS_ADMIN with `system.full` bypasses all scope checks
 
 ---
 

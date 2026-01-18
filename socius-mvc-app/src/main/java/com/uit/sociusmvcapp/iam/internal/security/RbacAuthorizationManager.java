@@ -83,6 +83,13 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
    * Check if the user has the required permission. This method handles both global permissions and
    * scoped permissions (team/department).
    *
+   * <p>For scope-sensitive resources (team/department), the user MUST have a scoped permission
+   * matching the exact scope code from the URL. This ensures users can only access resources they
+   * belong to. Global permissions for these resources are ignored - users must belong to the scope.
+   *
+   * <p>Note: SYS_ADMIN with 'system.full' permission bypasses this check entirely (handled earlier
+   * in the authorization flow).
+   *
    * @param authentication the authentication object
    * @param requiredPermission the required permission
    * @param requestUri the request URI for scope extraction
@@ -94,28 +101,33 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     String permissionCode = requiredPermission.getPermissionCode();
     String resource = requiredPermission.getResource();
 
-    // First, check for global/system permission
-    if (hasAuthority(authentication, permissionCode)) {
-      return true;
-    }
-
-    // For team-scoped permissions, extract team code and check scoped authority
+    // For team-scoped resources, user MUST belong to the specific team
+    // Global permissions are not sufficient - scope membership is required
     if (AuthConstant.SCOPE_TEAM.equalsIgnoreCase(resource)) {
       String teamCode =
           extractPathVariable(
               requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_TEAM_CODE);
       if (teamCode != null) {
+        // Only check scoped authority (TEAM:{teamCode}:{permissionCode})
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
                 AuthConstant.SCOPE_TEAM,
                 teamCode,
                 permissionCode);
-        return hasAuthority(authentication, scopedAuthority);
+        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
+        if (!hasAccess) {
+          log.debug(
+              "Access denied: User does not belong to team [{}] or lacks permission [{}]",
+              teamCode,
+              permissionCode);
+        }
+        return hasAccess;
       }
     }
 
-    // For department-scoped permissions, extract department code and check scoped authority
+    // For department-scoped resources, user MUST belong to the specific department
+    // Global permissions are not sufficient - scope membership is required
     if (AuthConstant.SCOPE_DEPARTMENT.equalsIgnoreCase(resource)) {
       String deptCode =
           extractPathVariable(
@@ -128,17 +140,27 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
                 requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_DEPT_CODE);
       }
       if (deptCode != null) {
+        // Only check scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
                 AuthConstant.SCOPE_DEPARTMENT,
                 deptCode,
                 permissionCode);
-        return hasAuthority(authentication, scopedAuthority);
+        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
+        if (!hasAccess) {
+          log.debug(
+              "Access denied: User does not belong to department [{}] or lacks permission [{}]",
+              deptCode,
+              permissionCode);
+        }
+        return hasAccess;
       }
     }
 
-    return false;
+    // For non-scoped resources (employee, role, notification, self, etc.)
+    // Check global permission
+    return hasAuthority(authentication, permissionCode);
   }
 
   /**
