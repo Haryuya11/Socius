@@ -17,6 +17,9 @@ public final class EmployeeConstant {
   /** Permission code for viewing employee salary. */
   public static final String PERMISSION_VIEW_SALARY = "employee.view.salary";
 
+  /** Permission code for system full access (SYS_ADMIN). */
+  public static final String PERMISSION_SYSTEM_FULL = "system.full";
+
   /**
    * Masked salary value returned when user doesn't have permission to view salary. Using -1 to
    * indicate restricted/hidden value.

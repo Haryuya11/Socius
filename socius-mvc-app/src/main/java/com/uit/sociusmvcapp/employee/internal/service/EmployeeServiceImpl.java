@@ -300,6 +300,15 @@ public class EmployeeServiceImpl implements EmployeeService {
   /**
    * Checks if the current user can view the salary of the specified employee.
    *
+   * <p>Salary visibility rules:
+   *
+   * <ul>
+   *   <li>User viewing their own profile: salary is visible
+   *   <li>SYS_ADMIN with 'system.full' permission: can view all salaries
+   *   <li>User with 'employee.view.salary' permission (DEPT_DIR, DEPT_MGR): salary is visible
+   *   <li>Otherwise: salary is masked
+   * </ul>
+   *
    * @param targetClientId the client ID of the employee whose salary is being viewed
    * @return true if the current user can view the salary, false otherwise
    */
@@ -308,6 +317,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     // User can always view their own salary
     if (currentUserClientId.equals(targetClientId)) {
+      return true;
+    }
+
+    // SYS_ADMIN with system.full can view all salaries
+    if (permissionSecurityService.hasGlobalPermission(EmployeeConstant.PERMISSION_SYSTEM_FULL)) {
       return true;
     }
 
