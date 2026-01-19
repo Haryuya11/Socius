@@ -66,6 +66,45 @@ public class NotificationServiceImpl implements NotificationService {
   }
 
   /**
+   * Send notifications to multiple users with the same message (batch operation).
+   *
+   * @param receiverIds the list of receiver IDs
+   * @param title the title of the notification
+   * @param content the content of the notification
+   * @param linkUrl the link URL of the notification
+   */
+  @Override
+  public void sendMultiNotification(
+      List<String> receiverIds, String title, String content, String linkUrl) {
+    if (receiverIds == null || receiverIds.isEmpty()) {
+      return;
+    }
+
+    LocalDateTime dateTime = LocalDateTime.now();
+    PayloadDto payloadDto = buildPayload(title, content, linkUrl);
+
+    // Build all notifications
+    List<Notification> notifications =
+        receiverIds.stream()
+            .map(
+                receiverId -> {
+                  NotificationCreateRequest request =
+                      buildNotificationRequest(receiverId, payloadDto);
+                  return notificationConverter.fromCreateRequest(request, dateTime);
+                })
+            .toList();
+
+    // Batch insert to DB (1 query)
+    notificationRepository.batchInsert(notifications);
+
+    // Batch publish to RabbitMQ
+    List<NotificationDto> dtos = notificationConverter.entitiesToDtos(notifications);
+    for (NotificationDto dto : dtos) {
+      notificationPublisher.publishNotification(dto);
+    }
+  }
+
+  /**
    * Retrieve notifications for the current user.
    *
    * @param cursor the pagination cursor
