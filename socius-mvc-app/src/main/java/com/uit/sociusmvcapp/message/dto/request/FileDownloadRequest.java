@@ -15,4 +15,7 @@ public class FileDownloadRequest {
 
   @NotBlank(message = "File path is required")
   private String filePath;
+
+  /** MIME type of the file for proper content type header. */
+  private String mimeType;
 }
