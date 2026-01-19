@@ -67,4 +67,15 @@ public interface AzureBlobService {
    * @return the original file name
    */
   String getOriginalFileName(String blobName);
+
+  /**
+   * Upload multiple files to Azure Blob Storage with a shared timestamp folder.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param requests the list of upload requests containing file details
+   * @param clientId the client ID (conversation ID) for organizing files
+   * @return the list of file paths for uploaded files
+   */
+  List<String> uploadFiles(
+      AzureBlobProperties properties, List<UploadRequest> requests, String clientId);
 }

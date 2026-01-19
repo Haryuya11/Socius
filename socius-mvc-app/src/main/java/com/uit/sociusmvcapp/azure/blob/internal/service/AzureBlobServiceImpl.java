@@ -220,6 +220,45 @@ public class AzureBlobServiceImpl implements AzureBlobService {
   }
 
   /**
+   * Upload multiple files to Azure Blob Storage with a shared timestamp folder.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param requests the list of upload requests containing file details
+   * @param clientId the client ID (conversation ID) for organizing files
+   * @return the list of file paths for uploaded files
+   */
+  @Override
+  public List<String> uploadFiles(
+      AzureBlobProperties properties, List<UploadRequest> requests, String clientId) {
+    try {
+      log.info(
+          "Uploading {} files to container: {}", requests.size(), properties.getContainerName());
+      BlobContainerClient containerClient = createBlobContainerClient(properties);
+
+      ensureContainerExists(containerClient, properties.getContainerName());
+
+      // Generate a shared timestamp for all files in this batch
+      long sharedTimestamp = System.currentTimeMillis();
+      List<String> filePaths = new java.util.ArrayList<>();
+
+      for (UploadRequest request : requests) {
+        String blobName =
+            generateBlobNameWithTimestamp(clientId, sharedTimestamp, request.getFileName());
+        BlobClient blobClient = containerClient.getBlobClient(blobName);
+
+        uploadToBlob(blobClient, request);
+        log.info("File uploaded successfully: {}", blobName);
+        filePaths.add(blobName);
+      }
+
+      return filePaths;
+    } catch (Exception e) {
+      log.error("Failed to upload files batch", e);
+      throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
+    }
+  }
+
+  /**
    * Build the blob path using target ID, current timestamp, and filename.
    *
    * @param id the ID of the user/conversation/message uploading the file
@@ -228,6 +267,18 @@ public class AzureBlobServiceImpl implements AzureBlobService {
    */
   private String generateBlobName(String id, String filename) {
     long timestamp = System.currentTimeMillis();
+    return String.format("%s/%d/%s", id, timestamp, filename);
+  }
+
+  /**
+   * Build the blob path using target ID, provided timestamp, and filename.
+   *
+   * @param id the ID of the user/conversation/message uploading the file
+   * @param timestamp the timestamp to use in the path
+   * @param filename the name of the file being uploaded
+   * @return the constructed blob path
+   */
+  private String generateBlobNameWithTimestamp(String id, long timestamp, String filename) {
     return String.format("%s/%d/%s", id, timestamp, filename);
   }
 

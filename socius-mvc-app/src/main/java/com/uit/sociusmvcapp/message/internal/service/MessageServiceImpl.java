@@ -22,7 +22,6 @@ import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -315,13 +314,8 @@ public class MessageServiceImpl implements MessageService {
     // Verify user is a participant
     validateParticipant(conversationId, currentClientId);
 
-    List<FileMetadataDto> fileMetadataList = new ArrayList<>();
-    for (MultipartFile file : files) {
-      FileMetadataDto metadata = messageBlobAdapter.uploadMessageFile(file, conversationId);
-      fileMetadataList.add(metadata);
-    }
-
-    return fileMetadataList;
+    // Use batch upload to store all files in the same timestamp folder
+    return messageBlobAdapter.uploadMessageFiles(files, conversationId);
   }
 
   /**

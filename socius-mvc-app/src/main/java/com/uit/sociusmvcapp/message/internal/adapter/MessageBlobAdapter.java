@@ -67,6 +67,53 @@ public class MessageBlobAdapter {
   }
 
   /**
+   * Upload multiple files for a message and return file metadata list. All files are stored in the
+   * same timestamp folder.
+   *
+   * @param files the list of files to upload
+   * @param conversationId the conversation ID for organizing files
+   * @return list of FileMetadataDto containing file metadata
+   */
+  public List<FileMetadataDto> uploadMessageFiles(
+      List<MultipartFile> files, String conversationId) {
+    List<UploadRequest> uploadRequests = new java.util.ArrayList<>();
+    List<String> mimeTypes = new java.util.ArrayList<>();
+    List<Long> fileSizes = new java.util.ArrayList<>();
+    List<String> fileNames = new java.util.ArrayList<>();
+
+    for (MultipartFile file : files) {
+      String mimeType = detectMimeType(file);
+      mimeTypes.add(mimeType);
+      fileSizes.add(file.getSize());
+      fileNames.add(file.getOriginalFilename());
+
+      UploadRequest request = buildUploadRequest(file, conversationId, mimeType);
+      if (request == null) {
+        log.error("Failed to build upload request for conversationId: {}", conversationId);
+        throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
+      }
+      uploadRequests.add(request);
+    }
+
+    AzureBlobProperties properties = buildBlobProperties();
+    List<String> filePaths =
+        azureBlobService.uploadFiles(properties, uploadRequests, conversationId);
+
+    List<FileMetadataDto> metadataList = new java.util.ArrayList<>();
+    for (int i = 0; i < filePaths.size(); i++) {
+      metadataList.add(
+          FileMetadataDto.builder()
+              .fileName(fileNames.get(i))
+              .filePath(filePaths.get(i))
+              .fileSize(fileSizes.get(i))
+              .mimeType(mimeTypes.get(i))
+              .build());
+    }
+
+    return metadataList;
+  }
+
+  /**
    * Download a single file to the output stream.
    *
    * @param filePath the file path in blob storage
