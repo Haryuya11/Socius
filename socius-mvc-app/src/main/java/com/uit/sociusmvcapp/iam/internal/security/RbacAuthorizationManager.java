@@ -86,10 +86,11 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
    * <p>Authorization flow for scoped resources (team/department):
    *
    * <ol>
-   *   <li>First, check if user has the permission as a GLOBAL authority (granted via system roles
-   *       like USER). If yes, allow access regardless of scope - this enables basic viewing.
-   *   <li>If user doesn't have global permission, check for scoped permission (SCOPE:CODE:PERM).
-   *       User must belong to the specific scope to access resources within it.
+   *   <li>If the URL pattern contains a scope path variable (e.g., {teamCode}, {departmentCode}),
+   *       the user MUST have the scoped permission (SCOPE:CODE:PERM) to access. This ensures users
+   *       can only access resources within scopes they belong to.
+   *   <li>For endpoints WITHOUT scope path variables (e.g., /departments/search, /teams), global
+   *       permissions are accepted.
    * </ol>
    *
    * <p>Note: SYS_ADMIN with 'system.full' permission bypasses this check entirely (handled earlier
@@ -105,89 +106,107 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     String permissionCode = requiredPermission.getPermissionCode();
     String resource = requiredPermission.getResource();
+    String urlPattern = requiredPermission.getUrlPattern();
 
     // For team-scoped resources
     if (AuthConstant.SCOPE_TEAM.equalsIgnoreCase(resource)) {
-      // First, check if user has global permission (e.g., USER role has team.view globally)
-      if (hasAuthority(authentication, permissionCode)) {
-        log.debug("Access granted via global permission [{}]", permissionCode);
-        return true;
-      }
-
-      // Otherwise, check scoped permission - user must belong to the specific team
-      String teamCode =
-          extractPathVariable(
-              requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_TEAM_CODE);
-      if (teamCode == null) {
-        log.debug(
-            "Access denied: Could not extract team code from URL [{}] with pattern [{}]",
-            requestUri,
-            requiredPermission.getUrlPattern());
-        return false;
-      }
-      // Check scoped authority (TEAM:{teamCode}:{permissionCode})
-      String scopedAuthority =
-          String.format(
-              AuthConstant.SCOPED_AUTHORITY_FORMAT,
-              AuthConstant.SCOPE_TEAM,
+      // Check if URL pattern contains team code path variable
+      if (containsPathVariable(urlPattern, AuthConstant.PATH_VAR_TEAM_CODE)) {
+        // URL contains {teamCode} - MUST check scoped permission (user must belong to this team)
+        String teamCode =
+            extractPathVariable(urlPattern, requestUri, AuthConstant.PATH_VAR_TEAM_CODE);
+        if (teamCode == null) {
+          log.debug(
+              "Access denied: Could not extract team code from URL [{}] with pattern [{}]",
+              requestUri,
+              urlPattern);
+          return false;
+        }
+        // Check scoped authority (TEAM:{teamCode}:{permissionCode})
+        String scopedAuthority =
+            String.format(
+                AuthConstant.SCOPED_AUTHORITY_FORMAT,
+                AuthConstant.SCOPE_TEAM,
+                teamCode,
+                permissionCode);
+        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
+        if (!hasAccess) {
+          log.debug(
+              "Access denied: User does not belong to team [{}] or lacks permission [{}]",
               teamCode,
               permissionCode);
-      boolean hasAccess = hasAuthority(authentication, scopedAuthority);
-      if (!hasAccess) {
-        log.debug(
-            "Access denied: User lacks permission [{}] (neither global nor in team [{}])",
-            permissionCode,
-            teamCode);
+        }
+        return hasAccess;
+      } else {
+        // URL does NOT contain {teamCode} (e.g., /teams, /teams/search) - global permission OK
+        boolean hasAccess = hasAuthority(authentication, permissionCode);
+        if (hasAccess) {
+          log.debug("Access granted via global permission [{}]", permissionCode);
+        }
+        return hasAccess;
       }
-      return hasAccess;
     }
 
     // For department-scoped resources
     if (AuthConstant.SCOPE_DEPARTMENT.equalsIgnoreCase(resource)) {
-      // First, check if user has global permission (e.g., USER role has department.view globally)
-      if (hasAuthority(authentication, permissionCode)) {
-        log.debug("Access granted via global permission [{}]", permissionCode);
-        return true;
-      }
+      // Check if URL pattern contains department code path variable
+      boolean hasDeptCodeVar =
+          containsPathVariable(urlPattern, AuthConstant.PATH_VAR_DEPARTMENT_CODE)
+              || containsPathVariable(urlPattern, AuthConstant.PATH_VAR_DEPT_CODE);
 
-      // Otherwise, check scoped permission - user must belong to the specific department
-      String deptCode =
-          extractPathVariable(
-              requiredPermission.getUrlPattern(),
+      if (hasDeptCodeVar) {
+        // URL contains {departmentCode} or {deptCode} - MUST check scoped permission
+        String deptCode =
+            extractPathVariable(urlPattern, requestUri, AuthConstant.PATH_VAR_DEPARTMENT_CODE);
+        if (deptCode == null) {
+          deptCode = extractPathVariable(urlPattern, requestUri, AuthConstant.PATH_VAR_DEPT_CODE);
+        }
+        if (deptCode == null) {
+          log.debug(
+              "Access denied: Could not extract department code from URL [{}] with pattern [{}]",
               requestUri,
-              AuthConstant.PATH_VAR_DEPARTMENT_CODE);
-      if (deptCode == null) {
-        deptCode =
-            extractPathVariable(
-                requiredPermission.getUrlPattern(), requestUri, AuthConstant.PATH_VAR_DEPT_CODE);
-      }
-      if (deptCode == null) {
-        log.debug(
-            "Access denied: Could not extract department code from URL [{}] with pattern [{}]",
-            requestUri,
-            requiredPermission.getUrlPattern());
-        return false;
-      }
-      // Check scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
-      String scopedAuthority =
-          String.format(
-              AuthConstant.SCOPED_AUTHORITY_FORMAT,
-              AuthConstant.SCOPE_DEPARTMENT,
+              urlPattern);
+          return false;
+        }
+        // Check scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
+        String scopedAuthority =
+            String.format(
+                AuthConstant.SCOPED_AUTHORITY_FORMAT,
+                AuthConstant.SCOPE_DEPARTMENT,
+                deptCode,
+                permissionCode);
+        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
+        if (!hasAccess) {
+          log.debug(
+              "Access denied: User does not belong to department [{}] or lacks permission [{}]",
               deptCode,
               permissionCode);
-      boolean hasAccess = hasAuthority(authentication, scopedAuthority);
-      if (!hasAccess) {
-        log.debug(
-            "Access denied: User lacks permission [{}] (neither global nor in department [{}])",
-            permissionCode,
-            deptCode);
+        }
+        return hasAccess;
+      } else {
+        // URL does NOT contain {departmentCode} - global permission OK
+        boolean hasAccess = hasAuthority(authentication, permissionCode);
+        if (hasAccess) {
+          log.debug("Access granted via global permission [{}]", permissionCode);
+        }
+        return hasAccess;
       }
-      return hasAccess;
     }
 
-    // For non-scoped resources (employee, role, notification, self, etc.)
+    // For non-scoped resources (employee, role, notification, self, task, etc.)
     // Check global permission
     return hasAuthority(authentication, permissionCode);
+  }
+
+  /**
+   * Check if a URL pattern contains a specific path variable.
+   *
+   * @param urlPattern the URL pattern (e.g., /teams/{teamCode}/employees)
+   * @param variableName the variable name to check for (e.g., "teamCode")
+   * @return true if the pattern contains the variable
+   */
+  private boolean containsPathVariable(String urlPattern, String variableName) {
+    return urlPattern != null && urlPattern.contains("{" + variableName + "}");
   }
 
   /**
