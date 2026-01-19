@@ -331,6 +331,9 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public PageResponse<SearchTaskDto> getTasksByTeam(
       String teamCode, Integer pageNumber, Integer pageSize, String sortBy, String sortDirection) {
+    // Validate user belongs to the team or is SYS_ADMIN
+    validateTeamAccess(teamCode);
+
     SearchTaskRequest criteria = new SearchTaskRequest();
     criteria.setTeamCode(teamCode);
 
@@ -354,6 +357,9 @@ public class TaskServiceImpl implements TaskService {
       Integer pageSize,
       String sortBy,
       String sortDirection) {
+    // Validate user belongs to the department or is SYS_ADMIN
+    validateDepartmentAccess(departmentCode);
+
     SearchTaskRequest criteria = new SearchTaskRequest();
     criteria.setDepartmentCode(departmentCode);
 
@@ -786,5 +792,51 @@ public class TaskServiceImpl implements TaskService {
     // Additional scope validation would require checking if receiver belongs to team/department
     // This can be enhanced later with a gateway method to validate receiver membership
     // For MVP, we trust the API-level authorization
+  }
+
+  /**
+   * Validate that the current user has access to view tasks in the specified team. User can access
+   * team tasks if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User belongs to the specified team
+   * </ol>
+   *
+   * @param teamCode the team code to check
+   */
+  private void validateTeamAccess(String teamCode) {
+    // SYS_ADMIN can view all teams' tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // User must belong to the team
+    if (!permissionSecurityService.belongsToScope(AuthConstant.SCOPE_TEAM, teamCode)) {
+      throw ExceptionFactory.forbidden(MessageConstant.E_TASK_019);
+    }
+  }
+
+  /**
+   * Validate that the current user has access to view tasks in the specified department. User can
+   * access department tasks if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User belongs to the specified department
+   * </ol>
+   *
+   * @param departmentCode the department code to check
+   */
+  private void validateDepartmentAccess(String departmentCode) {
+    // SYS_ADMIN can view all departments' tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // User must belong to the department
+    if (!permissionSecurityService.belongsToScope(AuthConstant.SCOPE_DEPARTMENT, departmentCode)) {
+      throw ExceptionFactory.forbidden(MessageConstant.E_TASK_019);
+    }
   }
 }
