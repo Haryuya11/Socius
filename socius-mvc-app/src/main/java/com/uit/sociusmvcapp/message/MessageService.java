@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.message;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
@@ -92,25 +93,26 @@ public interface MessageService {
    * Download a single file from a message.
    *
    * @param conversationId the conversation ID for access validation
-   * @param filePath the file path to download
+   * @param request the file download request containing file path
    * @param outputStream the output stream to write file content
    */
-  void downloadFile(String conversationId, String filePath, OutputStream outputStream);
+  void downloadFile(String conversationId, FileDownloadRequest request, OutputStream outputStream);
 
   /**
    * Download multiple files as a ZIP archive.
    *
    * @param conversationId the conversation ID for access validation
-   * @param filePaths the list of file paths to download
+   * @param requests the list of file download requests
    * @param outputStream the output stream to write ZIP content
    */
-  void downloadFilesAsZip(String conversationId, List<String> filePaths, OutputStream outputStream);
+  void downloadFilesAsZip(
+      String conversationId, List<FileDownloadRequest> requests, OutputStream outputStream);
 
   /**
-   * Get the original file name from a file path.
+   * Get the original file name from a file download request.
    *
-   * @param filePath the file path
+   * @param request the file download request
    * @return the original file name
    */
-  String getOriginalFileName(String filePath);
+  String getOriginalFileName(FileDownloadRequest request);
 }

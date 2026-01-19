@@ -389,14 +389,14 @@ public class ConversationController {
       @Valid @RequestBody FileDownloadRequest request,
       HttpServletResponse response)
       throws IOException {
-    String fileName = messageService.getOriginalFileName(request.getFilePath());
+    String fileName = messageService.getOriginalFileName(request);
     String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
 
     response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
     response.setHeader(
         HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName);
 
-    messageService.downloadFile(conversationId, request.getFilePath(), response.getOutputStream());
+    messageService.downloadFile(conversationId, request, response.getOutputStream());
     response.flushBuffer();
   }
 
@@ -415,12 +415,11 @@ public class ConversationController {
       HttpServletResponse response)
       throws IOException {
     String zipFileName = UUID.randomUUID().toString() + ".zip";
-    List<String> filePaths = requests.stream().map(FileDownloadRequest::getFilePath).toList();
 
     response.setContentType("application/zip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);
 
-    messageService.downloadFilesAsZip(conversationId, filePaths, response.getOutputStream());
+    messageService.downloadFilesAsZip(conversationId, requests, response.getOutputStream());
     response.flushBuffer();
   }
 }

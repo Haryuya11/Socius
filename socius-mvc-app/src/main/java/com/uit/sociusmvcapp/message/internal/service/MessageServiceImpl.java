@@ -6,6 +6,7 @@ import com.uit.sociusmvcapp.message.MessageService;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
@@ -327,45 +328,47 @@ public class MessageServiceImpl implements MessageService {
    * Download a single file from a message.
    *
    * @param conversationId the conversation ID for access validation
-   * @param filePath the file path to download
+   * @param request the file download request containing file path
    * @param outputStream the output stream to write file content
    */
   @Override
-  public void downloadFile(String conversationId, String filePath, OutputStream outputStream) {
+  public void downloadFile(
+      String conversationId, FileDownloadRequest request, OutputStream outputStream) {
     String currentClientId = userContentProvider.getUserContent().getClientId();
 
     // Verify user is a participant
     validateParticipant(conversationId, currentClientId);
 
-    messageBlobAdapter.downloadFile(filePath, outputStream);
+    messageBlobAdapter.downloadFile(request.getFilePath(), outputStream);
   }
 
   /**
    * Download multiple files as a ZIP archive.
    *
    * @param conversationId the conversation ID for access validation
-   * @param filePaths the list of file paths to download
+   * @param requests the list of file download requests
    * @param outputStream the output stream to write ZIP content
    */
   @Override
   public void downloadFilesAsZip(
-      String conversationId, List<String> filePaths, OutputStream outputStream) {
+      String conversationId, List<FileDownloadRequest> requests, OutputStream outputStream) {
     String currentClientId = userContentProvider.getUserContent().getClientId();
 
     // Verify user is a participant
     validateParticipant(conversationId, currentClientId);
 
+    List<String> filePaths = requests.stream().map(FileDownloadRequest::getFilePath).toList();
     messageBlobAdapter.downloadFilesAsZip(filePaths, outputStream);
   }
 
   /**
-   * Get the original file name from a file path.
+   * Get the original file name from a file download request.
    *
-   * @param filePath the file path
+   * @param request the file download request
    * @return the original file name
    */
   @Override
-  public String getOriginalFileName(String filePath) {
-    return messageBlobAdapter.getOriginalFileName(filePath);
+  public String getOriginalFileName(FileDownloadRequest request) {
+    return messageBlobAdapter.getOriginalFileName(request.getFilePath());
   }
 }
