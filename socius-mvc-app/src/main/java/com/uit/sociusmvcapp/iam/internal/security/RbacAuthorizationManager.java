@@ -122,21 +122,35 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
               urlPattern);
           return false;
         }
-        // Check scoped authority (TEAM:{teamCode}:{permissionCode})
+
+        // First check: specific scoped authority (TEAM:{teamCode}:{permissionCode})
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
                 AuthConstant.SCOPE_TEAM,
                 teamCode,
                 permissionCode);
-        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
-        if (!hasAccess) {
+        if (hasAuthority(authentication, scopedAuthority)) {
+          log.debug("Access granted via scoped permission [{}]", scopedAuthority);
+          return true;
+        }
+
+        // Second check: user belongs to this team (has ANY scoped authority for this team)
+        // AND has the global permission
+        if (hasAuthority(authentication, permissionCode)
+            && userBelongsToScope(authentication, AuthConstant.SCOPE_TEAM, teamCode)) {
           log.debug(
-              "Access denied: User does not belong to team [{}] or lacks permission [{}]",
+              "Access granted: User belongs to team [{}] and has global permission [{}]",
               teamCode,
               permissionCode);
+          return true;
         }
-        return hasAccess;
+
+        log.debug(
+            "Access denied: User does not belong to team [{}] or lacks permission [{}]",
+            teamCode,
+            permissionCode);
+        return false;
       } else {
         // URL does NOT contain {teamCode} (e.g., /teams, /teams/search) - global permission OK
         boolean hasAccess = hasAuthority(authentication, permissionCode);
@@ -168,21 +182,35 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
               urlPattern);
           return false;
         }
-        // Check scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
+
+        // First check: specific scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
                 AuthConstant.SCOPE_DEPARTMENT,
                 deptCode,
                 permissionCode);
-        boolean hasAccess = hasAuthority(authentication, scopedAuthority);
-        if (!hasAccess) {
+        if (hasAuthority(authentication, scopedAuthority)) {
+          log.debug("Access granted via scoped permission [{}]", scopedAuthority);
+          return true;
+        }
+
+        // Second check: user belongs to this department (has ANY scoped authority for this dept)
+        // AND has the global permission
+        if (hasAuthority(authentication, permissionCode)
+            && userBelongsToScope(authentication, AuthConstant.SCOPE_DEPARTMENT, deptCode)) {
           log.debug(
-              "Access denied: User does not belong to department [{}] or lacks permission [{}]",
+              "Access granted: User belongs to department [{}] and has global permission [{}]",
               deptCode,
               permissionCode);
+          return true;
         }
-        return hasAccess;
+
+        log.debug(
+            "Access denied: User does not belong to department [{}] or lacks permission [{}]",
+            deptCode,
+            permissionCode);
+        return false;
       } else {
         // URL does NOT contain {departmentCode} - global permission OK
         boolean hasAccess = hasAuthority(authentication, permissionCode);
@@ -243,5 +271,23 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
           e.getMessage());
       return null;
     }
+  }
+
+  /**
+   * Check if the user belongs to a specific scope (team or department). This checks if the user has
+   * ANY authority that starts with "SCOPE:CODE:" pattern, meaning they have at least one permission
+   * within that scope.
+   *
+   * @param authentication the authentication object
+   * @param scopeType the scope type (e.g., "TEAM", "DEPARTMENT")
+   * @param scopeCode the scope code (e.g., "T01", "DEPT01")
+   * @return true if the user has at least one scoped authority for the given scope
+   */
+  private boolean userBelongsToScope(
+      Authentication authentication, String scopeType, String scopeCode) {
+    String scopePrefix = scopeType + ":" + scopeCode + ":";
+    return authentication.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .anyMatch(a -> a.startsWith(scopePrefix));
   }
 }
