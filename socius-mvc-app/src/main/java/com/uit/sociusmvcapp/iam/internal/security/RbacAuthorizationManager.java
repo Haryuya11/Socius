@@ -228,9 +228,61 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       }
     }
 
-    // For non-scoped resources (employee, role, notification, self, task, etc.)
-    // Check global permission
+    // For task resources without scope path variables (e.g., /tasks/{id}, /tasks/my-tasks)
+    // We need to check both global permission AND scoped task permissions
+    // because task operations can be allowed via team membership (TEAM:T01:task.update)
+    if ("task".equalsIgnoreCase(resource)) {
+      // First check: global permission
+      if (hasAuthority(authentication, permissionCode)) {
+        log.debug("Access granted via global permission [{}]", permissionCode);
+        return true;
+      }
+
+      // Second check: user has this permission in ANY team (scoped authority check)
+      // This allows users with TEAM:T01:task.update to update tasks they're authorized for
+      if (hasAnyScopedPermission(authentication, permissionCode)) {
+        log.debug(
+            "Access granted: User has scoped permission [{}] in at least one team/department",
+            permissionCode);
+        return true;
+      }
+
+      log.debug(
+          "Access denied: User lacks permission [{}] globally or in any scope", permissionCode);
+      return false;
+    }
+
+    // For non-scoped resources (employee, role, notification, self, etc.)
+    // Check global permission only
     return hasAuthority(authentication, permissionCode);
+  }
+
+  /**
+   * Check if the user has the specified permission in ANY scope (team or department). This is
+   * useful for endpoints that don't specify a scope in the URL but should still allow access if the
+   * user has the permission in any of their assigned teams/departments.
+   *
+   * @param authentication the authentication object
+   * @param permissionCode the permission code to check
+   * @return true if the user has the permission in any scope
+   */
+  private boolean hasAnyScopedPermission(Authentication authentication, String permissionCode) {
+    if (authentication.getAuthorities() == null) {
+      return false;
+    }
+
+    // Check for pattern TEAM:*:permissionCode or DEPARTMENT:*:permissionCode
+    String teamSuffix = AuthConstant.SCOPED_AUTHORITY_SEPARATOR + permissionCode;
+    String deptSuffix = AuthConstant.SCOPED_AUTHORITY_SEPARATOR + permissionCode;
+    String teamPrefix = AuthConstant.SCOPE_TEAM + AuthConstant.SCOPED_AUTHORITY_SEPARATOR;
+    String deptPrefix = AuthConstant.SCOPE_DEPARTMENT + AuthConstant.SCOPED_AUTHORITY_SEPARATOR;
+
+    return authentication.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .anyMatch(
+            a ->
+                (a.startsWith(teamPrefix) && a.endsWith(teamSuffix))
+                    || (a.startsWith(deptPrefix) && a.endsWith(deptSuffix)));
   }
 
   /**

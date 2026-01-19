@@ -35,4 +35,7 @@ public final class AuthConstant {
 
   /** Scoped authority format pattern. */
   public static final String SCOPED_AUTHORITY_FORMAT = "%s:%s:%s";
+
+  /** Separator used in scoped authority strings (e.g., TEAM:T01:task.update). */
+  public static final String SCOPED_AUTHORITY_SEPARATOR = ":";
 }
