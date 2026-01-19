@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -33,8 +34,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
   private final ApiPermissionService apiPermissionService;
   private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-  /** API context path prefix (e.g., "/api"). */
-  @org.springframework.beans.factory.annotation.Value("${server.servlet.context-path:}")
+  @Value("${server.servlet.context-path:}")
   private String contextPath;
 
   @Override
@@ -46,33 +46,26 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     Authentication authentication = authenticationSupplier.get();
 
-    // Check if user is authenticated
     if (authentication == null || !authentication.isAuthenticated()) {
       log.debug("Access denied: User not authenticated for [{} {}]", httpMethod, requestUri);
       return new AuthorizationDecision(false);
     }
 
-    // Check if user has system.full permission (SYS_ADMIN)
     if (hasAuthority(authentication, AuthConstant.PERMISSION_SYSTEM_FULL)) {
       log.debug(
           "Access granted: User has system.full permission for [{} {}]", httpMethod, requestUri);
       return new AuthorizationDecision(true);
     }
 
-    // Look up required permission from database
     ApiPermissionDto requiredPermission = apiPermissionService.matchRequest(httpMethod, requestUri);
 
-    // If no permission mapping found, DENY access for security
-    // All protected endpoints must have explicit permission mappings
     if (requiredPermission == null) {
       log.debug("Access denied: No permission mapping found for [{} {}]", httpMethod, requestUri);
       return new AuthorizationDecision(false);
     }
 
-    // Normalize URI by removing context path for path variable extraction
     String normalizedUri = normalizeUri(requestUri);
 
-    // Check if user has the required permission (using normalizedUri for path variable extraction)
     boolean hasPermission = checkUserPermission(authentication, requiredPermission, normalizedUri);
 
     log.debug(
@@ -115,11 +108,9 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     String resource = requiredPermission.getResource();
     String urlPattern = requiredPermission.getUrlPattern();
 
-    // For team-scoped resources
+    // Team-scoped resource
     if (AuthConstant.SCOPE_TEAM.equalsIgnoreCase(resource)) {
-      // Check if URL pattern contains team code path variable
       if (containsPathVariable(urlPattern, AuthConstant.PATH_VAR_TEAM_CODE)) {
-        // URL contains {teamCode} - MUST check scoped permission (user must belong to this team)
         String teamCode =
             extractPathVariable(urlPattern, requestUri, AuthConstant.PATH_VAR_TEAM_CODE);
         if (teamCode == null) {
@@ -130,7 +121,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
           return false;
         }
 
-        // First check: specific scoped authority (TEAM:{teamCode}:{permissionCode})
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
@@ -138,12 +128,10 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
                 teamCode,
                 permissionCode);
         if (hasAuthority(authentication, scopedAuthority)) {
-          log.debug("Access granted via scoped permission [{}]", scopedAuthority);
+          log.debug("Access granted via team scoped permission [{}]", scopedAuthority);
           return true;
         }
 
-        // Second check: user belongs to this team (has ANY scoped authority for this team)
-        // AND has the global permission
         if (hasAuthority(authentication, permissionCode)
             && userBelongsToScope(authentication, AuthConstant.SCOPE_TEAM, teamCode)) {
           log.debug(
@@ -159,7 +147,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             permissionCode);
         return false;
       } else {
-        // URL does NOT contain {teamCode} (e.g., /teams, /teams/search) - global permission OK
         boolean hasAccess = hasAuthority(authentication, permissionCode);
         if (hasAccess) {
           log.debug("Access granted via global permission [{}]", permissionCode);
@@ -168,15 +155,13 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       }
     }
 
-    // For department-scoped resources
+    // Department-scoped resource
     if (AuthConstant.SCOPE_DEPARTMENT.equalsIgnoreCase(resource)) {
-      // Check if URL pattern contains department code path variable
       boolean hasDeptCodeVar =
           containsPathVariable(urlPattern, AuthConstant.PATH_VAR_DEPARTMENT_CODE)
               || containsPathVariable(urlPattern, AuthConstant.PATH_VAR_DEPT_CODE);
 
       if (hasDeptCodeVar) {
-        // URL contains {departmentCode} or {deptCode} - MUST check scoped permission
         String deptCode =
             extractPathVariable(urlPattern, requestUri, AuthConstant.PATH_VAR_DEPARTMENT_CODE);
         if (deptCode == null) {
@@ -190,7 +175,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
           return false;
         }
 
-        // First check: specific scoped authority (DEPARTMENT:{deptCode}:{permissionCode})
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
@@ -198,12 +182,10 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
                 deptCode,
                 permissionCode);
         if (hasAuthority(authentication, scopedAuthority)) {
-          log.debug("Access granted via scoped permission [{}]", scopedAuthority);
+          log.debug("Access granted via department scoped permission [{}]", scopedAuthority);
           return true;
         }
 
-        // Second check: user belongs to this department (has ANY scoped authority for this dept)
-        // AND has the global permission
         if (hasAuthority(authentication, permissionCode)
             && userBelongsToScope(authentication, AuthConstant.SCOPE_DEPARTMENT, deptCode)) {
           log.debug(
@@ -219,7 +201,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             permissionCode);
         return false;
       } else {
-        // URL does NOT contain {departmentCode} - global permission OK
         boolean hasAccess = hasAuthority(authentication, permissionCode);
         if (hasAccess) {
           log.debug("Access granted via global permission [{}]", permissionCode);
@@ -228,18 +209,12 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       }
     }
 
-    // For task resources without scope path variables (e.g., /tasks/{id}, /tasks/my-tasks)
-    // We need to check both global permission AND scoped task permissions
-    // because task operations can be allowed via team membership (TEAM:T01:task.update)
     if ("task".equalsIgnoreCase(resource)) {
-      // First check: global permission
       if (hasAuthority(authentication, permissionCode)) {
         log.debug("Access granted via global permission [{}]", permissionCode);
         return true;
       }
 
-      // Second check: user has this permission in ANY team (scoped authority check)
-      // This allows users with TEAM:T01:task.update to update tasks they're authorized for
       if (hasAnyScopedPermission(authentication, permissionCode)) {
         log.debug(
             "Access granted: User has scoped permission [{}] in at least one team/department",
@@ -252,8 +227,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       return false;
     }
 
-    // For non-scoped resources (employee, role, notification, self, etc.)
-    // Check global permission only
     return hasAuthority(authentication, permissionCode);
   }
 
@@ -271,7 +244,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       return false;
     }
 
-    // Check for pattern TEAM:*:permissionCode or DEPARTMENT:*:permissionCode
     String teamSuffix = AuthConstant.SCOPED_AUTHORITY_SEPARATOR + permissionCode;
     String deptSuffix = AuthConstant.SCOPED_AUTHORITY_SEPARATOR + permissionCode;
     String teamPrefix = AuthConstant.SCOPE_TEAM + AuthConstant.SCOPED_AUTHORITY_SEPARATOR;

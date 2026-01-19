@@ -2,6 +2,7 @@ package com.uit.sociusmvcapp.shared.component;
 
 import com.uit.sociusmvcapp.shared.config.TtlCacheConfig;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,7 +53,7 @@ public abstract class TtlCache<T> {
   public List<T> get() {
     if (isCacheExpired()) {
       log.debug("{} cache expired or empty", cacheName);
-      return null;
+      return Collections.emptyList();
     }
     return cache.get(getCacheKey());
   }
