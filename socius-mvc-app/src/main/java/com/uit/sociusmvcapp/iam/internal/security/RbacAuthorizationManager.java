@@ -285,7 +285,11 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
    */
   private boolean userBelongsToScope(
       Authentication authentication, String scopeType, String scopeCode) {
-    String scopePrefix = scopeType + ":" + scopeCode + ":";
+    if (authentication.getAuthorities() == null) {
+      return false;
+    }
+    String scopePrefix =
+        String.format(AuthConstant.SCOPED_AUTHORITY_FORMAT, scopeType, scopeCode, "");
     return authentication.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .anyMatch(a -> a.startsWith(scopePrefix));
