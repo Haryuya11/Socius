@@ -79,14 +79,43 @@ VALUES
 -- =====================================================
 INSERT INTO api_permissions (permission_code, resource, action, http_method, url_pattern)
 VALUES
--- Task operations (scoped to team)
+-- Task operations (scoped to team via /teams/{teamCode}/tasks - legacy)
 ('task.view.team', 'team', 'read', 'GET', '/teams/{teamCode}/tasks'),
 ('task.view.team', 'team', 'read', 'GET', '/teams/{teamCode}/tasks/{taskId}'),
 ('task.create', 'team', 'create', 'POST', '/teams/{teamCode}/tasks'),
 ('task.update', 'team', 'update', 'PUT', '/teams/{teamCode}/tasks/{taskId}'),
 ('task.delete', 'team', 'delete', 'DELETE', '/teams/{teamCode}/tasks/{taskId}'),
 ('task.approve', 'team', 'approve', 'POST', '/teams/{teamCode}/tasks/{taskId}/approve'),
-('task.assign', 'team', 'assign', 'POST', '/teams/{teamCode}/tasks/{taskId}/assign');
+('task.assign', 'team', 'assign', 'POST', '/teams/{teamCode}/tasks/{taskId}/assign'),
+
+-- Task CRUD via /tasks endpoints
+('task.create', 'task', 'create', 'POST', '/tasks'),
+('task.view.self', 'task', 'read', 'GET', '/tasks/{id}'),
+('task.update', 'task', 'update', 'PUT', '/tasks/{id}'),
+('task.delete', 'task', 'delete', 'DELETE', '/tasks/{id}'),
+('task.view.self', 'task', 'read', 'POST', '/tasks/search'),
+
+-- Sub-task operations
+('task.create', 'task', 'create', 'POST', '/tasks/{parentId}/sub-tasks'),
+('task.view.self', 'task', 'read', 'GET', '/tasks/{parentId}/sub-tasks'),
+
+-- Task activities
+('task.view.self', 'task', 'read', 'GET', '/tasks/{id}/activities'),
+
+-- My tasks (own tasks - self-scoped)
+('task.view.self', 'task', 'read', 'GET', '/tasks/my-tasks'),
+('task.view.self', 'task', 'read', 'GET', '/tasks/assigned-by-me'),
+
+-- Team/Department scoped task views via /tasks endpoints
+('task.view.team', 'task', 'read', 'GET', '/tasks/team/{teamCode}'),
+('task.view.department', 'task', 'read', 'GET', '/tasks/department/{departmentCode}'),
+
+-- Task state transitions (receiver can submit, sender can approve/reject/cancel/reopen)
+('task.update.self', 'task', 'update', 'PUT', '/tasks/{id}/submit-review'),
+('task.approve', 'task', 'approve', 'PUT', '/tasks/{id}/approve'),
+('task.approve', 'task', 'reject', 'PUT', '/tasks/{id}/reject'),
+('task.update', 'task', 'cancel', 'PUT', '/tasks/{id}/cancel'),
+('task.update', 'task', 'reopen', 'PUT', '/tasks/{id}/reopen');
 
 -- =====================================================
 -- 7. ROLE ENDPOINTS (Read-only, for reference)
