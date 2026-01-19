@@ -37,9 +37,12 @@ public class TaskRepository {
    *
    * @param request create task request
    * @param currentUserId current user ID
+   * @return task ID
    */
-  public void createTask(CreateTaskRequest request, String currentUserId) {
-    taskMapper.insert(taskConverter.createRequestToEntity(request, currentUserId));
+  public Integer createTask(CreateTaskRequest request, String currentUserId) {
+    Task task = taskConverter.createRequestToEntity(request, currentUserId);
+    taskMapper.insert(task);
+    return task.getId();
   }
 
   /**

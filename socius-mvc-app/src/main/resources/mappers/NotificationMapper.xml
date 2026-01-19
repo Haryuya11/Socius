@@ -25,6 +25,15 @@
         VALUES (#{receiverId}, #{deliveryType}, #{payload})
     </insert>
 
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO notifications
+            (receiver_id, delivery_type, payload_json)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.receiverId}, #{item.deliveryType}, #{item.payload})
+        </foreach>
+    </insert>
+
     <select id="countUnreadByClientId" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM notifications
         WHERE receiver_id = #{clientId}

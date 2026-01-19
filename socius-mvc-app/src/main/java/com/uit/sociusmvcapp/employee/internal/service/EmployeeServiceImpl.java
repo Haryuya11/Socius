@@ -144,7 +144,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             userContentProvider.getUserContent().getClientId(),
             "Account Updated",
             "Your account information has been updated.",
-            "/employees/profile"));
+            "/profile"));
   }
 
   /**

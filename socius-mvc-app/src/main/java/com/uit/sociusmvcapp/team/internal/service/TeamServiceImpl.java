@@ -1,12 +1,16 @@
 package com.uit.sociusmvcapp.team.internal.service;
 
+import com.uit.sociusmvcapp.iam.UserContentProvider;
+import com.uit.sociusmvcapp.notification.NotificationService;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import com.uit.sociusmvcapp.team.DepartmentGateway;
 import com.uit.sociusmvcapp.team.TeamActionGuard;
+import com.uit.sociusmvcapp.team.TeamEmployeeGateway;
 import com.uit.sociusmvcapp.team.TeamService;
 import com.uit.sociusmvcapp.team.dto.SearchTeamDto;
 import com.uit.sociusmvcapp.team.dto.TeamDto;
@@ -18,6 +22,7 @@ import com.uit.sociusmvcapp.team.internal.repository.TeamRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +37,14 @@ public class TeamServiceImpl implements TeamService {
   private final List<TeamActionGuard> guards;
 
   private final DepartmentGateway departmentGateway;
+
+  private final TeamEmployeeGateway teamEmployeeGateway;
+
+  private final ApplicationEventPublisher eventPublisher;
+
+  private final UserContentProvider userContentProvider;
+
+  private final NotificationService notificationService;
 
   // ========================= TEAM SERVICE MAIN METHODS =========================
 
@@ -56,6 +69,16 @@ public class TeamServiceImpl implements TeamService {
     } else {
       teamRepository.insert(request);
     }
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            userContentProvider.getUserContent().getClientId(),
+            "Team Created",
+            String.format(
+                "Team '%s' (%s) has been successfully created.",
+                request.getTeamName(), request.getTeamCode()),
+            "/teams/" + request.getTeamCode()));
   }
 
   /**
@@ -91,6 +114,17 @@ public class TeamServiceImpl implements TeamService {
     departmentGateway.validateDepartmentExists(request.getDepartmentCode());
 
     teamRepository.update(teamCode, request);
+
+    // Send batch notification to all team members about the update (avoid N+1)
+    List<String> memberIds = getTeamMemberIds(teamCode);
+    if (!memberIds.isEmpty()) {
+      notificationService.sendMultiNotification(
+          memberIds,
+          "Team Updated",
+          String.format("Team '%s' (%s) has been updated.", request.getTeamName(), teamCode),
+          "/teams/" + teamCode);
+    }
+
     return findByTeamCode(teamCode);
   }
 
@@ -108,7 +142,17 @@ public class TeamServiceImpl implements TeamService {
       guard.validate(TeamActionType.DEACTIVATE, teamCode);
     }
 
+    TeamDto team = teamRepository.findByTeamCode(teamCode);
     teamRepository.softDelete(teamCode);
+
+    // Send batch notification to all team members about the deletion (avoid N+1)
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            userContentProvider.getUserContent().getClientId(),
+            "Team Deleted",
+            String.format("Team '%s' (%s) has been deleted.", team.getTeamName(), teamCode),
+            "/teams"));
   }
 
   /**
@@ -146,5 +190,19 @@ public class TeamServiceImpl implements TeamService {
         teamRepository.search(criteria, request.getSortRequests(), limit, offset);
 
     return PageResponse.of(result, total, offset, limit);
+  }
+
+  // ========================= HELPER METHODS =========================
+
+  /**
+   * Get all active member IDs in a team for notification purposes.
+   *
+   * <p>Uses TeamEmployeeGateway to avoid circular dependency with TeamEmployee module.
+   *
+   * @param teamCode the team code
+   * @return list of employee client IDs (only active members)
+   */
+  private List<String> getTeamMemberIds(String teamCode) {
+    return teamEmployeeGateway.getActiveMemberIds(teamCode);
   }
 }
