@@ -48,7 +48,8 @@ public class MessageBlobAdapter {
    * @return FileMetadataDto containing file metadata
    */
   public FileMetadataDto uploadMessageFile(MultipartFile file, String conversationId) {
-    UploadRequest request = buildUploadRequest(file, conversationId);
+    String mimeType = detectMimeType(file);
+    UploadRequest request = buildUploadRequest(file, conversationId, mimeType);
     if (request == null) {
       log.error("Failed to build upload request for conversationId: {}", conversationId);
       throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
@@ -56,8 +57,6 @@ public class MessageBlobAdapter {
 
     AzureBlobProperties properties = buildBlobProperties();
     String filePath = azureBlobService.uploadFile(properties, request);
-
-    String mimeType = detectMimeType(file);
 
     return FileMetadataDto.builder()
         .fileName(file.getOriginalFilename())
@@ -135,10 +134,10 @@ public class MessageBlobAdapter {
     }
   }
 
-  /** Build an UploadRequest from a MultipartFile and conversationId. */
-  private UploadRequest buildUploadRequest(MultipartFile file, String conversationId) {
+  /** Build an UploadRequest from a MultipartFile, conversationId, and mimeType. */
+  private UploadRequest buildUploadRequest(
+      MultipartFile file, String conversationId, String mimeType) {
     try {
-      String mimeType = detectMimeType(file);
       return UploadRequest.builder()
           .clientId(conversationId)
           .fileName(file.getOriginalFilename())

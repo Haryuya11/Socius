@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -412,7 +413,7 @@ public class ConversationController {
       @RequestBody List<String> filePaths,
       HttpServletResponse response)
       throws IOException {
-    String zipFileName = System.currentTimeMillis() + ".zip";
+    String zipFileName = UUID.randomUUID().toString() + ".zip";
 
     response.setContentType("application/zip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);
