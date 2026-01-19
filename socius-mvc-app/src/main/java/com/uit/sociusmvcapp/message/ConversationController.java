@@ -7,6 +7,7 @@ import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantsRequest;
 import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateParticipantSettingsRequest;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
@@ -359,7 +360,7 @@ public class ConversationController {
    * @param files the files to upload
    * @return ResponseEntity containing the list of file metadata
    */
-  @PostMapping("/{conversationId}/files")
+  @PostMapping("/{conversationId}/messages/attachments")
   public ResponseEntity<Response> uploadMessageFiles(
       @PathVariable String conversationId, @RequestParam("files") List<MultipartFile> files) {
     List<FileMetadataDto> metadataList = messageService.uploadMessageFiles(conversationId, files);
@@ -378,24 +379,24 @@ public class ConversationController {
    * Download a single file from a conversation.
    *
    * @param conversationId the conversation ID
+   * @param request the file download request containing file path
    * @param response the HTTP servlet response
-   * @param filePath the file path to download (URL encoded)
    * @throws IOException if download fails
    */
-  @GetMapping("/{conversationId}/files/download")
+  @PostMapping("/{conversationId}/files/download")
   public void downloadFile(
       @PathVariable String conversationId,
-      @RequestParam("filePath") String filePath,
+      @Valid @RequestBody FileDownloadRequest request,
       HttpServletResponse response)
       throws IOException {
-    String fileName = messageService.getOriginalFileName(filePath);
+    String fileName = messageService.getOriginalFileName(request.getFilePath());
     String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
 
     response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
     response.setHeader(
         HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName);
 
-    messageService.downloadFile(conversationId, filePath, response.getOutputStream());
+    messageService.downloadFile(conversationId, request.getFilePath(), response.getOutputStream());
     response.flushBuffer();
   }
 
@@ -403,17 +404,18 @@ public class ConversationController {
    * Download multiple files as a ZIP archive from a conversation.
    *
    * @param conversationId the conversation ID
+   * @param requests the list of file download requests
    * @param response the HTTP servlet response
-   * @param filePaths the list of file paths to download
    * @throws IOException if download fails
    */
   @PostMapping("/{conversationId}/files/download-zip")
   public void downloadFilesAsZip(
       @PathVariable String conversationId,
-      @RequestBody List<String> filePaths,
+      @Valid @RequestBody List<FileDownloadRequest> requests,
       HttpServletResponse response)
       throws IOException {
     String zipFileName = UUID.randomUUID().toString() + ".zip";
+    List<String> filePaths = requests.stream().map(FileDownloadRequest::getFilePath).toList();
 
     response.setContentType("application/zip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);
