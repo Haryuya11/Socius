@@ -33,6 +33,10 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
   private final ApiPermissionService apiPermissionService;
   private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+  /** API context path prefix (e.g., "/api"). */
+  @org.springframework.beans.factory.annotation.Value("${server.servlet.context-path:}")
+  private String contextPath;
+
   @Override
   public AuthorizationDecision check(
       Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
@@ -65,8 +69,11 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       return new AuthorizationDecision(false);
     }
 
-    // Check if user has the required permission
-    boolean hasPermission = checkUserPermission(authentication, requiredPermission, requestUri);
+    // Normalize URI by removing context path for path variable extraction
+    String normalizedUri = normalizeUri(requestUri);
+
+    // Check if user has the required permission (using normalizedUri for path variable extraction)
+    boolean hasPermission = checkUserPermission(authentication, requiredPermission, normalizedUri);
 
     log.debug(
         "Access {}: User {} permission [{}] for [{} {}]",
@@ -74,7 +81,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
         hasPermission ? "has" : "lacks",
         requiredPermission.getPermissionCode(),
         httpMethod,
-        requestUri);
+        normalizedUri);
 
     return new AuthorizationDecision(hasPermission);
   }
@@ -293,5 +300,18 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     return authentication.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .anyMatch(a -> a.startsWith(scopePrefix));
+  }
+
+  /**
+   * Normalize the request URI by removing the context path prefix.
+   *
+   * @param requestUri the full request URI
+   * @return the normalized URI without context path
+   */
+  private String normalizeUri(String requestUri) {
+    if (contextPath != null && !contextPath.isEmpty() && requestUri.startsWith(contextPath)) {
+      return requestUri.substring(contextPath.length());
+    }
+    return requestUri;
   }
 }
