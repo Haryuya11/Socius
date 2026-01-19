@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.message.internal.service;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.message.MessagePublisher;
 import com.uit.sociusmvcapp.message.MessageService;
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
@@ -375,5 +376,17 @@ public class MessageServiceImpl implements MessageService {
   @Override
   public String getContentType(FileDownloadRequest request) {
     return messageBlobAdapter.getContentType(request.getFilePath());
+  }
+
+  /**
+   * Get file download information including file name and content type in a single call.
+   * Consolidates getOriginalFileName and getContentType to reduce service calls.
+   *
+   * @param request the file download request
+   * @return FileDownloadInfoDto containing file name and content type
+   */
+  @Override
+  public FileDownloadInfoDto getFileDownloadInfo(FileDownloadRequest request) {
+    return messageBlobAdapter.getFileDownloadInfo(request.getFilePath());
   }
 }

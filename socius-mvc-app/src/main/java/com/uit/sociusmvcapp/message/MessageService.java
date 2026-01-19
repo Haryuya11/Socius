@@ -1,5 +1,6 @@
 package com.uit.sociusmvcapp.message;
 
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
@@ -123,4 +124,13 @@ public interface MessageService {
    * @return the content type of the file
    */
   String getContentType(FileDownloadRequest request);
+
+  /**
+   * Get file download information including file name and content type in a single call.
+   * Consolidates getOriginalFileName and getContentType to reduce service calls.
+   *
+   * @param request the file download request
+   * @return FileDownloadInfoDto containing file name and content type
+   */
+  FileDownloadInfoDto getFileDownloadInfo(FileDownloadRequest request);
 }

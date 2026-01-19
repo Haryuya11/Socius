@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.message;
 import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
 import com.uit.sociusmvcapp.message.dto.ConversationParticipantDto;
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantsRequest;
@@ -389,17 +390,19 @@ public class ConversationController {
       @Valid @RequestBody FileDownloadRequest request,
       HttpServletResponse response)
       throws IOException {
-    String fileName = messageService.getOriginalFileName(request);
-    String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+    // Get file info in a single call to reduce Azure blob calls
+    FileDownloadInfoDto fileInfo = messageService.getFileDownloadInfo(request);
+    String encodedFileName = URLEncoder.encode(fileInfo.getFileName(), StandardCharsets.UTF_8);
 
-    // Get content type from Azure Blob Storage
-    String contentType = messageService.getContentType(request);
-    response.setContentType(contentType);
+    response.setContentType(fileInfo.getContentType());
 
     // Use both filename and filename* for browser compatibility
     response.setHeader(
         HttpHeaders.CONTENT_DISPOSITION,
-        "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName);
+        "attachment; filename=\""
+            + fileInfo.getFileName()
+            + "\"; filename*=UTF-8''"
+            + encodedFileName);
 
     messageService.downloadFile(conversationId, request, response.getOutputStream());
     response.flushBuffer();

@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.message.internal.adapter;
 import com.uit.sociusmvcapp.azure.blob.AzureBlobProperties;
 import com.uit.sociusmvcapp.azure.blob.AzureBlobService;
 import com.uit.sociusmvcapp.azure.blob.UploadRequest;
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
@@ -154,6 +155,21 @@ public class MessageBlobAdapter {
   public String getContentType(String filePath) {
     AzureBlobProperties properties = buildBlobProperties();
     return azureBlobService.getContentType(properties, filePath);
+  }
+
+  /**
+   * Get file download information including file name and content type. Consolidates multiple calls
+   * into one to reduce Azure blob calls.
+   *
+   * @param filePath the file path in blob storage
+   * @return FileDownloadInfoDto containing file name and content type
+   */
+  public FileDownloadInfoDto getFileDownloadInfo(String filePath) {
+    String fileName = azureBlobService.getOriginalFileName(filePath);
+    AzureBlobProperties properties = buildBlobProperties();
+    String contentType = azureBlobService.getContentType(properties, filePath);
+
+    return FileDownloadInfoDto.builder().fileName(fileName).contentType(contentType).build();
   }
 
   /**
