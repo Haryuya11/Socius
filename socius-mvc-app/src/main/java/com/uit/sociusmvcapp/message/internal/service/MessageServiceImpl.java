@@ -3,11 +3,13 @@ package com.uit.sociusmvcapp.message.internal.service;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.message.MessagePublisher;
 import com.uit.sociusmvcapp.message.MessageService;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
+import com.uit.sociusmvcapp.message.internal.adapter.MessageBlobAdapter;
 import com.uit.sociusmvcapp.message.internal.domain.MessageReaction;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationParticipantRepository;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationRepository;
@@ -17,13 +19,16 @@ import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Implementation of MessageService for Message-related operations. */
 @Service
@@ -37,6 +42,7 @@ public class MessageServiceImpl implements MessageService {
   private final ConversationParticipantRepository participantRepository;
   private final MessagePublisher messagePublisher;
   private final UserContentProvider userContentProvider;
+  private final MessageBlobAdapter messageBlobAdapter;
 
   /**
    * Sends a message in a conversation.
@@ -291,5 +297,75 @@ public class MessageServiceImpl implements MessageService {
     if (!Boolean.TRUE.equals(isParticipant)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_007);
     }
+  }
+
+  /**
+   * Upload files for a message in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param files the files to upload
+   * @return list of file metadata DTOs
+   */
+  @Override
+  public List<FileMetadataDto> uploadMessageFiles(
+      String conversationId, List<MultipartFile> files) {
+    String currentClientId = userContentProvider.getUserContent().getClientId();
+
+    // Verify user is a participant
+    validateParticipant(conversationId, currentClientId);
+
+    List<FileMetadataDto> fileMetadataList = new ArrayList<>();
+    for (MultipartFile file : files) {
+      FileMetadataDto metadata = messageBlobAdapter.uploadMessageFile(file, conversationId);
+      fileMetadataList.add(metadata);
+    }
+
+    return fileMetadataList;
+  }
+
+  /**
+   * Download a single file from a message.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param filePath the file path to download
+   * @param outputStream the output stream to write file content
+   */
+  @Override
+  public void downloadFile(String conversationId, String filePath, OutputStream outputStream) {
+    String currentClientId = userContentProvider.getUserContent().getClientId();
+
+    // Verify user is a participant
+    validateParticipant(conversationId, currentClientId);
+
+    messageBlobAdapter.downloadFile(filePath, outputStream);
+  }
+
+  /**
+   * Download multiple files as a ZIP archive.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param filePaths the list of file paths to download
+   * @param outputStream the output stream to write ZIP content
+   */
+  @Override
+  public void downloadFilesAsZip(
+      String conversationId, List<String> filePaths, OutputStream outputStream) {
+    String currentClientId = userContentProvider.getUserContent().getClientId();
+
+    // Verify user is a participant
+    validateParticipant(conversationId, currentClientId);
+
+    messageBlobAdapter.downloadFilesAsZip(filePaths, outputStream);
+  }
+
+  /**
+   * Get the original file name from a file path.
+   *
+   * @param filePath the file path
+   * @return the original file name
+   */
+  @Override
+  public String getOriginalFileName(String filePath) {
+    return messageBlobAdapter.getOriginalFileName(filePath);
   }
 }

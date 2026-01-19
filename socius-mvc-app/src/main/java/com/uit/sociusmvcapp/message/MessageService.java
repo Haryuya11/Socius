@@ -1,12 +1,15 @@
 package com.uit.sociusmvcapp.message;
 
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
+import java.io.OutputStream;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Service interface for Message-related operations. */
 public interface MessageService {
@@ -75,4 +78,39 @@ public interface MessageService {
    * @return list of reaction DTOs
    */
   List<MessageReactionDto> getReactions(String messageId);
+
+  /**
+   * Upload files for a message in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param files the files to upload
+   * @return list of file metadata DTOs
+   */
+  List<FileMetadataDto> uploadMessageFiles(String conversationId, List<MultipartFile> files);
+
+  /**
+   * Download a single file from a message.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param filePath the file path to download
+   * @param outputStream the output stream to write file content
+   */
+  void downloadFile(String conversationId, String filePath, OutputStream outputStream);
+
+  /**
+   * Download multiple files as a ZIP archive.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param filePaths the list of file paths to download
+   * @param outputStream the output stream to write ZIP content
+   */
+  void downloadFilesAsZip(String conversationId, List<String> filePaths, OutputStream outputStream);
+
+  /**
+   * Get the original file name from a file path.
+   *
+   * @param filePath the file path
+   * @return the original file name
+   */
+  String getOriginalFileName(String filePath);
 }

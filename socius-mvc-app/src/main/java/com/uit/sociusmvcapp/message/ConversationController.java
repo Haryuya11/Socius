@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.message;
 import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
 import com.uit.sociusmvcapp.message.dto.ConversationParticipantDto;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantsRequest;
 import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
@@ -12,10 +13,16 @@ import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -342,5 +349,75 @@ public class ConversationController {
             .data(metadata)
             .build();
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Upload files for a message in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param files the files to upload
+   * @return ResponseEntity containing the list of file metadata
+   */
+  @PostMapping("/{conversationId}/files")
+  public ResponseEntity<Response> uploadMessageFiles(
+      @PathVariable String conversationId, @RequestParam("files") List<MultipartFile> files) {
+    List<FileMetadataDto> metadataList = messageService.uploadMessageFiles(conversationId, files);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.CREATED.value())
+            .code(MessageConstant.S_MSG_021)
+            .message(i18nService.getMessage(MessageConstant.S_MSG_021))
+            .data(metadataList)
+            .build();
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  /**
+   * Download a single file from a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param response the HTTP servlet response
+   * @param filePath the file path to download (URL encoded)
+   * @throws IOException if download fails
+   */
+  @GetMapping("/{conversationId}/files/download")
+  public void downloadFile(
+      @PathVariable String conversationId,
+      @RequestParam("filePath") String filePath,
+      HttpServletResponse response)
+      throws IOException {
+    String fileName = messageService.getOriginalFileName(filePath);
+    String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
+
+    response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+    response.setHeader(
+        HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFileName);
+
+    messageService.downloadFile(conversationId, filePath, response.getOutputStream());
+    response.flushBuffer();
+  }
+
+  /**
+   * Download multiple files as a ZIP archive from a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param response the HTTP servlet response
+   * @param filePaths the list of file paths to download
+   * @throws IOException if download fails
+   */
+  @PostMapping("/{conversationId}/files/download-zip")
+  public void downloadFilesAsZip(
+      @PathVariable String conversationId,
+      @RequestBody List<String> filePaths,
+      HttpServletResponse response)
+      throws IOException {
+    String zipFileName = System.currentTimeMillis() + ".zip";
+
+    response.setContentType("application/zip");
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);
+
+    messageService.downloadFilesAsZip(conversationId, filePaths, response.getOutputStream());
+    response.flushBuffer();
   }
 }

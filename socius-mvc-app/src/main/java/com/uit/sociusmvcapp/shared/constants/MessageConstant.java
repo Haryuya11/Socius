@@ -321,6 +321,9 @@ public final class MessageConstant {
   /** Uploaded file successfully. */
   public static final String S_MSG_020 = "S_MSG_020";
 
+  /** Message files uploaded successfully. */
+  public static final String S_MSG_021 = "S_MSG_021";
+
   // ================= TASK MODULE =================
   /** Task created successfully. */
   public static final String S_TASK_001 = "S_TASK_001";

@@ -13,7 +13,12 @@ import com.uit.sociusmvcapp.azure.blob.internal.domain.BlobClientProperties;
 import com.uit.sociusmvcapp.azure.blob.internal.factory.BlobClientFactory;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -124,6 +129,94 @@ public class AzureBlobServiceImpl implements AzureBlobService {
       log.error("Failed to check blob existence: {}", e.getMessage(), e);
       return false;
     }
+  }
+
+  /**
+   * Download a single file from Azure Blob Storage.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param blobName the name of the blob to download
+   * @param outputStream the output stream to write the file content
+   */
+  @Override
+  public void downloadFile(
+      AzureBlobProperties properties, String blobName, OutputStream outputStream) {
+    try {
+      log.info("Downloading blob: {} from container: {}", blobName, properties.getContainerName());
+
+      BlobContainerClient containerClient = createBlobContainerClient(properties);
+      BlobClient blobClient = containerClient.getBlobClient(blobName);
+
+      verifyBlobExists(blobClient, blobName);
+
+      blobClient.downloadStream(outputStream);
+      log.info("Successfully downloaded blob: {}", blobName);
+    } catch (Exception e) {
+      log.error("Failed to download blob: {}", e.getMessage(), e);
+      throw ExceptionFactory.internalError(MessageConstant.E_SYS_003);
+    }
+  }
+
+  /**
+   * Download multiple files from Azure Blob Storage as a ZIP archive.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param blobNames the list of blob names to download
+   * @param outputStream the output stream to write the ZIP content
+   */
+  @Override
+  public void downloadFilesAsZip(
+      AzureBlobProperties properties, List<String> blobNames, OutputStream outputStream) {
+    try {
+      log.info(
+          "Downloading {} blobs as ZIP from container: {}",
+          blobNames.size(),
+          properties.getContainerName());
+
+      BlobContainerClient containerClient = createBlobContainerClient(properties);
+
+      try (ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
+        for (String blobName : blobNames) {
+          BlobClient blobClient = containerClient.getBlobClient(blobName);
+
+          if (Boolean.FALSE.equals(blobClient.exists())) {
+            log.warn("Blob does not exist, skipping: {}", blobName);
+            continue;
+          }
+
+          String fileName = getOriginalFileName(blobName);
+          ZipEntry zipEntry = new ZipEntry(fileName);
+          zipOut.putNextEntry(zipEntry);
+
+          blobClient.downloadStream(zipOut);
+
+          zipOut.closeEntry();
+        }
+      }
+
+      log.info("Successfully created ZIP archive with {} blobs", blobNames.size());
+    } catch (IOException e) {
+      log.error("Failed to create ZIP archive: {}", e.getMessage(), e);
+      throw ExceptionFactory.internalError(MessageConstant.E_SYS_003);
+    }
+  }
+
+  /**
+   * Get the original file name from a blob path.
+   *
+   * @param blobName the full blob name/path (format: {id}/{timestamp}/{fileName})
+   * @return the original file name
+   */
+  @Override
+  public String getOriginalFileName(String blobName) {
+    if (blobName == null || blobName.isEmpty()) {
+      return "unknown";
+    }
+    int lastSlash = blobName.lastIndexOf('/');
+    if (lastSlash >= 0 && lastSlash < blobName.length() - 1) {
+      return blobName.substring(lastSlash + 1);
+    }
+    return blobName;
   }
 
   /**

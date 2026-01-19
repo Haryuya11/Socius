@@ -1,5 +1,8 @@
 package com.uit.sociusmvcapp.azure.blob;
 
+import java.io.OutputStream;
+import java.util.List;
+
 /** Service interface for Azure Blob Storage operations. */
 public interface AzureBlobService {
 
@@ -37,4 +40,31 @@ public interface AzureBlobService {
    * @return true if the blob exists, false otherwise
    */
   boolean fileExists(AzureBlobProperties properties, String blobName);
+
+  /**
+   * Download a single file from Azure Blob Storage.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param blobName the name of the blob to download
+   * @param outputStream the output stream to write the file content
+   */
+  void downloadFile(AzureBlobProperties properties, String blobName, OutputStream outputStream);
+
+  /**
+   * Download multiple files from Azure Blob Storage as a ZIP archive.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param blobNames the list of blob names to download
+   * @param outputStream the output stream to write the ZIP content
+   */
+  void downloadFilesAsZip(
+      AzureBlobProperties properties, List<String> blobNames, OutputStream outputStream);
+
+  /**
+   * Get the original file name from a blob path.
+   *
+   * @param blobName the full blob name/path
+   * @return the original file name
+   */
+  String getOriginalFileName(String blobName);
 }
