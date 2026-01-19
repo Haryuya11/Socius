@@ -42,9 +42,10 @@ public class MessageReactionRepository {
    * @param messageId the message ID
    * @param employeeId the employee ID
    * @param reaction the reaction type
+   * @return number of rows affected
    */
-  public void softDelete(String messageId, String employeeId, String reaction) {
-    reactionMapper.softDelete(messageId, employeeId, reaction);
+  public int softDelete(String messageId, String employeeId, String reaction) {
+    return reactionMapper.softDelete(messageId, employeeId, reaction);
   }
 
   /**

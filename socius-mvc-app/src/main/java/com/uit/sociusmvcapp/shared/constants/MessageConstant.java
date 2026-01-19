@@ -260,6 +260,9 @@ public final class MessageConstant {
   /** Duplicate employeeId in request. */
   public static final String E_MSG_013 = "E_MSG_013";
 
+  /** This reaction does not exist on the message. */
+  public static final String E_MSG_014 = "E_MSG_014";
+
   // Success messages
   /** Conversation created successfully. */
   public static final String S_MSG_001 = "S_MSG_001";

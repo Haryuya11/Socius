@@ -27,7 +27,7 @@
         FROM message_reactions
         WHERE message_id = #{messageId}
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
-        ORDER BY created_at ASC
+        ORDER BY created_at
     </select>
 
     <update id="softDelete">
@@ -36,6 +36,7 @@
         WHERE message_id = #{messageId}
           AND employee_id = #{employeeId}
           AND reaction = #{reaction}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </update>
 
     <select id="exists" resultType="java.lang.Boolean">

@@ -422,7 +422,7 @@ public class ConversationController {
       @Valid @RequestBody FileDownloadBatchRequest request,
       HttpServletResponse response)
       throws IOException {
-    String zipFileName = UUID.randomUUID().toString() + ".zip";
+    String zipFileName = UUID.randomUUID() + ".zip";
 
     response.setContentType("application/zip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);

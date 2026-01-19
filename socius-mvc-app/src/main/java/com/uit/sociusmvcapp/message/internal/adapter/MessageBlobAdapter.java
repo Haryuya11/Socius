@@ -9,6 +9,7 @@ import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +39,7 @@ public class MessageBlobAdapter {
   private String connectionString;
 
   /** Azure Blob Storage container name for message files. */
-  @Value("${azure.blob.message-file.container-name}")
+  @Value("${azure.blob.message.container-name}")
   private String containerName;
 
   /**
@@ -77,10 +78,10 @@ public class MessageBlobAdapter {
    */
   public List<FileMetadataDto> uploadMessageFiles(
       List<MultipartFile> files, String conversationId) {
-    List<UploadRequest> uploadRequests = new java.util.ArrayList<>();
-    List<String> mimeTypes = new java.util.ArrayList<>();
-    List<Long> fileSizes = new java.util.ArrayList<>();
-    List<String> fileNames = new java.util.ArrayList<>();
+    List<UploadRequest> uploadRequests = new ArrayList<>();
+    List<String> mimeTypes = new ArrayList<>();
+    List<Long> fileSizes = new ArrayList<>();
+    List<String> fileNames = new ArrayList<>();
 
     for (MultipartFile file : files) {
       String mimeType = detectMimeType(file);
@@ -100,7 +101,7 @@ public class MessageBlobAdapter {
     List<String> filePaths =
         azureBlobService.uploadFiles(properties, uploadRequests, conversationId);
 
-    List<FileMetadataDto> metadataList = new java.util.ArrayList<>();
+    List<FileMetadataDto> metadataList = new ArrayList<>();
     for (int i = 0; i < filePaths.size(); i++) {
       metadataList.add(
           FileMetadataDto.builder()

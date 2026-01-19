@@ -265,7 +265,6 @@ public class AzureBlobServiceImpl implements AzureBlobService {
 
       ensureContainerExists(containerClient, properties.getContainerName());
 
-      // Generate a shared timestamp for all files in this batch
       long sharedTimestamp = System.currentTimeMillis();
       List<String> filePaths = new java.util.ArrayList<>();
 
