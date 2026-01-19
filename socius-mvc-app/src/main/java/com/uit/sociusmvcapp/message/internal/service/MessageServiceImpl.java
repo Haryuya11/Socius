@@ -365,4 +365,15 @@ public class MessageServiceImpl implements MessageService {
   public String getOriginalFileName(FileDownloadRequest request) {
     return messageBlobAdapter.getOriginalFileName(request.getFilePath());
   }
+
+  /**
+   * Get the content type (MIME type) of a file from a file download request.
+   *
+   * @param request the file download request
+   * @return the content type of the file
+   */
+  @Override
+  public String getContentType(FileDownloadRequest request) {
+    return messageBlobAdapter.getContentType(request.getFilePath());
+  }
 }

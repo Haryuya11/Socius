@@ -146,6 +146,17 @@ public class MessageBlobAdapter {
   }
 
   /**
+   * Get the content type (MIME type) of a file from blob storage.
+   *
+   * @param filePath the file path in blob storage
+   * @return the content type of the file
+   */
+  public String getContentType(String filePath) {
+    AzureBlobProperties properties = buildBlobProperties();
+    return azureBlobService.getContentType(properties, filePath);
+  }
+
+  /**
    * Check if a file exists in blob storage.
    *
    * @param filePath the file path to check

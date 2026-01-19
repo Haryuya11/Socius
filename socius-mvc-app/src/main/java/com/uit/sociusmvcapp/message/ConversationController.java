@@ -24,7 +24,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -392,11 +391,8 @@ public class ConversationController {
     String fileName = messageService.getOriginalFileName(request);
     String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8);
 
-    // Use MIME type from request if available, otherwise default to octet-stream
-    String contentType =
-        (request.getMimeType() != null && !request.getMimeType().isBlank())
-            ? request.getMimeType()
-            : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+    // Get content type from Azure Blob Storage
+    String contentType = messageService.getContentType(request);
     response.setContentType(contentType);
 
     // Use both filename and filename* for browser compatibility

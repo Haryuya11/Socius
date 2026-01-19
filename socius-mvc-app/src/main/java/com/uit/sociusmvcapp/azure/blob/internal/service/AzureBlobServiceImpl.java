@@ -220,6 +220,34 @@ public class AzureBlobServiceImpl implements AzureBlobService {
   }
 
   /**
+   * Get the content type (MIME type) of a blob from Azure.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param blobName the name of the blob
+   * @return the content type of the blob, or "application/octet-stream" if not available
+   */
+  @Override
+  public String getContentType(AzureBlobProperties properties, String blobName) {
+    try {
+      log.info("Getting content type for blob: {}", blobName);
+
+      BlobContainerClient containerClient = createBlobContainerClient(properties);
+      BlobClient blobClient = containerClient.getBlobClient(blobName);
+
+      verifyBlobExists(blobClient, blobName);
+
+      String contentType = blobClient.getProperties().getContentType();
+      if (contentType == null || contentType.isBlank()) {
+        return "application/octet-stream";
+      }
+      return contentType;
+    } catch (Exception e) {
+      log.error("Failed to get content type for blob: {}", e.getMessage(), e);
+      return "application/octet-stream";
+    }
+  }
+
+  /**
    * Upload multiple files to Azure Blob Storage with a shared timestamp folder.
    *
    * @param properties Azure Blob configuration properties

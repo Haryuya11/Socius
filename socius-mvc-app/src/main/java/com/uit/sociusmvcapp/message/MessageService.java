@@ -115,4 +115,12 @@ public interface MessageService {
    * @return the original file name
    */
   String getOriginalFileName(FileDownloadRequest request);
+
+  /**
+   * Get the content type (MIME type) of a file from a file download request.
+   *
+   * @param request the file download request
+   * @return the content type of the file
+   */
+  String getContentType(FileDownloadRequest request);
 }

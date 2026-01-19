@@ -69,6 +69,15 @@ public interface AzureBlobService {
   String getOriginalFileName(String blobName);
 
   /**
+   * Get the content type (MIME type) of a blob from Azure.
+   *
+   * @param properties Azure Blob configuration properties
+   * @param blobName the name of the blob
+   * @return the content type of the blob, or "application/octet-stream" if not available
+   */
+  String getContentType(AzureBlobProperties properties, String blobName);
+
+  /**
    * Upload multiple files to Azure Blob Storage with a shared timestamp folder.
    *
    * @param properties Azure Blob configuration properties
