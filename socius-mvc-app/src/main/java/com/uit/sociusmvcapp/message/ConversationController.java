@@ -7,6 +7,7 @@ import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantsRequest;
 import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadBatchRequest;
 import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateParticipantSettingsRequest;
@@ -408,14 +409,14 @@ public class ConversationController {
    * Download multiple files as a ZIP archive from a conversation.
    *
    * @param conversationId the conversation ID
-   * @param requests the list of file download requests
+   * @param request the batch download request containing file list
    * @param response the HTTP servlet response
    * @throws IOException if download fails
    */
   @PostMapping("/{conversationId}/files/download-zip")
   public void downloadFilesAsZip(
       @PathVariable String conversationId,
-      @Valid @RequestBody List<FileDownloadRequest> requests,
+      @Valid @RequestBody FileDownloadBatchRequest request,
       HttpServletResponse response)
       throws IOException {
     String zipFileName = UUID.randomUUID().toString() + ".zip";
@@ -423,7 +424,8 @@ public class ConversationController {
     response.setContentType("application/zip");
     response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);
 
-    messageService.downloadFilesAsZip(conversationId, requests, response.getOutputStream());
+    messageService.downloadFilesAsZip(
+        conversationId, request.getFiles(), response.getOutputStream());
     response.flushBuffer();
   }
 }
