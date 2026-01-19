@@ -609,10 +609,13 @@ public class TaskServiceImpl implements TaskService {
    * <ol>
    *   <li>User is a system admin (has system.full permission)
    *   <li>User is the sender or receiver of the task
-   *   <li>User belongs to the same team as the task and has task.view.self or task.view.team
-   *       permission
-   *   <li>User belongs to the same department as the task and has task.view.department permission
+   *   <li>User belongs to the same team as the task (all team members can view team tasks)
+   *   <li>User belongs to the same department as the task (all department members can view
+   *       department tasks)
    * </ol>
+   *
+   * <p>Note: View permission only requires membership in the same scope. Update and delete
+   * operations require specific permissions.
    *
    * @param task the task to check
    * @param currentUserId the current user's client ID
@@ -628,24 +631,16 @@ public class TaskServiceImpl implements TaskService {
       return;
     }
 
-    // Check if user belongs to the same team and has view permission
+    // Check if user belongs to the same team (all team members can view team tasks)
     if (task.getTeamCode() != null
-        && permissionSecurityService.belongsToScope(AuthConstant.SCOPE_TEAM, task.getTeamCode())
-        && (permissionSecurityService.hasScopedPermission(
-                AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_VIEW_TEAM)
-            || permissionSecurityService.hasScopedPermission(
-                AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_VIEW_SELF))) {
+        && permissionSecurityService.belongsToScope(AuthConstant.SCOPE_TEAM, task.getTeamCode())) {
       return;
     }
 
-    // Check if user belongs to the same department and has view permission
+    // Check if user belongs to the same department (all department members can view dept tasks)
     if (task.getDepartmentCode() != null
         && permissionSecurityService.belongsToScope(
-            AuthConstant.SCOPE_DEPARTMENT, task.getDepartmentCode())
-        && permissionSecurityService.hasScopedPermission(
-            AuthConstant.SCOPE_DEPARTMENT,
-            task.getDepartmentCode(),
-            TaskConstant.PERMISSION_VIEW_DEPARTMENT)) {
+            AuthConstant.SCOPE_DEPARTMENT, task.getDepartmentCode())) {
       return;
     }
 
