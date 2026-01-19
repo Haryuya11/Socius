@@ -3,7 +3,9 @@ package com.uit.sociusmvcapp.task.internal.service;
 import static com.uit.sociusmvcapp.shared.utils.TaskValidationUtils.normalizeToEndOfDay;
 import static com.uit.sociusmvcapp.shared.utils.TaskValidationUtils.normalizeToStartOfDay;
 
+import com.uit.sociusmvcapp.iam.PermissionSecurityService;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
+import com.uit.sociusmvcapp.shared.constants.AuthConstant;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
@@ -27,6 +29,7 @@ import com.uit.sociusmvcapp.task.dto.request.SubmitReviewRequest;
 import com.uit.sociusmvcapp.task.dto.request.UpdateTaskRequest;
 import com.uit.sociusmvcapp.task.enums.ActivityType;
 import com.uit.sociusmvcapp.task.enums.TaskStatus;
+import com.uit.sociusmvcapp.task.internal.constants.TaskConstant;
 import com.uit.sociusmvcapp.task.internal.domain.TaskActivity;
 import com.uit.sociusmvcapp.task.internal.dto.ParentTaskContext;
 import com.uit.sociusmvcapp.task.internal.repository.TaskRepository;
@@ -61,6 +64,9 @@ public class TaskServiceImpl implements TaskService {
   /** Gateway for department validation. */
   private final DepartmentGateway departmentGateway;
 
+  /** Service for checking user permissions. */
+  private final PermissionSecurityService permissionSecurityService;
+
   /**
    * Create a new task.
    *
@@ -77,11 +83,14 @@ public class TaskServiceImpl implements TaskService {
     // Validate receiver exists
     employeeGateway.validateEmployeeExists(request.getReceiverId());
 
-    String currentUserId = userContentProvider.getUserContent().getClientId();
     // Validate team and department exist
     teamGateway.validateTeamExists(request.getTeamCode());
     departmentGateway.validateDepartmentExists(request.getDepartmentCode());
 
+    // Validate user has permission to create task in this scope
+    validateCreatePermission(request.getTeamCode(), request.getDepartmentCode());
+
+    String currentUserId = userContentProvider.getUserContent().getClientId();
     taskRepository.createTask(request, currentUserId);
   }
 
@@ -94,7 +103,7 @@ public class TaskServiceImpl implements TaskService {
   @Override
   @Transactional
   public void createSubTask(Integer parentId, CreateTaskRequest request) {
-    // Get parent task DTO
+    // Get parent task DTO (also validates view permission)
     TaskDto parent = getById(parentId);
 
     // Validate parent is not a sub-task
@@ -107,7 +116,9 @@ public class TaskServiceImpl implements TaskService {
       throw ExceptionFactory.badRequest(MessageConstant.E_TASK_003);
     }
 
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    // Validate user has permission to create task in parent's scope
+    validateCreatePermission(parent.getTeamCode(), parent.getDepartmentCode());
+
     // Validate child dates within parent range
     TaskValidationUtils.validateChildDatesWithinParentRange(
         request.getStartDate(), request.getDueDate(),
@@ -117,19 +128,34 @@ public class TaskServiceImpl implements TaskService {
     employeeGateway.validateEmployeeExists(request.getReceiverId());
 
     // Create sub-task via repository
+    String currentUserId = userContentProvider.getUserContent().getClientId();
     ParentTaskContext parentContext =
         new ParentTaskContext(parentId, parent.getTeamCode(), parent.getDepartmentCode());
     taskRepository.createSubTask(request, currentUserId, parentContext);
   }
 
   /**
-   * Get task by ID.
+   * Get task by ID with permission validation.
    *
    * @param id task ID
    * @return task DTO
    */
   @Override
   public TaskDto getById(Integer id) {
+    TaskDto task = findTaskById(id);
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+    validateViewPermission(task, currentUserId);
+    return task;
+  }
+
+  /**
+   * Internal method to find task by ID without permission validation. Used by other service methods
+   * that need to fetch task for validation purposes.
+   *
+   * @param id task ID
+   * @return task DTO
+   */
+  private TaskDto findTaskById(Integer id) {
     TaskDto task = taskRepository.findDtoById(id);
     if (task == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_TASK_006);
@@ -146,7 +172,11 @@ public class TaskServiceImpl implements TaskService {
   @Override
   @Transactional
   public TaskDto update(Integer id, UpdateTaskRequest request) {
-    TaskDto task = getById(id);
+    TaskDto task = findTaskById(id);
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+
+    // Validate update permission
+    validateUpdatePermission(task, currentUserId);
 
     // Validate receiver if provided
     if (request.getReceiverId() != null) {
@@ -171,10 +201,11 @@ public class TaskServiceImpl implements TaskService {
   @Override
   @Transactional
   public void delete(Integer id) {
-    // Validate task exists
-    if (!taskRepository.existsById(id)) {
-      throw ExceptionFactory.notFound(MessageConstant.E_TASK_006);
-    }
+    TaskDto task = findTaskById(id);
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+
+    // Validate delete permission
+    validateDeletePermission(task, currentUserId);
 
     // If parent task, cascade delete children
     if (taskRepository.hasChildren(id)) {
@@ -568,5 +599,197 @@ public class TaskServiceImpl implements TaskService {
         throw ExceptionFactory.badRequest(MessageConstant.E_TASK_005);
       }
     }
+  }
+
+  // ========== Authorization Helper Methods ==========
+
+  /**
+   * Validate that the current user has permission to view the task. User can view a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User is the sender or receiver of the task
+   *   <li>User belongs to the same team as the task and has task.view.self or task.view.team
+   *       permission
+   *   <li>User belongs to the same department as the task and has task.view.department permission
+   * </ol>
+   *
+   * @param task the task to check
+   * @param currentUserId the current user's client ID
+   */
+  private void validateViewPermission(TaskDto task, String currentUserId) {
+    // SYS_ADMIN can view all tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Sender or receiver can always view their own tasks
+    if (currentUserId.equals(task.getSenderId()) || currentUserId.equals(task.getReceiverId())) {
+      return;
+    }
+
+    // Check if user belongs to the same team and has view permission
+    if (task.getTeamCode() != null
+        && permissionSecurityService.belongsToScope(AuthConstant.SCOPE_TEAM, task.getTeamCode())
+        && (permissionSecurityService.hasScopedPermission(
+                AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_VIEW_TEAM)
+            || permissionSecurityService.hasScopedPermission(
+                AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_VIEW_SELF))) {
+      return;
+    }
+
+    // Check if user belongs to the same department and has view permission
+    if (task.getDepartmentCode() != null
+        && permissionSecurityService.belongsToScope(
+            AuthConstant.SCOPE_DEPARTMENT, task.getDepartmentCode())
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT,
+            task.getDepartmentCode(),
+            TaskConstant.PERMISSION_VIEW_DEPARTMENT)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_019);
+  }
+
+  /**
+   * Validate that the current user has permission to update the task. User can update a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User is the sender of the task (task creators can update their tasks)
+   *   <li>User belongs to the same team as the task and has task.update permission
+   *   <li>User belongs to the same department as the task and has task.update permission
+   * </ol>
+   *
+   * @param task the task to check
+   * @param currentUserId the current user's client ID
+   */
+  private void validateUpdatePermission(TaskDto task, String currentUserId) {
+    // SYS_ADMIN can update all tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Sender can always update their own tasks
+    if (currentUserId.equals(task.getSenderId())) {
+      return;
+    }
+
+    // Check if user belongs to the same team and has update permission
+    if (task.getTeamCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_UPDATE)) {
+      return;
+    }
+
+    // Check if user belongs to the same department and has update permission
+    if (task.getDepartmentCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT,
+            task.getDepartmentCode(),
+            TaskConstant.PERMISSION_UPDATE)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_020);
+  }
+
+  /**
+   * Validate that the current user has permission to delete the task. User can delete a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User is the sender of the task (task creators can delete their tasks)
+   *   <li>User belongs to the same team as the task and has task.delete permission
+   *   <li>User belongs to the same department as the task and has task.delete permission
+   * </ol>
+   *
+   * @param task the task to check
+   * @param currentUserId the current user's client ID
+   */
+  private void validateDeletePermission(TaskDto task, String currentUserId) {
+    // SYS_ADMIN can delete all tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Sender can always delete their own tasks
+    if (currentUserId.equals(task.getSenderId())) {
+      return;
+    }
+
+    // Check if user belongs to the same team and has delete permission
+    if (task.getTeamCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_DELETE)) {
+      return;
+    }
+
+    // Check if user belongs to the same department and has delete permission
+    if (task.getDepartmentCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT,
+            task.getDepartmentCode(),
+            TaskConstant.PERMISSION_DELETE)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_021);
+  }
+
+  /**
+   * Validate that the current user has permission to create a task in the specified team. User can
+   * create a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User belongs to the specified team and has task.create permission
+   *   <li>User belongs to the specified department and has task.create permission
+   * </ol>
+   *
+   * @param teamCode the team code where the task will be created
+   * @param departmentCode the department code where the task will be created
+   */
+  private void validateCreatePermission(String teamCode, String departmentCode) {
+    // SYS_ADMIN can create tasks anywhere
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Check if user has create permission in the team
+    if (teamCode != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_TEAM, teamCode, TaskConstant.PERMISSION_CREATE)) {
+      return;
+    }
+
+    // Check if user has create permission in the department
+    if (departmentCode != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT, departmentCode, TaskConstant.PERMISSION_CREATE)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_022);
+  }
+
+  /**
+   * Validate that the receiver belongs to the same team or department as the task.
+   *
+   * @param receiverId the receiver's client ID
+   * @param teamCode the team code of the task
+   * @param departmentCode the department code of the task
+   */
+  private void validateReceiverInScope(String receiverId, String teamCode, String departmentCode) {
+    // SYS_ADMIN can assign to anyone
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // For now, we validate that the receiver exists (done by employeeGateway)
+    // Additional scope validation would require checking if receiver belongs to team/department
+    // This can be enhanced later with a gateway method to validate receiver membership
+    // For MVP, we trust the API-level authorization
   }
 }
