@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.iam.internal.security;
 
 import com.uit.sociusmvcapp.iam.ApiPermissionService;
+import com.uit.sociusmvcapp.iam.TeamInfoGateway;
 import com.uit.sociusmvcapp.iam.internal.dto.ApiPermissionDto;
 import com.uit.sociusmvcapp.shared.constants.AuthConstant;
 import java.util.Map;
@@ -23,6 +24,9 @@ import org.springframework.util.AntPathMatcher;
  * <p>This implementation does not hardcode permissions in code - all permission mappings are
  * fetched from the api_permissions table.
  *
+ * <p>Supports hierarchical scope: Department directors/managers can access teams within their
+ * department even if they are not direct team members.
+ *
  * <p>Note: Public endpoints and CORS preflight (OPTIONS) requests are already handled by
  * SecurityConfig's permitAll() rules. This manager only handles authenticated requests.
  */
@@ -32,6 +36,7 @@ import org.springframework.util.AntPathMatcher;
 public class RbacAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
   private final ApiPermissionService apiPermissionService;
+  private final TeamInfoGateway teamInfoGateway;
   private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
   @Value("${server.servlet.context-path:}")
@@ -121,6 +126,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
           return false;
         }
 
+        // 1. Check team-scoped permission (e.g., TEAM:T01:team.member.add)
         String scopedAuthority =
             String.format(
                 AuthConstant.SCOPED_AUTHORITY_FORMAT,
@@ -132,6 +138,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
           return true;
         }
 
+        // 2. Check if user belongs to the team AND has global permission
         if (hasAuthority(authentication, permissionCode)
             && userBelongsToScope(authentication, AuthConstant.SCOPE_TEAM, teamCode)) {
           log.debug(
@@ -141,8 +148,43 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
           return true;
         }
 
+        // 3. HIERARCHICAL SCOPE: Check if user has department-scoped permission
+        //    for the team's parent department (e.g., DEPT_DIR can access teams in their dept)
+        String departmentCode = teamInfoGateway.getDepartmentCodeByTeamCode(teamCode);
+        if (departmentCode != null) {
+          String deptScopedAuthority =
+              String.format(
+                  AuthConstant.SCOPED_AUTHORITY_FORMAT,
+                  AuthConstant.SCOPE_DEPARTMENT,
+                  departmentCode,
+                  permissionCode);
+          if (hasAuthority(authentication, deptScopedAuthority)) {
+            log.debug(
+                "Access granted via hierarchical scope: User has department permission [{}] "
+                    + "for team [{}] which belongs to department [{}]",
+                deptScopedAuthority,
+                teamCode,
+                departmentCode);
+            return true;
+          }
+
+          // Also check if user belongs to the parent department AND has global permission
+          if (hasAuthority(authentication, permissionCode)
+              && userBelongsToScope(
+                  authentication, AuthConstant.SCOPE_DEPARTMENT, departmentCode)) {
+            log.debug(
+                "Access granted via hierarchical scope: User belongs to department [{}] "
+                    + "and has global permission [{}] for team [{}]",
+                departmentCode,
+                permissionCode,
+                teamCode);
+            return true;
+          }
+        }
+
         log.debug(
-            "Access denied: User does not belong to team [{}] or lacks permission [{}]",
+            "Access denied: User does not belong to team [{}] or its parent department, "
+                + "or lacks permission [{}]",
             teamCode,
             permissionCode);
         return false;
