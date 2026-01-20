@@ -30,8 +30,9 @@ public interface MessageReactionMapper {
    * @param messageId the message ID
    * @param employeeId the employee ID
    * @param reaction the reaction type
+   * @return number of rows affected
    */
-  void softDelete(
+  int softDelete(
       @Param("messageId") String messageId,
       @Param("employeeId") String employeeId,
       @Param("reaction") String reaction);

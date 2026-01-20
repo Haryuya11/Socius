@@ -20,6 +20,9 @@ dependencies {
     annotationProcessor libs.lombok
     implementation libs.commons.lang3
 
+    // File Processing
+    implementation libs.tika.core
+
     // Azure Integration
     implementation libs.bundles.azure.integration
 

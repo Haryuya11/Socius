@@ -1,5 +1,6 @@
 package com.uit.sociusmvcapp.shared.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,26 @@ public class CommonUtils {
       return OBJECT_MAPPER.readValue(json, clazz);
     } catch (Exception e) {
       log.error("Error deserializing object of type {}: {}", clazz.getName(), e.getMessage(), e);
+      return null;
+    }
+  }
+
+  /**
+   * Deserializes a JSON string to an object using TypeReference for generic types.
+   *
+   * @param json the JSON string to deserialize
+   * @param typeReference the TypeReference for the target type
+   * @param <T> the type of the target class
+   * @return the deserialized object, or null if deserialization fails
+   */
+  public static <T> T deserializeFromJson(String json, TypeReference<T> typeReference) {
+    if (StringUtils.isEmpty(json)) {
+      return null;
+    }
+    try {
+      return OBJECT_MAPPER.readValue(json, typeReference);
+    } catch (Exception e) {
+      log.error("Error deserializing object with TypeReference: {}", e.getMessage(), e);
       return null;
     }
   }

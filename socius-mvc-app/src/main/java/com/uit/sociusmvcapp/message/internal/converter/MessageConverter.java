@@ -1,11 +1,13 @@
 package com.uit.sociusmvcapp.message.internal.converter;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.internal.domain.Message;
 import com.uit.sociusmvcapp.shared.converter.BaseConverter;
 import com.uit.sociusmvcapp.shared.utils.CommonUtils;
-import java.util.Map;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -48,25 +50,24 @@ public interface MessageConverter extends BaseConverter<Message, MessageDto> {
   Message sendRequestToEntity(SendMessageRequest request, String messageId, String senderId);
 
   /**
-   * Converts a JSON string to a metadata map.
+   * Converts a JSON string to a list of file metadata.
    *
    * @param json the JSON string
-   * @return the metadata map
+   * @return the list of FileMetadataDto
    */
-  @SuppressWarnings("unchecked")
   @Named("jsonToMetadata")
-  default Map<String, Object> jsonToMetadata(String json) {
-    return CommonUtils.deserializeFromJson(json, Map.class);
+  default List<FileMetadataDto> jsonToMetadata(String json) {
+    return CommonUtils.deserializeFromJson(json, new TypeReference<List<FileMetadataDto>>() {});
   }
 
   /**
-   * Converts a metadata object to a JSON string.
+   * Converts a list of file metadata to a JSON string.
    *
-   * @param metadata the metadata object
+   * @param metadata the list of file metadata
    * @return the JSON string
    */
   @Named("metadataToJson")
-  default String metadataToJson(Object metadata) {
+  default String metadataToJson(List<FileMetadataDto> metadata) {
     return CommonUtils.serializeToJson(metadata);
   }
 }

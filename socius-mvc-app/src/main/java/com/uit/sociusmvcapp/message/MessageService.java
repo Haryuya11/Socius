@@ -1,12 +1,17 @@
 package com.uit.sociusmvcapp.message;
 
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
+import java.io.OutputStream;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Service interface for Message-related operations. */
 public interface MessageService {
@@ -75,4 +80,57 @@ public interface MessageService {
    * @return list of reaction DTOs
    */
   List<MessageReactionDto> getReactions(String messageId);
+
+  /**
+   * Upload files for a message in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param files the files to upload
+   * @return list of file metadata DTOs
+   */
+  List<FileMetadataDto> uploadMessageFiles(String conversationId, List<MultipartFile> files);
+
+  /**
+   * Download a single file from a message.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param request the file download request containing file path
+   * @param outputStream the output stream to write file content
+   */
+  void downloadFile(String conversationId, FileDownloadRequest request, OutputStream outputStream);
+
+  /**
+   * Download multiple files as a ZIP archive.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param requests the list of file download requests
+   * @param outputStream the output stream to write ZIP content
+   */
+  void downloadFilesAsZip(
+      String conversationId, List<FileDownloadRequest> requests, OutputStream outputStream);
+
+  /**
+   * Get the original file name from a file download request.
+   *
+   * @param request the file download request
+   * @return the original file name
+   */
+  String getOriginalFileName(FileDownloadRequest request);
+
+  /**
+   * Get the content type (MIME type) of a file from a file download request.
+   *
+   * @param request the file download request
+   * @return the content type of the file
+   */
+  String getContentType(FileDownloadRequest request);
+
+  /**
+   * Get file download information including file name and content type in a single call.
+   * Consolidates getOriginalFileName and getContentType to reduce service calls.
+   *
+   * @param request the file download request
+   * @return FileDownloadInfoDto containing file name and content type
+   */
+  FileDownloadInfoDto getFileDownloadInfo(FileDownloadRequest request);
 }

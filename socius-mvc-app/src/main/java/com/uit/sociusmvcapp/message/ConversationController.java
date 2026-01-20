@@ -3,18 +3,28 @@ package com.uit.sociusmvcapp.message;
 import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
 import com.uit.sociusmvcapp.message.dto.ConversationParticipantDto;
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.AddParticipantsRequest;
 import com.uit.sociusmvcapp.message.dto.request.CreateGroupConversationRequest;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadBatchRequest;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateConversationRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateParticipantSettingsRequest;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.response.Response;
 import com.uit.sociusmvcapp.shared.service.I18nService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -342,5 +352,83 @@ public class ConversationController {
             .data(metadata)
             .build();
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Upload files for a message in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param files the files to upload
+   * @return ResponseEntity containing the list of file metadata
+   */
+  @PostMapping("/{conversationId}/messages/attachments")
+  public ResponseEntity<Response> uploadMessageFiles(
+      @PathVariable String conversationId, @RequestParam("files") List<MultipartFile> files) {
+    List<FileMetadataDto> metadataList = messageService.uploadMessageFiles(conversationId, files);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.CREATED.value())
+            .code(MessageConstant.S_MSG_021)
+            .message(i18nService.getMessage(MessageConstant.S_MSG_021))
+            .data(metadataList)
+            .build();
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  /**
+   * Download a single file from a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param request the file download request containing file path
+   * @param response the HTTP servlet response
+   * @throws IOException if download fails
+   */
+  @PostMapping("/{conversationId}/files/download")
+  public void downloadFile(
+      @PathVariable String conversationId,
+      @Valid @RequestBody FileDownloadRequest request,
+      HttpServletResponse response)
+      throws IOException {
+    // Get file info in a single call to reduce Azure blob calls
+    FileDownloadInfoDto fileInfo = messageService.getFileDownloadInfo(request);
+    String encodedFileName = URLEncoder.encode(fileInfo.getFileName(), StandardCharsets.UTF_8);
+
+    response.setContentType(fileInfo.getContentType());
+
+    // Use both filename and filename* for browser compatibility
+    response.setHeader(
+        HttpHeaders.CONTENT_DISPOSITION,
+        "attachment; filename=\""
+            + fileInfo.getFileName()
+            + "\"; filename*=UTF-8''"
+            + encodedFileName);
+
+    messageService.downloadFile(conversationId, request, response.getOutputStream());
+    response.flushBuffer();
+  }
+
+  /**
+   * Download multiple files as a ZIP archive from a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param request the batch download request containing file list
+   * @param response the HTTP servlet response
+   * @throws IOException if download fails
+   */
+  @PostMapping("/{conversationId}/files/download-zip")
+  public void downloadFilesAsZip(
+      @PathVariable String conversationId,
+      @Valid @RequestBody FileDownloadBatchRequest request,
+      HttpServletResponse response)
+      throws IOException {
+    String zipFileName = UUID.randomUUID() + ".zip";
+
+    response.setContentType("application/zip");
+    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + zipFileName);
+
+    messageService.downloadFilesAsZip(
+        conversationId, request.getFiles(), response.getOutputStream());
+    response.flushBuffer();
   }
 }
