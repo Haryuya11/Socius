@@ -113,14 +113,30 @@
                 #{salary})
     </insert>
 
-    <!-- Update -->
-    <update id="update">
+    <!-- Update Profile (excluding salary to prevent mass assignment) -->
+    <update id="updateProfile">
         UPDATE employees
-        SET first_name  = #{firstName},
-            last_name   = #{lastName},
-            system_role = #{systemRole},
-            image_url   = #{imageUrl},
-            salary      = #{salary},
+        SET first_name  = #{request.firstName},
+            last_name   = #{request.lastName},
+            image_url   = #{request.imageUrl},
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Update Salary (separate for security - requires specific authorization) -->
+    <update id="updateSalary">
+        UPDATE employees
+        SET salary      = #{salary},
+            updated_at  = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </update>
+
+    <!-- Update System Role (separate for security - only SYS_ADMIN can change roles) -->
+    <update id="updateSystemRole">
+        UPDATE employees
+        SET system_role = #{systemRole},
             updated_at  = CURRENT_TIMESTAMP
         WHERE client_id = #{clientId}
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}

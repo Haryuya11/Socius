@@ -6,6 +6,7 @@ import com.microsoft.graph.models.User;
 import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.internal.constants.EmployeeConstant;
 import com.uit.sociusmvcapp.employee.internal.domain.Employee;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
@@ -81,6 +82,20 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
   User toGraphUserForUpdate(CreateEmployeeRequest request);
 
   /**
+   * Converts an UpdateEmployeeRequest to a Microsoft Graph User object for a profile update
+   * operation. This mapping intentionally excludes salary fields to prevent mass assignment
+   * vulnerabilities.
+   *
+   * @param request The DTO containing the user profile details to update.
+   * @return A Microsoft Graph User object containing only the profile fields to be patched.
+   */
+  @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "displayName", expression = "java(buildDisplayNameFromUpdate(request))")
+  @Mapping(target = "givenName", expression = "java(request.getFirstName())")
+  @Mapping(target = "surname", expression = "java(request.getLastName())")
+  User toGraphUserForProfileUpdate(UpdateEmployeeRequest request);
+
+  /**
    * Converts an EmployeeCreateRequest to an Employee entity.
    *
    * @param request The DTO containing the user creation details.
@@ -114,6 +129,22 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
    */
   @Named("buildDisplayName")
   default String buildDisplayName(CreateEmployeeRequest request) {
+    if (request == null) {
+      return "";
+    }
+    String fn = request.getFirstName() == null ? "" : request.getFirstName().trim();
+    String ln = request.getLastName() == null ? "" : request.getLastName().trim();
+    return (fn + " " + ln).trim();
+  }
+
+  /**
+   * Builds the display name from UpdateEmployeeRequest by concatenating first and last names.
+   *
+   * @param request The UpdateEmployeeRequest containing first and last names.
+   * @return The constructed display name.
+   */
+  @Named("buildDisplayNameFromUpdate")
+  default String buildDisplayNameFromUpdate(UpdateEmployeeRequest request) {
     if (request == null) {
       return "";
     }

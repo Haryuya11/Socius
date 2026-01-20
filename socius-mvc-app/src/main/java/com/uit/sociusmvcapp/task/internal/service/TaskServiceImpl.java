@@ -3,7 +3,9 @@ package com.uit.sociusmvcapp.task.internal.service;
 import static com.uit.sociusmvcapp.shared.utils.TaskValidationUtils.normalizeToEndOfDay;
 import static com.uit.sociusmvcapp.shared.utils.TaskValidationUtils.normalizeToStartOfDay;
 
+import com.uit.sociusmvcapp.iam.PermissionSecurityService;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
+import com.uit.sociusmvcapp.shared.constants.AuthConstant;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.event.NotificationMultiSendRequest;
@@ -29,6 +31,7 @@ import com.uit.sociusmvcapp.task.dto.request.SubmitReviewRequest;
 import com.uit.sociusmvcapp.task.dto.request.UpdateTaskRequest;
 import com.uit.sociusmvcapp.task.enums.ActivityType;
 import com.uit.sociusmvcapp.task.enums.TaskStatus;
+import com.uit.sociusmvcapp.task.internal.constants.TaskConstant;
 import com.uit.sociusmvcapp.task.internal.domain.TaskActivity;
 import com.uit.sociusmvcapp.task.internal.dto.ParentTaskContext;
 import com.uit.sociusmvcapp.task.internal.repository.TaskRepository;
@@ -66,6 +69,9 @@ public class TaskServiceImpl implements TaskService {
   /** Gateway for department validation. */
   private final DepartmentGateway departmentGateway;
 
+  /** Service for checking user permissions. */
+  private final PermissionSecurityService permissionSecurityService;
+
   /** Event publisher for notifications. */
   private final ApplicationEventPublisher eventPublisher;
 
@@ -85,11 +91,15 @@ public class TaskServiceImpl implements TaskService {
     // Validate receiver exists
     employeeGateway.validateEmployeeExists(request.getReceiverId());
 
-    String currentUserId = userContentProvider.getUserContent().getClientId();
     // Validate team and department exist
     teamGateway.validateTeamExists(request.getTeamCode());
     departmentGateway.validateDepartmentExists(request.getDepartmentCode());
 
+    // Validate user has permission to create task in this scope
+    validateCreatePermission(request.getTeamCode(), request.getDepartmentCode());
+
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+    taskRepository.createTask(request, currentUserId);
     Integer taskId = taskRepository.createTask(request, currentUserId);
 
     // Send notifications after task creation
@@ -134,7 +144,9 @@ public class TaskServiceImpl implements TaskService {
       throw ExceptionFactory.badRequest(MessageConstant.E_TASK_003);
     }
 
-    String currentUserId = userContentProvider.getUserContent().getClientId();
+    // Validate user has permission to create task in parent's scope
+    validateCreatePermission(parent.getTeamCode(), parent.getDepartmentCode());
+
     // Validate child dates within parent range
     TaskValidationUtils.validateChildDatesWithinParentRange(
         request.getStartDate(), request.getDueDate(),
@@ -144,6 +156,7 @@ public class TaskServiceImpl implements TaskService {
     employeeGateway.validateEmployeeExists(request.getReceiverId());
 
     // Create sub-task via repository
+    String currentUserId = userContentProvider.getUserContent().getClientId();
     ParentTaskContext parentContext =
         new ParentTaskContext(parentId, parent.getTeamCode(), parent.getDepartmentCode());
     Integer subTaskId = taskRepository.createSubTask(request, currentUserId, parentContext);
@@ -178,6 +191,20 @@ public class TaskServiceImpl implements TaskService {
    */
   @Override
   public TaskDto getById(Integer id) {
+    TaskDto task = findTaskById(id);
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+    validateViewPermission(task, currentUserId);
+    return task;
+  }
+
+  /**
+   * Internal method to find task by ID without permission validation. Used by other service methods
+   * that need to fetch task for validation purposes.
+   *
+   * @param id task ID
+   * @return task DTO
+   */
+  private TaskDto findTaskById(Integer id) {
     TaskDto task = taskRepository.findDtoById(id);
     if (task == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_TASK_006);
@@ -194,7 +221,11 @@ public class TaskServiceImpl implements TaskService {
   @Override
   @Transactional
   public TaskDto update(Integer id, UpdateTaskRequest request) {
-    TaskDto task = getById(id);
+    TaskDto task = findTaskById(id);
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+
+    // Validate update permission
+    validateUpdatePermission(task, currentUserId);
 
     // Validate receiver if provided
     if (request.getReceiverId() != null) {
@@ -211,7 +242,6 @@ public class TaskServiceImpl implements TaskService {
     TaskDto updatedTask = getById(id);
 
     // Send notifications after task update
-    String currentUserId = userContentProvider.getUserContent().getClientId();
     Set<String> recipients = new java.util.HashSet<>();
     recipients.add(updatedTask.getSenderId());
     recipients.add(updatedTask.getReceiverId());
@@ -249,8 +279,11 @@ public class TaskServiceImpl implements TaskService {
   @Override
   @Transactional
   public void delete(Integer id) {
-    // Get task before deletion for notifications
-    TaskDto task = getById(id);
+    TaskDto task = findTaskById(id);
+    String currentUserId = userContentProvider.getUserContent().getClientId();
+
+    // Validate delete permission
+    validateDeletePermission(task, currentUserId);
 
     // If parent task, cascade delete children
     if (taskRepository.hasChildren(id)) {
@@ -389,6 +422,9 @@ public class TaskServiceImpl implements TaskService {
   @Override
   public PageResponse<SearchTaskDto> getTasksByTeam(
       String teamCode, Integer pageNumber, Integer pageSize, String sortBy, String sortDirection) {
+    // Validate user belongs to the team or is SYS_ADMIN
+    validateTeamAccess(teamCode);
+
     SearchTaskRequest criteria = new SearchTaskRequest();
     criteria.setTeamCode(teamCode);
 
@@ -412,6 +448,9 @@ public class TaskServiceImpl implements TaskService {
       Integer pageSize,
       String sortBy,
       String sortDirection) {
+    // Validate user belongs to the department or is SYS_ADMIN
+    validateDepartmentAccess(departmentCode);
+
     SearchTaskRequest criteria = new SearchTaskRequest();
     criteria.setDepartmentCode(departmentCode);
 
@@ -486,7 +525,7 @@ public class TaskServiceImpl implements TaskService {
             task.getSenderId(),
             "Task Submitted",
             String.format("Task #%d '%s' has been submitted for review.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
 
     eventPublisher.publishEvent(
         new NotificationSendEvent(
@@ -494,7 +533,7 @@ public class TaskServiceImpl implements TaskService {
             task.getReceiverId(),
             "Task Submitted",
             String.format("Task #%d '%s' has been submitted.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -527,7 +566,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Approved",
             String.format("Task #%d '%s' has been approved.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -556,7 +595,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Rejected",
             String.format("Task #%d '%s' has been rejected.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -596,7 +635,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Cancelled",
             String.format("Task #%d '%s' has been cancelled.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -633,7 +672,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Reopened",
             String.format("Task #%d '%s' has been reopened.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   // ========== Private Helper Methods ==========
@@ -725,6 +764,220 @@ public class TaskServiceImpl implements TaskService {
       if (dueDateTime.isAfter(parent.getDueDate())) {
         throw ExceptionFactory.badRequest(MessageConstant.E_TASK_005);
       }
+    }
+  }
+
+  // ========== Authorization Helper Methods ==========
+
+  /**
+   * Validate that the current user has permission to view the task. User can view a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User is the sender or receiver of the task
+   *   <li>User belongs to the same team as the task (all team members can view team tasks)
+   *   <li>User belongs to the same department as the task (all department members can view
+   *       department tasks)
+   * </ol>
+   *
+   * <p>Note: View permission only requires membership in the same scope. Update and delete
+   * operations require specific permissions.
+   *
+   * @param task the task to check
+   * @param currentUserId the current user's client ID
+   */
+  private void validateViewPermission(TaskDto task, String currentUserId) {
+    // SYS_ADMIN can view all tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Sender or receiver can always view their own tasks
+    if (currentUserId.equals(task.getSenderId()) || currentUserId.equals(task.getReceiverId())) {
+      return;
+    }
+
+    // Check if user belongs to the same team (all team members can view team tasks)
+    if (task.getTeamCode() != null
+        && permissionSecurityService.belongsToScope(AuthConstant.SCOPE_TEAM, task.getTeamCode())) {
+      return;
+    }
+
+    // Check if user belongs to the same department (all department members can view dept tasks)
+    if (task.getDepartmentCode() != null
+        && permissionSecurityService.belongsToScope(
+            AuthConstant.SCOPE_DEPARTMENT, task.getDepartmentCode())) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_019);
+  }
+
+  /**
+   * Validate that the current user has permission to update the task. User can update a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User is the sender of the task (task creators can update their tasks)
+   *   <li>User belongs to the same team as the task and has task.update permission
+   *   <li>User belongs to the same department as the task and has task.update permission
+   * </ol>
+   *
+   * @param task the task to check
+   * @param currentUserId the current user's client ID
+   */
+  private void validateUpdatePermission(TaskDto task, String currentUserId) {
+    // SYS_ADMIN can update all tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Sender can always update their own tasks
+    if (currentUserId.equals(task.getSenderId())) {
+      return;
+    }
+
+    // Check if user belongs to the same team and has update permission
+    if (task.getTeamCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_UPDATE)) {
+      return;
+    }
+
+    // Check if user belongs to the same department and has update permission
+    if (task.getDepartmentCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT,
+            task.getDepartmentCode(),
+            TaskConstant.PERMISSION_UPDATE)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_020);
+  }
+
+  /**
+   * Validate that the current user has permission to delete the task. User can delete a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User is the sender of the task (task creators can delete their tasks)
+   *   <li>User belongs to the same team as the task and has task.delete permission
+   *   <li>User belongs to the same department as the task and has task.delete permission
+   * </ol>
+   *
+   * @param task the task to check
+   * @param currentUserId the current user's client ID
+   */
+  private void validateDeletePermission(TaskDto task, String currentUserId) {
+    // SYS_ADMIN can delete all tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Sender can always delete their own tasks
+    if (currentUserId.equals(task.getSenderId())) {
+      return;
+    }
+
+    // Check if user belongs to the same team and has delete permission
+    if (task.getTeamCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_TEAM, task.getTeamCode(), TaskConstant.PERMISSION_DELETE)) {
+      return;
+    }
+
+    // Check if user belongs to the same department and has delete permission
+    if (task.getDepartmentCode() != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT,
+            task.getDepartmentCode(),
+            TaskConstant.PERMISSION_DELETE)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_021);
+  }
+
+  /**
+   * Validate that the current user has permission to create a task in the specified team. User can
+   * create a task if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User belongs to the specified team and has task.create permission
+   *   <li>User belongs to the specified department and has task.create permission
+   * </ol>
+   *
+   * @param teamCode the team code where the task will be created
+   * @param departmentCode the department code where the task will be created
+   */
+  private void validateCreatePermission(String teamCode, String departmentCode) {
+    // SYS_ADMIN can create tasks anywhere
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // Check if user has create permission in the team
+    if (teamCode != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_TEAM, teamCode, TaskConstant.PERMISSION_CREATE)) {
+      return;
+    }
+
+    // Check if user has create permission in the department
+    if (departmentCode != null
+        && permissionSecurityService.hasScopedPermission(
+            AuthConstant.SCOPE_DEPARTMENT, departmentCode, TaskConstant.PERMISSION_CREATE)) {
+      return;
+    }
+
+    throw ExceptionFactory.forbidden(MessageConstant.E_TASK_022);
+  }
+
+  /**
+   * Validate that the current user has access to view tasks in the specified team. User can access
+   * team tasks if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User belongs to the specified team
+   * </ol>
+   *
+   * @param teamCode the team code to check
+   */
+  private void validateTeamAccess(String teamCode) {
+    // SYS_ADMIN can view all teams' tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // User must belong to the team
+    if (!permissionSecurityService.belongsToScope(AuthConstant.SCOPE_TEAM, teamCode)) {
+      throw ExceptionFactory.forbidden(MessageConstant.E_TASK_019);
+    }
+  }
+
+  /**
+   * Validate that the current user has access to view tasks in the specified department. User can
+   * access department tasks if:
+   *
+   * <ol>
+   *   <li>User is a system admin (has system.full permission)
+   *   <li>User belongs to the specified department
+   * </ol>
+   *
+   * @param departmentCode the department code to check
+   */
+  private void validateDepartmentAccess(String departmentCode) {
+    // SYS_ADMIN can view all departments' tasks
+    if (permissionSecurityService.isSystemAdmin()) {
+      return;
+    }
+
+    // User must belong to the department
+    if (!permissionSecurityService.belongsToScope(AuthConstant.SCOPE_DEPARTMENT, departmentCode)) {
+      throw ExceptionFactory.forbidden(MessageConstant.E_TASK_019);
     }
   }
 }

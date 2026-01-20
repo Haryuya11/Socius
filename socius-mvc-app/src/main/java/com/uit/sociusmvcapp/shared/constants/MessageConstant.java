@@ -17,6 +17,9 @@ public final class MessageConstant {
   /** Upload file error message key. */
   public static final String E_SYS_004 = "E_SYS_004";
 
+  /** Token invalid or expired error message key. */
+  public static final String E_SYS_005 = "E_SYS_005";
+
   /** Employee creation error message key. */
   public static final String E_EMP_001 = "E_EMP_001";
 
@@ -417,4 +420,22 @@ public final class MessageConstant {
 
   /** Cannot create sub-task of a sub-task (only 2 levels allowed). */
   public static final String E_TASK_018 = "E_TASK_018";
+
+  /** Access denied: User does not have permission to view this task. */
+  public static final String E_TASK_019 = "E_TASK_019";
+
+  /** Access denied: User does not have permission to update this task. */
+  public static final String E_TASK_020 = "E_TASK_020";
+
+  /** Access denied: User does not have permission to delete this task. */
+  public static final String E_TASK_021 = "E_TASK_021";
+
+  /** Access denied: User does not have permission to create task in this scope. */
+  public static final String E_TASK_022 = "E_TASK_022";
+
+  /** Employee salary updated successfully. */
+  public static final String S_EMP_010 = "S_EMP_010";
+
+  /** Employee system role updated successfully. */
+  public static final String S_EMP_011 = "S_EMP_011";
 }

@@ -5,6 +5,7 @@ import com.uit.sociusmvcapp.azure.graph.AzureGraphProperties;
 import com.uit.sociusmvcapp.azure.graph.AzureGraphService;
 import com.uit.sociusmvcapp.azure.graph.ChangePasswordRequest;
 import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.internal.converter.EmployeeConverter;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.exception.BusinessException;
@@ -69,14 +70,14 @@ public class EmployeeGraphAdapter {
   }
 
   /**
-   * Update an existing user in Azure Active Directory.
+   * Update an existing user in Azure Active Directory (profile only, excludes salary).
    *
    * @param clientId the client ID of the user to update
-   * @param request the request containing user update details
+   * @param request the request containing user update details (excludes salary)
    */
-  public void updateUser(String clientId, CreateEmployeeRequest request) {
+  public void updateUser(String clientId, UpdateEmployeeRequest request) {
     AzureGraphProperties properties = buildProperties();
-    User userToUpdate = employeeConverter.toGraphUserForUpdate(request);
+    User userToUpdate = employeeConverter.toGraphUserForProfileUpdate(request);
     azureGraphService.updateUser(properties, clientId, userToUpdate);
   }
 

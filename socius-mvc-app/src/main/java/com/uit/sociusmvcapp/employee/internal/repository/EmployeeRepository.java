@@ -4,6 +4,7 @@ import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.internal.converter.EmployeeConverter;
 import com.uit.sociusmvcapp.employee.internal.persistence.EmployeeMapper;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
@@ -51,12 +52,40 @@ public class EmployeeRepository {
   }
 
   /**
-   * Update an existing employee record.
+   * Update employee profile information (excluding salary).
    *
-   * @param request the user creation request
+   * <p>This method intentionally excludes salary to prevent mass assignment vulnerabilities. Use
+   * updateSalary() for salary modifications.
+   *
+   * @param request the update request containing profile fields (excludes salary)
+   * @param clientId the client ID of the employee to update
    */
-  public void update(CreateEmployeeRequest request) {
-    employeeMapper.update(employeeConverter.createRequestToEntity(request));
+  public void updateProfile(UpdateEmployeeRequest request, String clientId) {
+    employeeMapper.updateProfile(request, clientId);
+  }
+
+  /**
+   * Update employee salary.
+   *
+   * <p>Separated from profile updates for security - requires specific authorization.
+   *
+   * @param salary the new salary value
+   * @param clientId the client ID of the employee
+   */
+  public void updateSalary(Long salary, String clientId) {
+    employeeMapper.updateSalary(salary, clientId);
+  }
+
+  /**
+   * Update employee system role.
+   *
+   * <p>Separated from profile updates for security - only SYS_ADMIN can change system roles.
+   *
+   * @param systemRole the new system role
+   * @param clientId the client ID of the employee
+   */
+  public void updateSystemRole(String systemRole, String clientId) {
+    employeeMapper.updateSystemRole(systemRole, clientId);
   }
 
   /**

@@ -6,6 +6,9 @@ import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.SearchEmployeeDto;
 import com.uit.sociusmvcapp.employee.dto.request.CreateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateSalaryRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateSystemRoleRequest;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
@@ -31,12 +34,37 @@ public interface EmployeeService {
   Map<String, String> create(CreateEmployeeRequest request);
 
   /**
-   * Update an existing user profile.
+   * Update an existing user profile (excluding salary).
    *
-   * @param request the request containing user update details
+   * <p>This method intentionally excludes salary updates to prevent mass assignment
+   * vulnerabilities. Use updateSalary() for salary modifications with proper authorization.
+   *
+   * @param request the request containing user update details (excludes salary)
    * @param clientId the client ID of the user to be updated
    */
-  void update(CreateEmployeeRequest request, String clientId);
+  void update(UpdateEmployeeRequest request, String clientId);
+
+  /**
+   * Update an employee's salary.
+   *
+   * <p>This is a separate endpoint requiring 'system.full' permission (SYS_ADMIN only) to prevent
+   * unauthorized salary modifications through the general update endpoint.
+   *
+   * @param request the request containing the new salary value
+   * @param clientId the client ID of the employee whose salary is being updated
+   */
+  void updateSalary(UpdateSalaryRequest request, String clientId);
+
+  /**
+   * Update an employee's system role.
+   *
+   * <p>This is a separate endpoint requiring 'system.full' permission (SYS_ADMIN only) as only
+   * system administrators should be able to change user roles.
+   *
+   * @param request the request containing the new system role
+   * @param clientId the client ID of the employee whose system role is being updated
+   */
+  void updateSystemRole(UpdateSystemRoleRequest request, String clientId);
 
   /**
    * Deactivate a user profile.
@@ -61,10 +89,19 @@ public interface EmployeeService {
   PageResponse<SearchEmployeeDto> search(PaginationSearchRequest<SearchUserRequest> request);
 
   /**
-   * Find an employee by client ID.
+   * Find an employee by client ID. The salary field will be masked (set to -1) if the current user
+   * does not have permission to view it.
+   *
+   * <p>Salary visibility rules:
+   *
+   * <ul>
+   *   <li>User viewing their own profile: salary is visible
+   *   <li>User with 'employee.view.salary' permission: salary is visible
+   *   <li>Otherwise: salary is masked as -1
+   * </ul>
    *
    * @param clientId the employee client ID
-   * @return the corresponding EmployeeDto
+   * @return the corresponding EmployeeDto with salary masked if unauthorized
    */
   EmployeeDto findByClientId(String clientId);
 

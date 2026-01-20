@@ -38,7 +38,6 @@ VALUES
 -- ===== EMPLOYEE permissions =====
 ('employee.view.basic', 'View Employee Basic Info', 'employee', 'read', 'View employee info (excluding salary)'),
 ('employee.view.salary', 'View Employee Salary', 'employee', 'read', 'View employee salary information'),
-('employee.salary.update', 'Update Employee Salary', 'employee', 'update', 'Update employee salary'),
 ('employee.profile.update', 'Update Employee Profile', 'employee', 'update', 'Update employee profile information'),
 
 -- ===== DEPARTMENT permissions =====
@@ -74,6 +73,9 @@ VALUES
 ('report.view', 'View Reports', 'report', 'read', 'View reports'),
 ('report.export', 'Export Reports', 'report', 'export', 'Export reports'),
 
+-- ===== ROLE permissions =====
+('role.view', 'View Roles', 'role', 'read', 'View role information'),
+
 -- ===== SYSTEM permissions =====
 ('system.full', 'Full System Access', 'system', 'all', 'Complete system access');
 
@@ -102,6 +104,7 @@ VALUES
 -- View basic info
 ('USER', 'department.view'),
 ('USER', 'team.view'),
+('USER', 'role.view'),
 ('USER', 'task.view.self'),
 ('USER', 'task.update.self');
 
@@ -126,7 +129,6 @@ VALUES
 
 -- Employee management in department
 ('DEPT_DIR', 'employee.view.salary'),        -- View salary of dept members
-('DEPT_DIR', 'employee.salary.update'),      -- Update salary
 ('DEPT_DIR', 'employee.profile.update'),
 
 -- Team management

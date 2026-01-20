@@ -23,4 +23,28 @@ public final class TaskConstant {
 
   /** Keyword for current user in search. */
   public static final String CURRENT_USER_KEYWORD = "me";
+
+  /** Permission code for viewing own tasks. */
+  public static final String PERMISSION_VIEW_SELF = "task.view.self";
+
+  /** Permission code for viewing team tasks. */
+  public static final String PERMISSION_VIEW_TEAM = "task.view.team";
+
+  /** Permission code for viewing department tasks. */
+  public static final String PERMISSION_VIEW_DEPARTMENT = "task.view.department";
+
+  /** Permission code for creating tasks. */
+  public static final String PERMISSION_CREATE = "task.create";
+
+  /** Permission code for updating tasks. */
+  public static final String PERMISSION_UPDATE = "task.update";
+
+  /** Permission code for deleting tasks. */
+  public static final String PERMISSION_DELETE = "task.delete";
+
+  /** Permission code for assigning tasks. */
+  public static final String PERMISSION_ASSIGN = "task.assign";
+
+  /** Permission code for approving tasks. */
+  public static final String PERMISSION_APPROVE = "task.approve";
 }

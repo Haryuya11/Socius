@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.employee.internal.persistence;
 
 import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
+import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.internal.domain.Employee;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
 import java.util.List;
@@ -35,11 +36,35 @@ public interface EmployeeMapper {
   void create(Employee request);
 
   /**
-   * Update an existing employee record.
+   * Update employee profile information (excluding salary).
    *
-   * @param request the user creation request
+   * <p>This method intentionally excludes salary to prevent mass assignment vulnerabilities.
+   *
+   * @param request the update request containing profile fields
+   * @param clientId the client ID of the employee to update
    */
-  void update(Employee request);
+  void updateProfile(
+      @Param("request") UpdateEmployeeRequest request, @Param("clientId") String clientId);
+
+  /**
+   * Update employee salary.
+   *
+   * <p>Separated from profile updates for security - requires specific authorization.
+   *
+   * @param salary the new salary value
+   * @param clientId the client ID of the employee
+   */
+  void updateSalary(@Param("salary") Long salary, @Param("clientId") String clientId);
+
+  /**
+   * Update employee system role.
+   *
+   * <p>Separated from profile updates for security - only SYS_ADMIN can change system roles.
+   *
+   * @param systemRole the new system role
+   * @param clientId the client ID of the employee
+   */
+  void updateSystemRole(@Param("systemRole") String systemRole, @Param("clientId") String clientId);
 
   /**
    * Deactivate an employee record by client ID.
