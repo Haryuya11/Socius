@@ -440,6 +440,6 @@ public final class MessageConstant {
   public static final String S_EMP_011 = "S_EMP_011";
 
   // ================= CACHE MODULE =================
-  /** Cache cleared successfully. */
+  /** Authorization caches cleared successfully. */
   public static final String S_CACHE_001 = "S_CACHE_001";
 }
