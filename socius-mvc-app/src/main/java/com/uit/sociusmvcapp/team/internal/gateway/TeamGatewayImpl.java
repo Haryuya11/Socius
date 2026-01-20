@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.team.internal.gateway;
 
 import com.uit.sociusmvcapp.iam.TeamInfoGateway;
+import com.uit.sociusmvcapp.shared.exception.BusinessException;
 import com.uit.sociusmvcapp.task.TeamGateway;
 import com.uit.sociusmvcapp.team.TeamService;
 import com.uit.sociusmvcapp.team.dto.TeamDto;
@@ -29,6 +30,10 @@ public class TeamGatewayImpl implements TeamGateway, TeamInfoGateway {
   /**
    * Get the department code for a team.
    *
+   * <p>Note: This method is called during authorization checks. The team-to-department relationship
+   * is stable and infrequently changed, so additional caching is not needed beyond what the
+   * database layer provides.
+   *
    * @param teamCode the team code
    * @return the department code that the team belongs to, or null if team not found
    */
@@ -37,7 +42,8 @@ public class TeamGatewayImpl implements TeamGateway, TeamInfoGateway {
     try {
       TeamDto team = teamService.findByTeamCode(teamCode);
       return team != null ? team.getDepartmentCode() : null;
-    } catch (Exception e) {
+    } catch (BusinessException e) {
+      // Team not found - this is expected for invalid team codes
       log.debug("Could not find team [{}]: {}", teamCode, e.getMessage());
       return null;
     }
