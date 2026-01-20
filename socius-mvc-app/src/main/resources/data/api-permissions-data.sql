@@ -136,3 +136,45 @@ VALUES
 ('self.profile.view', 'notification', 'read', 'GET', '/notifications'),
 ('self.profile.update', 'notification', 'update', 'PUT', '/notifications/{notificationId}/read'),
 ('self.profile.update', 'notification', 'update', 'PUT', '/notifications/read-all');
+
+-- =====================================================
+-- 9. MESSAGE ENDPOINTS
+-- =====================================================
+INSERT INTO api_permissions (permission_code, resource, action, http_method, url_pattern)
+VALUES
+-- Message operations
+('message.send', 'message', 'create', 'POST', '/messages'),
+('message.view', 'message', 'read', 'GET', '/messages/{messageId}'),
+('message.update', 'message', 'update', 'PUT', '/messages/{messageId}'),
+('message.delete', 'message', 'delete', 'DELETE', '/messages/{messageId}'),
+-- Message reactions
+('message.reaction', 'message', 'create', 'POST', '/messages/reactions'),
+('message.reaction', 'message', 'delete', 'DELETE', '/messages/reactions'),
+('message.view', 'message', 'read', 'GET', '/messages/{messageId}/reactions');
+
+-- =====================================================
+-- 10. CONVERSATION ENDPOINTS
+-- =====================================================
+INSERT INTO api_permissions (permission_code, resource, action, http_method, url_pattern)
+VALUES
+-- Conversation CRUD
+('conversation.create', 'conversation', 'create', 'POST', '/conversations/direct/{targetEmployeeId}'),
+('conversation.create', 'conversation', 'create', 'POST', '/conversations/group'),
+('conversation.view', 'conversation', 'read', 'GET', '/conversations/{conversationId}'),
+('conversation.update', 'conversation', 'update', 'PUT', '/conversations/{conversationId}'),
+('conversation.delete', 'conversation', 'delete', 'DELETE', '/conversations/{conversationId}'),
+('conversation.view', 'conversation', 'read', 'GET', '/conversations'),
+-- Participant management
+('conversation.view', 'conversation', 'read', 'GET', '/conversations/{conversationId}/participants'),
+('conversation.participant.manage', 'conversation', 'create', 'POST', '/conversations/{conversationId}/participants'),
+('conversation.participant.manage', 'conversation', 'delete', 'DELETE', '/conversations/{conversationId}/participants'),
+('conversation.update', 'conversation', 'update', 'POST', '/conversations/{conversationId}/leave'),
+('conversation.update', 'conversation', 'update', 'PUT', '/conversations/{conversationId}/settings'),
+('conversation.update', 'conversation', 'update', 'PUT', '/conversations/{conversationId}/read/{messageId}'),
+-- Messages in conversation
+('message.view', 'conversation', 'read', 'GET', '/conversations/{conversationId}/messages'),
+-- File operations
+('conversation.file.manage', 'conversation', 'update', 'POST', '/conversations/{conversationId}/avatar'),
+('conversation.file.manage', 'conversation', 'create', 'POST', '/conversations/{conversationId}/messages/attachments'),
+('conversation.file.manage', 'conversation', 'read', 'POST', '/conversations/{conversationId}/files/download'),
+('conversation.file.manage', 'conversation', 'read', 'POST', '/conversations/{conversationId}/files/download-zip');

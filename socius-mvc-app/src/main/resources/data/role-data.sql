@@ -76,6 +76,21 @@ VALUES
 -- ===== ROLE permissions =====
 ('role.view', 'View Roles', 'role', 'read', 'View role information'),
 
+-- ===== MESSAGE permissions =====
+('message.view', 'View Messages', 'message', 'read', 'View messages in conversations'),
+('message.send', 'Send Message', 'message', 'create', 'Send new messages'),
+('message.update', 'Update Message', 'message', 'update', 'Update own messages'),
+('message.delete', 'Delete Message', 'message', 'delete', 'Delete own messages'),
+('message.reaction', 'Manage Reactions', 'message', 'update', 'Add or remove message reactions'),
+
+-- ===== CONVERSATION permissions =====
+('conversation.view', 'View Conversations', 'conversation', 'read', 'View conversations'),
+('conversation.create', 'Create Conversation', 'conversation', 'create', 'Create new conversations'),
+('conversation.update', 'Update Conversation', 'conversation', 'update', 'Update conversation settings'),
+('conversation.delete', 'Delete Conversation', 'conversation', 'delete', 'Delete conversations'),
+('conversation.participant.manage', 'Manage Participants', 'conversation', 'update', 'Add or remove conversation participants'),
+('conversation.file.manage', 'Manage Files', 'conversation', 'update', 'Upload and download conversation files'),
+
 -- ===== SYSTEM permissions =====
 ('system.full', 'Full System Access', 'system', 'all', 'Complete system access');
 
@@ -106,7 +121,20 @@ VALUES
 ('USER', 'team.view'),
 ('USER', 'role.view'),
 ('USER', 'task.view.self'),
-('USER', 'task.update.self');
+('USER', 'task.update.self'),
+-- Message permissions
+('USER', 'message.view'),
+('USER', 'message.send'),
+('USER', 'message.update'),
+('USER', 'message.delete'),
+('USER', 'message.reaction'),
+-- Conversation permissions
+('USER', 'conversation.view'),
+('USER', 'conversation.create'),
+('USER', 'conversation.update'),
+('USER', 'conversation.delete'),
+('USER', 'conversation.participant.manage'),
+('USER', 'conversation.file.manage');
 
 -- ----------------------------------------------------
 -- DEPT_DIR, DEPT_MGR, TEAM_LEAD, DEPT_MEM, TEAM_MEM: Inherit USER permissions
