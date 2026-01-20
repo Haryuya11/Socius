@@ -120,4 +120,25 @@ public interface DepartmentEmployeeMapper {
   void removeEmployeesFromDepartmentBatch(
       @Param("departmentCode") String departmentCode,
       @Param("employeeIds") List<String> employeeIds);
+
+  /**
+   * Find raw employee IDs in a department from a list of employee IDs.
+   *
+   * @param departmentCode the department code
+   * @param employeeIds the list of employee IDs
+   * @return list of raw employee IDs present in the department
+   */
+  List<String> findRawEmployeeIdsInDepartment(
+      @Param("departmentCode") String departmentCode,
+      @Param("employeeIds") List<String> employeeIds);
+
+  /**
+   * Reactivate multiple Employees in a Department in batch.
+   *
+   * @param entities the list of DepartmentEmployee entities to be reactivated
+   * @param departmentCode the department code
+   */
+  void reactivateEmployeesInDepartmentBatch(
+      @Param("entities") List<DepartmentEmployee> entities,
+      @Param("departmentCode") String departmentCode);
 }
