@@ -59,14 +59,12 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public ConversationDto getOrCreateDirectConversation(String targetEmployeeId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
 
-    // Prevent creating conversation with self
     if (currentClientId.equals(targetEmployeeId)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_011);
     }
 
-    // Check if direct conversation already exists between these two users
     ConversationDto existingConversation =
         conversationRepository.findDirectConversationBetweenUsers(
             currentClientId, targetEmployeeId);
@@ -75,7 +73,6 @@ public class ConversationServiceImpl implements ConversationService {
       return existingConversation;
     }
 
-    // Create new direct conversation
     String conversationId = UUID.randomUUID().toString();
 
     ConversationDto conversation =
@@ -87,7 +84,6 @@ public class ConversationServiceImpl implements ConversationService {
 
     conversationRepository.insert(conversation);
 
-    // Add both users as participants
     List<ConversationParticipantDto> participants = new ArrayList<>();
 
     participants.add(
@@ -109,12 +105,10 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public ConversationDto createGroupConversation(CreateGroupConversationRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
 
-    // Generate unique conversation ID
     String conversationId = UUID.randomUUID().toString();
 
-    // Create group conversation entity
     ConversationDto conversation =
         ConversationDto.builder()
             .conversationId(conversationId)
@@ -126,12 +120,10 @@ public class ConversationServiceImpl implements ConversationService {
 
     conversationRepository.insert(conversation);
 
-    // Add creator as OWNER participant
     List<ConversationParticipantDto> participants = new ArrayList<>();
     participants.add(
         buildParticipant(conversationId, currentClientId, ParticipantRole.OWNER.getCode()));
 
-    // Add other participants as MEMBER
     for (String participantId : request.getParticipantIds()) {
       if (!participantId.equals(currentClientId)) {
         participants.add(
@@ -152,10 +144,7 @@ public class ConversationServiceImpl implements ConversationService {
    */
   @Override
   public ConversationDto getByConversationId(String conversationId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
-
-    // Verify user is a participant
-    validateParticipant(conversationId, currentClientId);
+    validateParticipant(conversationId, getCurrentClientId());
 
     ConversationDto conversation = conversationRepository.findByConversationId(conversationId);
     if (conversation == null) {
@@ -174,10 +163,8 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public ConversationDto update(String conversationId, UpdateConversationRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    // Verify user is a participant
-    validateParticipant(conversationId, currentClientId);
+    validateParticipant(conversationId, getCurrentClientId());
 
     ConversationDto existingConversation =
         conversationRepository.findByConversationId(conversationId);
@@ -198,15 +185,12 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public void delete(String conversationId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
-
-    // Verify user is the owner
     ConversationDto conversation = conversationRepository.findByConversationId(conversationId);
     if (conversation == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_002);
     }
 
-    if (!conversation.getCreatedBy().equals(currentClientId)) {
+    if (!conversation.getCreatedBy().equals(getCurrentClientId())) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_003);
     }
 
@@ -222,7 +206,6 @@ public class ConversationServiceImpl implements ConversationService {
    */
   @Override
   public CursorResponse<ConversationDto> getConversations(String cursor, int limit) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
     LocalDateTime lastMessageAt = null;
     Long lastId = null;
@@ -244,7 +227,7 @@ public class ConversationServiceImpl implements ConversationService {
 
     List<ConversationDto> conversations =
         conversationRepository.findByEmployeeIdWithCursor(
-            currentClientId, lastMessageAt, lastId, limit);
+            getCurrentClientId(), lastMessageAt, lastId, limit);
 
     // Prepare next cursor
     String nextCursor = null;
@@ -276,10 +259,8 @@ public class ConversationServiceImpl implements ConversationService {
    */
   @Override
   public List<ConversationParticipantDto> getParticipants(String conversationId) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
 
-    // Verify user is a participant
-    validateParticipant(conversationId, currentUserId);
+    validateParticipant(conversationId, getCurrentClientId());
 
     return participantRepository.findByConversationId(conversationId);
   }
@@ -295,16 +276,11 @@ public class ConversationServiceImpl implements ConversationService {
   @Transactional
   public List<ConversationParticipantDto> addParticipant(
       String conversationId, AddParticipantsRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    // Verify user is a participant
-    validateParticipant(conversationId, currentClientId);
-
-    // Verify this is a GROUP conversation (cannot add participants to DIRECT)
+    validateParticipant(conversationId, getCurrentClientId());
     validateDirectConversationType(conversationId);
 
     List<ParticipantRequest> participants = normalizeParticipants(request);
-
     Set<String> employeeIds = extractAndValidateEmployeeIds(participants);
 
     Map<String, ConversationParticipantDto> existingMap =
@@ -325,10 +301,8 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public void removeParticipant(String conversationId, List<String> employeeIds) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    // Verify user is a participant and has permission
-    validateParticipant(conversationId, currentClientId);
+    validateParticipant(conversationId, getCurrentClientId());
 
     ConversationDto conversation = conversationRepository.findByConversationId(conversationId);
     if (conversation != null && employeeIds.contains(conversation.getCreatedBy())) {
@@ -346,12 +320,10 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public void leaveConversation(String conversationId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
 
-    // Check if user is a participant
     validateParticipant(conversationId, currentClientId);
 
-    // Check if user is the owner
     ConversationDto conversation = conversationRepository.findByConversationId(conversationId);
     if (conversation != null && conversation.getCreatedBy().equals(currentClientId)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_006);
@@ -369,7 +341,7 @@ public class ConversationServiceImpl implements ConversationService {
   @Transactional
   public void updateParticipantSettings(
       String conversationId, UpdateParticipantSettingsRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
 
     // Verify user is a participant
     validateParticipant(conversationId, currentClientId);
@@ -387,7 +359,7 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   @Transactional
   public void markAsRead(String conversationId, String messageId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
 
     // Verify user is a participant
     validateParticipant(conversationId, currentClientId);
@@ -577,5 +549,14 @@ public class ConversationServiceImpl implements ConversationService {
     if (!batch.toInsert().isEmpty()) {
       participantRepository.insertBatch(batch.toInsert());
     }
+  }
+
+  /**
+   * Get the current client ID from user content.
+   *
+   * @return the current client ID
+   */
+  private String getCurrentClientId() {
+    return userContentProvider.getUserContent().getClientId();
   }
 }

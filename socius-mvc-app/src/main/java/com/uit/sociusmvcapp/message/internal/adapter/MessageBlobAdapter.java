@@ -1,0 +1,281 @@
+package com.uit.sociusmvcapp.message.internal.adapter;
+
+import com.uit.sociusmvcapp.azure.blob.AzureBlobProperties;
+import com.uit.sociusmvcapp.azure.blob.AzureBlobService;
+import com.uit.sociusmvcapp.azure.blob.UploadRequest;
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
+import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * Adapter for Azure Blob Storage operations specific to Message file uploads. This class hides
+ * Azure Blob configuration details from the service layer and uses a separate container for message
+ * files.
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class MessageBlobAdapter {
+
+  /** Azure Blob Service for file operations. */
+  private final AzureBlobService azureBlobService;
+
+  /** Apache Tika for MIME type detection. */
+  private final Tika tika = new Tika();
+
+  /** Azure Blob Storage connection string. */
+  @Value("${azure.blob.connection-string}")
+  private String connectionString;
+
+  /** Azure Blob Storage container name for message files. */
+  @Value("${azure.blob.message.container-name}")
+  private String containerName;
+
+  /**
+   * Upload a file for a message and return file metadata.
+   *
+   * @param file the file to upload
+   * @param conversationId the conversation ID for organizing files
+   * @return FileMetadataDto containing file metadata
+   */
+  public FileMetadataDto uploadMessageFile(MultipartFile file, String conversationId) {
+    FileUploadContext context = buildFileUploadContext(file, conversationId);
+
+    AzureBlobProperties properties = buildBlobProperties();
+    String filePath = azureBlobService.uploadFile(properties, context.getUploadRequest());
+    String fileUrl = azureBlobService.generateSasToken(properties, filePath);
+
+    return buildFileMetadata(context, filePath, fileUrl);
+  }
+
+  /**
+   * Upload multiple files for a message and return file metadata list. All files are stored in the
+   * same timestamp folder.
+   *
+   * @param files the list of files to upload
+   * @param conversationId the conversation ID for organizing files
+   * @return list of FileMetadataDto containing file metadata
+   */
+  public List<FileMetadataDto> uploadMessageFiles(
+      List<MultipartFile> files, String conversationId) {
+    List<FileUploadContext> contexts = prepareUploadContexts(files, conversationId);
+    List<UploadRequest> uploadRequests =
+        contexts.stream().map(FileUploadContext::getUploadRequest).toList();
+
+    AzureBlobProperties properties = buildBlobProperties();
+    List<String> filePaths =
+        azureBlobService.uploadFiles(properties, uploadRequests, conversationId);
+
+    return buildMetadataList(properties, contexts, filePaths);
+  }
+
+  /**
+   * Prepare file upload contexts for batch upload.
+   *
+   * @param files the list of files to upload
+   * @param conversationId the conversation ID for organizing files
+   * @return list of FileUploadContext containing file info and upload requests
+   */
+  private List<FileUploadContext> prepareUploadContexts(
+      List<MultipartFile> files, String conversationId) {
+    List<FileUploadContext> contexts = new ArrayList<>();
+    for (MultipartFile file : files) {
+      contexts.add(buildFileUploadContext(file, conversationId));
+    }
+    return contexts;
+  }
+
+  /**
+   * Build a FileUploadContext from a MultipartFile.
+   *
+   * @param file the file to process
+   * @param conversationId the conversation ID for organizing files
+   * @return FileUploadContext containing file metadata and upload request
+   */
+  private FileUploadContext buildFileUploadContext(MultipartFile file, String conversationId) {
+    String mimeType = detectMimeType(file);
+    UploadRequest request = buildUploadRequest(file, conversationId, mimeType);
+    if (request == null) {
+      log.error("Failed to build upload request for conversationId: {}", conversationId);
+      throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
+    }
+    return FileUploadContext.builder()
+        .fileName(file.getOriginalFilename())
+        .fileSize(file.getSize())
+        .mimeType(mimeType)
+        .uploadRequest(request)
+        .build();
+  }
+
+  /**
+   * Build FileMetadataDto from context and upload result.
+   *
+   * @param context the file upload context
+   * @param filePath the uploaded file path
+   * @param fileUrl the SAS URL for the file
+   * @return FileMetadataDto with all file information
+   */
+  private FileMetadataDto buildFileMetadata(
+      FileUploadContext context, String filePath, String fileUrl) {
+    return FileMetadataDto.builder()
+        .fileName(context.getFileName())
+        .filePath(filePath)
+        .fileSize(context.getFileSize())
+        .mimeType(context.getMimeType())
+        .fileUrl(fileUrl)
+        .build();
+  }
+
+  /**
+   * Build metadata list from contexts and file paths.
+   *
+   * @param properties Azure Blob properties for SAS token generation
+   * @param contexts the list of file upload contexts
+   * @param filePaths the list of uploaded file paths
+   * @return list of FileMetadataDto
+   */
+  private List<FileMetadataDto> buildMetadataList(
+      AzureBlobProperties properties, List<FileUploadContext> contexts, List<String> filePaths) {
+    List<FileMetadataDto> metadataList = new ArrayList<>();
+    for (int i = 0; i < filePaths.size(); i++) {
+      String filePath = filePaths.get(i);
+      String fileUrl = azureBlobService.generateSasToken(properties, filePath);
+      metadataList.add(buildFileMetadata(contexts.get(i), filePath, fileUrl));
+    }
+    return metadataList;
+  }
+
+  /**
+   * Download a single file to the output stream.
+   *
+   * @param filePath the file path in blob storage
+   * @param outputStream the output stream to write file content
+   */
+  public void downloadFile(String filePath, OutputStream outputStream) {
+    AzureBlobProperties properties = buildBlobProperties();
+    azureBlobService.downloadFile(properties, filePath, outputStream);
+  }
+
+  /**
+   * Download multiple files as a ZIP archive.
+   *
+   * @param filePaths the list of file paths to download
+   * @param outputStream the output stream to write ZIP content
+   */
+  public void downloadFilesAsZip(List<String> filePaths, OutputStream outputStream) {
+    AzureBlobProperties properties = buildBlobProperties();
+    azureBlobService.downloadFilesAsZip(properties, filePaths, outputStream);
+  }
+
+  /**
+   * Get the original file name from the file path.
+   *
+   * @param filePath the file path in blob storage
+   * @return the original file name
+   */
+  public String getOriginalFileName(String filePath) {
+    return azureBlobService.getOriginalFileName(filePath);
+  }
+
+  /**
+   * Get the content type (MIME type) of a file from blob storage.
+   *
+   * @param filePath the file path in blob storage
+   * @return the content type of the file
+   */
+  public String getContentType(String filePath) {
+    AzureBlobProperties properties = buildBlobProperties();
+    return azureBlobService.getContentType(properties, filePath);
+  }
+
+  /**
+   * Get file download information including file name and content type. Consolidates multiple calls
+   * into one to reduce Azure blob calls.
+   *
+   * @param filePath the file path in blob storage
+   * @return FileDownloadInfoDto containing file name and content type
+   */
+  public FileDownloadInfoDto getFileDownloadInfo(String filePath) {
+    String fileName = azureBlobService.getOriginalFileName(filePath);
+    AzureBlobProperties properties = buildBlobProperties();
+    String contentType = azureBlobService.getContentType(properties, filePath);
+
+    return FileDownloadInfoDto.builder().fileName(fileName).contentType(contentType).build();
+  }
+
+  /**
+   * Check if a file exists in blob storage.
+   *
+   * @param filePath the file path to check
+   * @return true if file exists, false otherwise
+   */
+  public boolean fileExists(String filePath) {
+    AzureBlobProperties properties = buildBlobProperties();
+    return azureBlobService.fileExists(properties, filePath);
+  }
+
+  /**
+   * Delete a file from blob storage.
+   *
+   * @param filePath the file path to delete
+   */
+  public void deleteFile(String filePath) {
+    AzureBlobProperties properties = buildBlobProperties();
+    azureBlobService.deleteFile(properties, filePath);
+  }
+
+  /**
+   * Detect MIME type of the file using Apache Tika.
+   *
+   * @param file the file to detect
+   * @return the detected MIME type
+   */
+  private String detectMimeType(MultipartFile file) {
+    try (InputStream inputStream = file.getInputStream()) {
+      return tika.detect(inputStream, file.getOriginalFilename());
+    } catch (Exception e) {
+      log.warn("Failed to detect MIME type, using default: {}", e.getMessage());
+      return "application/octet-stream";
+    }
+  }
+
+  /** Build an UploadRequest from a MultipartFile, conversationId, and mimeType. */
+  private UploadRequest buildUploadRequest(
+      MultipartFile file, String conversationId, String mimeType) {
+    try {
+      return UploadRequest.builder()
+          .clientId(conversationId)
+          .fileName(file.getOriginalFilename())
+          .contentType(mimeType)
+          .fileSize(file.getSize())
+          .inputStream(file.getInputStream())
+          .build();
+    } catch (Exception e) {
+      log.error("Failed to build upload request: {}", e.getMessage(), e);
+      return null;
+    }
+  }
+
+  /**
+   * Build AzureBlobProperties for file operations.
+   *
+   * @return AzureBlobProperties instance
+   */
+  private AzureBlobProperties buildBlobProperties() {
+    return AzureBlobProperties.builder()
+        .connectionString(connectionString)
+        .containerName(containerName)
+        .build();
+  }
+}

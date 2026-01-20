@@ -23,6 +23,9 @@ azureBlob="12.32.0"
 # Security
 nimbusJoseJwt = "10.5"
 
+# File Processing
+tika = "3.2.2"
+
 # Code Quality
 spotless = "8.0.0"
 checkstyle = "12.1.0"
@@ -73,6 +76,9 @@ nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimb
 
 # Utilities
 commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commonsLang3" }
+
+# File Processing
+tika-core = { module = "org.apache.tika:tika-core", version.ref = "tika" }
 
 # Testing
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }

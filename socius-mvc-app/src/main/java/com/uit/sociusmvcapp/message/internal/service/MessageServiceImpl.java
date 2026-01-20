@@ -3,11 +3,15 @@ package com.uit.sociusmvcapp.message.internal.service;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.message.MessagePublisher;
 import com.uit.sociusmvcapp.message.MessageService;
+import com.uit.sociusmvcapp.message.dto.FileDownloadInfoDto;
+import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
+import com.uit.sociusmvcapp.message.dto.request.FileDownloadRequest;
 import com.uit.sociusmvcapp.message.dto.request.MessageReactionRequest;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
 import com.uit.sociusmvcapp.message.dto.request.UpdateMessageRequest;
+import com.uit.sociusmvcapp.message.internal.adapter.MessageBlobAdapter;
 import com.uit.sociusmvcapp.message.internal.domain.MessageReaction;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationParticipantRepository;
 import com.uit.sociusmvcapp.message.internal.repository.ConversationRepository;
@@ -17,6 +21,7 @@ import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -24,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Implementation of MessageService for Message-related operations. */
 @Service
@@ -37,6 +43,7 @@ public class MessageServiceImpl implements MessageService {
   private final ConversationParticipantRepository participantRepository;
   private final MessagePublisher messagePublisher;
   private final UserContentProvider userContentProvider;
+  private final MessageBlobAdapter messageBlobAdapter;
 
   /**
    * Sends a message in a conversation.
@@ -47,22 +54,15 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public MessageDto sendMessage(SendMessageRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
     validateParticipant(request.getConversationId(), currentClientId);
 
     MessageDto messageDto = messageRepository.createMessage(request, currentClientId);
-
-    // Update conversation's last message
     conversationRepository.updateLastMessage(
         request.getConversationId(), messageDto.getMessageId());
-
-    // Get participants for realtime event
     List<String> targetUserIds =
         participantRepository.findEmployeeIdsByConversationId(request.getConversationId());
-
-    // Publish real-time event
     messagePublisher.publishNewMessage(messageDto, targetUserIds);
-
     return messageDto;
   }
 
@@ -74,7 +74,6 @@ public class MessageServiceImpl implements MessageService {
    */
   @Override
   public MessageDto getByMessageId(String messageId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
     MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
@@ -82,7 +81,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     // Verify user is a participant
-    validateParticipant(message.getConversationId(), currentClientId);
+    validateParticipant(message.getConversationId(), getCurrentClientId());
 
     return message;
   }
@@ -97,15 +96,12 @@ public class MessageServiceImpl implements MessageService {
    */
   @Override
   public CursorResponse<MessageDto> getMessages(String conversationId, String cursor, int limit) {
-    String currentUserId = userContentProvider.getUserContent().getClientId();
 
-    // Verify user is a participant
-    validateParticipant(conversationId, currentUserId);
+    validateParticipant(conversationId, getCurrentClientId());
 
     LocalDateTime lastCreatedAt = null;
     Long lastId = null;
 
-    // Decode cursor if provided
     if (cursor != null && !cursor.isEmpty()) {
       String decoded = new String(Base64.getDecoder().decode(cursor));
       String[] parts = decoded.split(CommonConstant.UNDERSCORE);
@@ -116,7 +112,6 @@ public class MessageServiceImpl implements MessageService {
     List<MessageDto> messages =
         messageRepository.findByConversationId(conversationId, lastCreatedAt, lastId, limit);
 
-    // Prepare next cursor
     String nextCursor = null;
     if (!messages.isEmpty()) {
       MessageDto lastMessage = messages.get(messages.size() - CommonConstant.ONE);
@@ -143,15 +138,13 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public MessageDto updateMessage(String messageId, UpdateMessageRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
     MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
-    // Verify user is the sender
-    if (!message.getSenderId().equals(currentClientId)) {
+    if (!message.getSenderId().equals(getCurrentClientId())) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_009);
     }
 
@@ -159,13 +152,10 @@ public class MessageServiceImpl implements MessageService {
 
     MessageDto updatedMessage = messageRepository.findByMessageId(messageId);
 
-    // Get participants for realtime event
     List<String> targetUserIds =
         participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
 
-    // Publish real-time event
     messagePublisher.publishMessageUpdated(updatedMessage, targetUserIds);
-
     return updatedMessage;
   }
 
@@ -177,26 +167,21 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public void deleteMessage(String messageId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
-
     MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
-    // Verify user is the sender
-    if (!message.getSenderId().equals(currentClientId)) {
+    if (!message.getSenderId().equals(getCurrentClientId())) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_009);
     }
 
     String conversationId = message.getConversationId();
     messageRepository.softDelete(messageId);
 
-    // Get participants for realtime event
     List<String> targetUserIds =
         participantRepository.findEmployeeIdsByConversationId(conversationId);
 
-    // Publish real-time event
     messagePublisher.publishMessageDeleted(conversationId, messageId, targetUserIds);
   }
 
@@ -209,17 +194,14 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public MessageReactionDto addReaction(MessageReactionRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
+    String currentClientId = getCurrentClientId();
 
     MessageDto message = messageRepository.findByMessageId(request.getMessageId());
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
-
-    // Verify user is a participant
     validateParticipant(message.getConversationId(), currentClientId);
 
-    // Check if reaction already exists
     Boolean exists =
         reactionRepository.exists(request.getMessageId(), currentClientId, request.getReaction());
     if (Boolean.TRUE.equals(exists)) {
@@ -253,9 +235,13 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public void removeReaction(MessageReactionRequest request) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
 
-    reactionRepository.softDelete(request.getMessageId(), currentClientId, request.getReaction());
+    int rowsAffected =
+        reactionRepository.softDelete(
+            request.getMessageId(), getCurrentClientId(), request.getReaction());
+    if (rowsAffected == CommonConstant.INIT_INDEX) {
+      throw ExceptionFactory.badRequest(MessageConstant.E_MSG_014);
+    }
   }
 
   /**
@@ -266,15 +252,12 @@ public class MessageServiceImpl implements MessageService {
    */
   @Override
   public List<MessageReactionDto> getReactions(String messageId) {
-    String currentClientId = userContentProvider.getUserContent().getClientId();
-
     MessageDto message = messageRepository.findByMessageId(messageId);
     if (message == null) {
       throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
     }
 
-    // Verify user is a participant
-    validateParticipant(message.getConversationId(), currentClientId);
+    validateParticipant(message.getConversationId(), getCurrentClientId());
 
     return reactionRepository.findByMessageId(messageId);
   }
@@ -291,5 +274,95 @@ public class MessageServiceImpl implements MessageService {
     if (!Boolean.TRUE.equals(isParticipant)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_007);
     }
+  }
+
+  /**
+   * Upload files for a message in a conversation.
+   *
+   * @param conversationId the conversation ID
+   * @param files the files to upload
+   * @return list of file metadata DTOs
+   */
+  @Override
+  public List<FileMetadataDto> uploadMessageFiles(
+      String conversationId, List<MultipartFile> files) {
+
+    validateParticipant(conversationId, getCurrentClientId());
+
+    return messageBlobAdapter.uploadMessageFiles(files, conversationId);
+  }
+
+  /**
+   * Download a single file from a message.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param request the file download request containing file path
+   * @param outputStream the output stream to write file content
+   */
+  @Override
+  public void downloadFile(
+      String conversationId, FileDownloadRequest request, OutputStream outputStream) {
+    validateParticipant(conversationId, getCurrentClientId());
+    messageBlobAdapter.downloadFile(request.getFilePath(), outputStream);
+  }
+
+  /**
+   * Download multiple files as a ZIP archive.
+   *
+   * @param conversationId the conversation ID for access validation
+   * @param requests the list of file download requests
+   * @param outputStream the output stream to write ZIP content
+   */
+  @Override
+  public void downloadFilesAsZip(
+      String conversationId, List<FileDownloadRequest> requests, OutputStream outputStream) {
+
+    validateParticipant(conversationId, getCurrentClientId());
+
+    List<String> filePaths = requests.stream().map(FileDownloadRequest::getFilePath).toList();
+    messageBlobAdapter.downloadFilesAsZip(filePaths, outputStream);
+  }
+
+  /**
+   * Get the original file name from a file download request.
+   *
+   * @param request the file download request
+   * @return the original file name
+   */
+  @Override
+  public String getOriginalFileName(FileDownloadRequest request) {
+    return messageBlobAdapter.getOriginalFileName(request.getFilePath());
+  }
+
+  /**
+   * Get the content type (MIME type) of a file from a file download request.
+   *
+   * @param request the file download request
+   * @return the content type of the file
+   */
+  @Override
+  public String getContentType(FileDownloadRequest request) {
+    return messageBlobAdapter.getContentType(request.getFilePath());
+  }
+
+  /**
+   * Get file download information including file name and content type in a single call.
+   * Consolidates getOriginalFileName and getContentType to reduce service calls.
+   *
+   * @param request the file download request
+   * @return FileDownloadInfoDto containing file name and content type
+   */
+  @Override
+  public FileDownloadInfoDto getFileDownloadInfo(FileDownloadRequest request) {
+    return messageBlobAdapter.getFileDownloadInfo(request.getFilePath());
+  }
+
+  /**
+   * Get the current client ID from user content.
+   *
+   * @return the current client ID
+   */
+  private String getCurrentClientId() {
+    return userContentProvider.getUserContent().getClientId();
   }
 }
