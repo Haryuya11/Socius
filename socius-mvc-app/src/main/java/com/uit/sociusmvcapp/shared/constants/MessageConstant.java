@@ -438,4 +438,8 @@ public final class MessageConstant {
 
   /** Employee system role updated successfully. */
   public static final String S_EMP_011 = "S_EMP_011";
+
+  // ================= CACHE MODULE =================
+  /** Cache cleared successfully. */
+  public static final String S_CACHE_001 = "S_CACHE_001";
 }
