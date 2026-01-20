@@ -17,4 +17,5 @@ public class FileMetadataDto {
   private String filePath;
   private Long fileSize;
   private String mimeType;
+  private String fileUrl;
 }

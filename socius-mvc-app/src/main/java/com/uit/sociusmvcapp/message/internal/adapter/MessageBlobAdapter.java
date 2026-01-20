@@ -50,22 +50,13 @@ public class MessageBlobAdapter {
    * @return FileMetadataDto containing file metadata
    */
   public FileMetadataDto uploadMessageFile(MultipartFile file, String conversationId) {
-    String mimeType = detectMimeType(file);
-    UploadRequest request = buildUploadRequest(file, conversationId, mimeType);
-    if (request == null) {
-      log.error("Failed to build upload request for conversationId: {}", conversationId);
-      throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
-    }
+    FileUploadContext context = buildFileUploadContext(file, conversationId);
 
     AzureBlobProperties properties = buildBlobProperties();
-    String filePath = azureBlobService.uploadFile(properties, request);
+    String filePath = azureBlobService.uploadFile(properties, context.getUploadRequest());
+    String fileUrl = azureBlobService.generateSasToken(properties, filePath);
 
-    return FileMetadataDto.builder()
-        .fileName(file.getOriginalFilename())
-        .filePath(filePath)
-        .fileSize(file.getSize())
-        .mimeType(mimeType)
-        .build();
+    return buildFileMetadata(context, filePath, fileUrl);
   }
 
   /**
@@ -78,40 +69,90 @@ public class MessageBlobAdapter {
    */
   public List<FileMetadataDto> uploadMessageFiles(
       List<MultipartFile> files, String conversationId) {
-    List<UploadRequest> uploadRequests = new ArrayList<>();
-    List<String> mimeTypes = new ArrayList<>();
-    List<Long> fileSizes = new ArrayList<>();
-    List<String> fileNames = new ArrayList<>();
-
-    for (MultipartFile file : files) {
-      String mimeType = detectMimeType(file);
-      mimeTypes.add(mimeType);
-      fileSizes.add(file.getSize());
-      fileNames.add(file.getOriginalFilename());
-
-      UploadRequest request = buildUploadRequest(file, conversationId, mimeType);
-      if (request == null) {
-        log.error("Failed to build upload request for conversationId: {}", conversationId);
-        throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
-      }
-      uploadRequests.add(request);
-    }
+    List<FileUploadContext> contexts = prepareUploadContexts(files, conversationId);
+    List<UploadRequest> uploadRequests =
+        contexts.stream().map(FileUploadContext::getUploadRequest).toList();
 
     AzureBlobProperties properties = buildBlobProperties();
     List<String> filePaths =
         azureBlobService.uploadFiles(properties, uploadRequests, conversationId);
 
+    return buildMetadataList(properties, contexts, filePaths);
+  }
+
+  /**
+   * Prepare file upload contexts for batch upload.
+   *
+   * @param files the list of files to upload
+   * @param conversationId the conversation ID for organizing files
+   * @return list of FileUploadContext containing file info and upload requests
+   */
+  private List<FileUploadContext> prepareUploadContexts(
+      List<MultipartFile> files, String conversationId) {
+    List<FileUploadContext> contexts = new ArrayList<>();
+    for (MultipartFile file : files) {
+      contexts.add(buildFileUploadContext(file, conversationId));
+    }
+    return contexts;
+  }
+
+  /**
+   * Build a FileUploadContext from a MultipartFile.
+   *
+   * @param file the file to process
+   * @param conversationId the conversation ID for organizing files
+   * @return FileUploadContext containing file metadata and upload request
+   */
+  private FileUploadContext buildFileUploadContext(MultipartFile file, String conversationId) {
+    String mimeType = detectMimeType(file);
+    UploadRequest request = buildUploadRequest(file, conversationId, mimeType);
+    if (request == null) {
+      log.error("Failed to build upload request for conversationId: {}", conversationId);
+      throw ExceptionFactory.internalError(MessageConstant.E_SYS_004);
+    }
+    return FileUploadContext.builder()
+        .fileName(file.getOriginalFilename())
+        .fileSize(file.getSize())
+        .mimeType(mimeType)
+        .uploadRequest(request)
+        .build();
+  }
+
+  /**
+   * Build FileMetadataDto from context and upload result.
+   *
+   * @param context the file upload context
+   * @param filePath the uploaded file path
+   * @param fileUrl the SAS URL for the file
+   * @return FileMetadataDto with all file information
+   */
+  private FileMetadataDto buildFileMetadata(
+      FileUploadContext context, String filePath, String fileUrl) {
+    return FileMetadataDto.builder()
+        .fileName(context.getFileName())
+        .filePath(filePath)
+        .fileSize(context.getFileSize())
+        .mimeType(context.getMimeType())
+        .fileUrl(fileUrl)
+        .build();
+  }
+
+  /**
+   * Build metadata list from contexts and file paths.
+   *
+   * @param properties Azure Blob properties for SAS token generation
+   * @param contexts the list of file upload contexts
+   * @param filePaths the list of uploaded file paths
+   * @return list of FileMetadataDto
+   */
+  private List<FileMetadataDto> buildMetadataList(
+      AzureBlobProperties properties, List<FileUploadContext> contexts, List<String> filePaths) {
     List<FileMetadataDto> metadataList = new ArrayList<>();
     for (int i = 0; i < filePaths.size(); i++) {
-      metadataList.add(
-          FileMetadataDto.builder()
-              .fileName(fileNames.get(i))
-              .filePath(filePaths.get(i))
-              .fileSize(fileSizes.get(i))
-              .mimeType(mimeTypes.get(i))
-              .build());
+      String filePath = filePaths.get(i);
+      String fileUrl = azureBlobService.generateSasToken(properties, filePath);
+      metadataList.add(buildFileMetadata(contexts.get(i), filePath, fileUrl));
     }
-
     return metadataList;
   }
 
