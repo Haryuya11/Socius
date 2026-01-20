@@ -189,11 +189,20 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             permissionCode);
         return false;
       } else {
-        boolean hasAccess = hasAuthority(authentication, permissionCode);
-        if (hasAccess) {
+        // No scope in URL (e.g., POST /teams, POST /teams/search)
+        // Check global permission first
+        if (hasAuthority(authentication, permissionCode)) {
           log.debug("Access granted via global permission [{}]", permissionCode);
+          return true;
         }
-        return hasAccess;
+        // Also check if user has the permission in ANY scope (for DEPT_DIR creating teams)
+        if (hasAnyScopedPermission(authentication, permissionCode)) {
+          log.debug(
+              "Access granted: User has scoped permission [{}] in at least one team/department",
+              permissionCode);
+          return true;
+        }
+        return false;
       }
     }
 
@@ -243,11 +252,20 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             permissionCode);
         return false;
       } else {
-        boolean hasAccess = hasAuthority(authentication, permissionCode);
-        if (hasAccess) {
+        // No scope in URL (e.g., POST /departments, POST /departments/search)
+        // Check global permission first
+        if (hasAuthority(authentication, permissionCode)) {
           log.debug("Access granted via global permission [{}]", permissionCode);
+          return true;
         }
-        return hasAccess;
+        // Also check if user has the permission in ANY scope (for DEPT_DIR)
+        if (hasAnyScopedPermission(authentication, permissionCode)) {
+          log.debug(
+              "Access granted: User has scoped permission [{}] in at least one department",
+              permissionCode);
+          return true;
+        }
+        return false;
       }
     }
 
