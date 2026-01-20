@@ -285,7 +285,6 @@ public class TaskServiceImpl implements TaskService {
     // Validate delete permission
     validateDeletePermission(task, currentUserId);
 
-
     // If parent task, cascade delete children
     if (taskRepository.hasChildren(id)) {
       taskRepository.cascadeDeleteChildren(id);
@@ -526,7 +525,7 @@ public class TaskServiceImpl implements TaskService {
             task.getSenderId(),
             "Task Submitted",
             String.format("Task #%d '%s' has been submitted for review.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
 
     eventPublisher.publishEvent(
         new NotificationSendEvent(
@@ -534,7 +533,7 @@ public class TaskServiceImpl implements TaskService {
             task.getReceiverId(),
             "Task Submitted",
             String.format("Task #%d '%s' has been submitted.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -567,7 +566,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Approved",
             String.format("Task #%d '%s' has been approved.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -596,7 +595,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Rejected",
             String.format("Task #%d '%s' has been rejected.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -636,7 +635,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Cancelled",
             String.format("Task #%d '%s' has been cancelled.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   /**
@@ -673,7 +672,7 @@ public class TaskServiceImpl implements TaskService {
             new java.util.ArrayList<>(recipients),
             "Task Reopened",
             String.format("Task #%d '%s' has been reopened.", id, task.getTitle()),
-            "/tasks?taskId=" + id));
+            TASKS_PATH + id));
   }
 
   // ========== Private Helper Methods ==========
@@ -934,25 +933,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     throw ExceptionFactory.forbidden(MessageConstant.E_TASK_022);
-  }
-
-  /**
-   * Validate that the receiver belongs to the same team or department as the task.
-   *
-   * @param receiverId the receiver's client ID
-   * @param teamCode the team code of the task
-   * @param departmentCode the department code of the task
-   */
-  private void validateReceiverInScope(String receiverId, String teamCode, String departmentCode) {
-    // SYS_ADMIN can assign to anyone
-    if (permissionSecurityService.isSystemAdmin()) {
-      return;
-    }
-
-    // For now, we validate that the receiver exists (done by employeeGateway)
-    // Additional scope validation would require checking if receiver belongs to team/department
-    // This can be enhanced later with a gateway method to validate receiver membership
-    // For MVP, we trust the API-level authorization
   }
 
   /**
