@@ -4,9 +4,9 @@ import static com.uit.sociusmvcapp.shared.utils.TaskValidationUtils.normalizeToE
 import static com.uit.sociusmvcapp.shared.utils.TaskValidationUtils.normalizeToStartOfDay;
 
 import com.uit.sociusmvcapp.iam.UserContentProvider;
-import com.uit.sociusmvcapp.notification.NotificationService;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.event.NotificationMultiSendRequest;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
@@ -49,6 +49,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
 
+  private static final String TASKS_PATH = "/tasks?taskId=";
+
   /** Repository for accesing task data. */
   private final TaskRepository taskRepository;
 
@@ -66,9 +68,6 @@ public class TaskServiceImpl implements TaskService {
 
   /** Event publisher for notifications. */
   private final ApplicationEventPublisher eventPublisher;
-
-  /** Notification service. */
-  private final NotificationService notificationService;
 
   /**
    * Create a new task.
@@ -94,8 +93,23 @@ public class TaskServiceImpl implements TaskService {
     Integer taskId = taskRepository.createTask(request, currentUserId);
 
     // Send notifications after task creation
-    sendTaskCreationNotifications(
-        currentUserId, request.getReceiverId(), request.getTitle(), taskId);
+    if (!request.getReceiverId().equals(currentUserId)) {
+      eventPublisher.publishEvent(
+          new NotificationSendEvent(
+              this,
+              request.getReceiverId(),
+              "Task Created",
+              String.format("Task #%d '%s' has been assigned to you.", taskId, request.getTitle()),
+              TASKS_PATH + taskId));
+    }
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            currentUserId,
+            "Task Created",
+            String.format("Task #%d '%s' has been created by you.", taskId, request.getTitle()),
+            TASKS_PATH + taskId));
   }
 
   /**
@@ -135,8 +149,25 @@ public class TaskServiceImpl implements TaskService {
     Integer subTaskId = taskRepository.createSubTask(request, currentUserId, parentContext);
 
     // Send notifications after sub-task creation
-    sendSubTaskCreationNotifications(
-        currentUserId, request.getReceiverId(), request.getTitle(), subTaskId);
+    if (!request.getReceiverId().equals(currentUserId)) {
+      eventPublisher.publishEvent(
+          new NotificationSendEvent(
+              this,
+              request.getReceiverId(),
+              "Sub-Task Created",
+              String.format(
+                  "Sub-task #%d '%s' has been assigned to you.", subTaskId, request.getTitle()),
+              TASKS_PATH + subTaskId));
+    }
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            currentUserId,
+            "Sub-Task Created",
+            String.format(
+                "Sub-task #%d '%s' has been created by you.", subTaskId, request.getTitle()),
+            TASKS_PATH + subTaskId));
   }
 
   /**
@@ -181,7 +212,31 @@ public class TaskServiceImpl implements TaskService {
 
     // Send notifications after task update
     String currentUserId = userContentProvider.getUserContent().getClientId();
-    sendTaskUpdateNotifications(currentUserId, updatedTask, id);
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(updatedTask.getSenderId());
+    recipients.add(updatedTask.getReceiverId());
+    recipients.remove(currentUserId);
+
+    if (!recipients.isEmpty()) {
+      eventPublisher.publishEvent(
+          new NotificationMultiSendRequest(
+              this,
+              new java.util.ArrayList<>(recipients),
+              "Task Updated",
+              String.format("Task #%d '%s' has been updated.", id, updatedTask.getTitle()),
+              TASKS_PATH + id));
+    }
+
+    if (currentUserId.equals(updatedTask.getSenderId())
+        || currentUserId.equals(updatedTask.getReceiverId())) {
+      eventPublisher.publishEvent(
+          new NotificationSendEvent(
+              this,
+              currentUserId,
+              "Task Updated",
+              String.format("Task #%d '%s' has been updated by you.", id, updatedTask.getTitle()),
+              TASKS_PATH + id));
+    }
 
     return updatedTask;
   }
@@ -205,7 +260,17 @@ public class TaskServiceImpl implements TaskService {
     taskRepository.delete(id);
 
     // Send notifications after task deletion
-    sendTaskDeletionNotifications(task);
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Deleted",
+            String.format("Task #%d '%s' has been deleted.", id, task.getTitle()),
+            "/tasks"));
   }
 
   /**
@@ -415,7 +480,21 @@ public class TaskServiceImpl implements TaskService {
     saveTaskActivity(id, ActivityType.SUBMIT, currentUserId, request.getCompletionNote());
 
     // Send notifications after submit
-    sendTaskSubmitNotifications(task, id);
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            task.getSenderId(),
+            "Task Submitted",
+            String.format("Task #%d '%s' has been submitted for review.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            task.getReceiverId(),
+            "Task Submitted",
+            String.format("Task #%d '%s' has been submitted.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -438,7 +517,17 @@ public class TaskServiceImpl implements TaskService {
     saveTaskActivity(id, ActivityType.APPROVE, currentUserId, request.getReviewNote());
 
     // Send notifications after approve
-    sendTaskApproveNotifications(task, id);
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Approved",
+            String.format("Task #%d '%s' has been approved.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -457,7 +546,17 @@ public class TaskServiceImpl implements TaskService {
     saveTaskActivity(id, ActivityType.REJECT, currentUserId, request.getRejectionReason());
 
     // Send notifications after reject
-    sendTaskRejectNotifications(task, id);
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Rejected",
+            String.format("Task #%d '%s' has been rejected.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -487,7 +586,17 @@ public class TaskServiceImpl implements TaskService {
     saveTaskActivity(id, ActivityType.CANCEL, currentUserId, request.getCancellationReason());
 
     // Send notifications after cancel
-    sendTaskCancelNotifications(task, id);
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Cancelled",
+            String.format("Task #%d '%s' has been cancelled.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -514,7 +623,17 @@ public class TaskServiceImpl implements TaskService {
     saveTaskActivity(id, ActivityType.REOPEN, currentUserId, request.getReopenReason());
 
     // Send notifications after reopen
-    sendTaskReopenNotifications(task, id);
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Reopened",
+            String.format("Task #%d '%s' has been reopened.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   // ========== Private Helper Methods ==========
@@ -607,218 +726,5 @@ public class TaskServiceImpl implements TaskService {
         throw ExceptionFactory.badRequest(MessageConstant.E_TASK_005);
       }
     }
-  }
-
-  // ========== Notification Helper Methods ==========
-
-  /**
-   * Send notifications after task creation.
-   *
-   * @param creatorId creator ID
-   * @param assigneeId assignee ID
-   * @param taskTitle task title
-   * @param taskId task ID
-   */
-  private void sendTaskCreationNotifications(
-      String creatorId, String assigneeId, String taskTitle, Integer taskId) {
-    // Notify assignee if different from creator
-    if (!assigneeId.equals(creatorId)) {
-      eventPublisher.publishEvent(
-          new NotificationSendEvent(
-              this,
-              assigneeId,
-              "Task Created",
-              String.format("Task '%s' has been assigned to you.", taskTitle),
-              "/tasks?taskId=" + taskId));
-    }
-
-    // Notify creator
-    eventPublisher.publishEvent(
-        new NotificationSendEvent(
-            this,
-            creatorId,
-            "Task Created",
-            String.format("Task '%s' has been created by you.", taskTitle),
-            "/tasks?taskId=" + taskId));
-  }
-
-  /**
-   * Send notifications after sub-task creation.
-   *
-   * @param creatorId creator ID
-   * @param assigneeId assignee ID
-   * @param subTaskTitle sub-task title
-   * @param subTaskId sub-task ID
-   */
-  private void sendSubTaskCreationNotifications(
-      String creatorId, String assigneeId, String subTaskTitle, Integer subTaskId) {
-    // Notify assignee if different from creator
-    if (!assigneeId.equals(creatorId)) {
-      eventPublisher.publishEvent(
-          new NotificationSendEvent(
-              this,
-              assigneeId,
-              "Sub-Task Created",
-              String.format("Sub-task '%s' has been assigned to you.", subTaskTitle),
-              "/tasks?taskId=" + subTaskId));
-    }
-
-    // Notify creator
-    eventPublisher.publishEvent(
-        new NotificationSendEvent(
-            this,
-            creatorId,
-            "Sub-Task Created",
-            String.format("Sub-task '%s' has been created by you.", subTaskTitle),
-            "/tasks?taskId=" + subTaskId));
-  }
-
-  /**
-   * Send notifications after task update.
-   *
-   * @param updaterId updater ID
-   * @param task updated task
-   * @param taskId task ID
-   */
-  private void sendTaskUpdateNotifications(String updaterId, TaskDto task, Integer taskId) {
-    Set<String> recipients = new java.util.HashSet<>();
-    recipients.add(task.getSenderId());
-    recipients.add(task.getReceiverId());
-    recipients.remove(updaterId); // Don't notify the updater
-
-    // Notify other involved parties
-    if (!recipients.isEmpty()) {
-      notificationService.sendMultiNotification(
-          new java.util.ArrayList<>(recipients),
-          "Task Updated",
-          String.format("Task '%s' has been updated.", task.getTitle()),
-          "/tasks?taskId=" + taskId);
-    }
-
-    // Notify updater if they are involved (creator or assignee)
-    if (updaterId.equals(task.getSenderId()) || updaterId.equals(task.getReceiverId())) {
-      eventPublisher.publishEvent(
-          new NotificationSendEvent(
-              this,
-              updaterId,
-              "Task Updated",
-              String.format("Task '%s' has been updated by you.", task.getTitle()),
-              "/tasks?taskId=" + taskId));
-    }
-  }
-
-  /**
-   * Send notifications after task deletion.
-   *
-   * @param task deleted task
-   */
-  private void sendTaskDeletionNotifications(TaskDto task) {
-    Set<String> recipients = new java.util.HashSet<>();
-    recipients.add(task.getSenderId());
-    recipients.add(task.getReceiverId());
-
-    notificationService.sendMultiNotification(
-        new java.util.ArrayList<>(recipients),
-        "Task Deleted",
-        String.format("Task '%s' has been deleted.", task.getTitle()),
-        "/tasks");
-  }
-
-  /**
-   * Send notifications after task submit.
-   *
-   * @param task submitted task
-   * @param taskId task ID
-   */
-  private void sendTaskSubmitNotifications(TaskDto task, Integer taskId) {
-    // Notify creator (sender)
-    eventPublisher.publishEvent(
-        new NotificationSendEvent(
-            this,
-            task.getSenderId(),
-            "Task Submitted",
-            String.format("Task '%s' has been submitted for review.", task.getTitle()),
-            "/tasks?taskId=" + taskId));
-
-    // Notify assignee (receiver)
-    eventPublisher.publishEvent(
-        new NotificationSendEvent(
-            this,
-            task.getReceiverId(),
-            "Task Submitted",
-            String.format("Task '%s' has been submitted.", task.getTitle()),
-            "/tasks?taskId=" + taskId));
-  }
-
-  /**
-   * Send notifications after task approve.
-   *
-   * @param task approved task
-   * @param taskId task ID
-   */
-  private void sendTaskApproveNotifications(TaskDto task, Integer taskId) {
-    Set<String> recipients = new java.util.HashSet<>();
-    recipients.add(task.getSenderId());
-    recipients.add(task.getReceiverId());
-
-    notificationService.sendMultiNotification(
-        new java.util.ArrayList<>(recipients),
-        "Task Approved",
-        String.format("Task '%s' has been approved.", task.getTitle()),
-        "/tasks?taskId=" + taskId);
-  }
-
-  /**
-   * Send notifications after task reject.
-   *
-   * @param task rejected task
-   * @param taskId task ID
-   */
-  private void sendTaskRejectNotifications(TaskDto task, Integer taskId) {
-    Set<String> recipients = new java.util.HashSet<>();
-    recipients.add(task.getSenderId());
-    recipients.add(task.getReceiverId());
-
-    notificationService.sendMultiNotification(
-        new java.util.ArrayList<>(recipients),
-        "Task Rejected",
-        String.format("Task '%s' has been rejected.", task.getTitle()),
-        "/tasks?taskId=" + taskId);
-  }
-
-  /**
-   * Send notifications after task cancel.
-   *
-   * @param task cancelled task
-   * @param taskId task ID
-   */
-  private void sendTaskCancelNotifications(TaskDto task, Integer taskId) {
-    Set<String> recipients = new java.util.HashSet<>();
-    recipients.add(task.getSenderId());
-    recipients.add(task.getReceiverId());
-
-    notificationService.sendMultiNotification(
-        new java.util.ArrayList<>(recipients),
-        "Task Cancelled",
-        String.format("Task '%s' has been cancelled.", task.getTitle()),
-        "/tasks?taskId=" + taskId);
-  }
-
-  /**
-   * Send notifications after task reopen.
-   *
-   * @param task reopened task
-   * @param taskId task ID
-   */
-  private void sendTaskReopenNotifications(TaskDto task, Integer taskId) {
-    Set<String> recipients = new java.util.HashSet<>();
-    recipients.add(task.getSenderId());
-    recipients.add(task.getReceiverId());
-
-    notificationService.sendMultiNotification(
-        new java.util.ArrayList<>(recipients),
-        "Task Reopened",
-        String.format("Task '%s' has been reopened.", task.getTitle()),
-        "/tasks?taskId=" + taskId);
   }
 }

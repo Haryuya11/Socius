@@ -11,9 +11,9 @@ import com.uit.sociusmvcapp.department.dto.request.UpdateDepartmentRequest;
 import com.uit.sociusmvcapp.department.enums.DepartmentActionType;
 import com.uit.sociusmvcapp.department.internal.repository.DepartmentRepository;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
-import com.uit.sociusmvcapp.notification.NotificationService;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.event.NotificationMultiSendRequest;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
@@ -31,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class DepartmentServiceImpl implements DepartmentService {
+
+  private static final String DEPARTMENTS_PATH = "/departments/";
+
   /** Repository for accessing department data. */
   private final DepartmentRepository departmentRepository;
 
@@ -42,8 +45,6 @@ public class DepartmentServiceImpl implements DepartmentService {
   private final ApplicationEventPublisher eventPublisher;
 
   private final UserContentProvider userContentProvider;
-
-  private final NotificationService notificationService;
 
   /**
    * Get department information by department code.
@@ -91,7 +92,7 @@ public class DepartmentServiceImpl implements DepartmentService {
             String.format(
                 "Department '%s' (%s) has been successfully created.",
                 request.getDepartmentName(), request.getDepartmentCode()),
-            "/departments/" + request.getDepartmentCode()));
+            DEPARTMENTS_PATH + request.getDepartmentCode()));
   }
 
   /**
@@ -115,13 +116,15 @@ public class DepartmentServiceImpl implements DepartmentService {
     // Send batch notification to all department members about the update
     List<String> memberIds = departmentEmployeeGateway.getActiveMemberIds(departmentCode);
     if (!memberIds.isEmpty()) {
-      notificationService.sendMultiNotification(
-          memberIds,
-          "Department Updated",
-          String.format(
-              "Department '%s' (%s) has been updated.",
-              request.getDepartmentName(), departmentCode),
-          "/departments/" + departmentCode);
+      eventPublisher.publishEvent(
+          new NotificationMultiSendRequest(
+              this,
+              memberIds,
+              "Department Updated",
+              String.format(
+                  "Department '%s' (%s) has been updated.",
+                  request.getDepartmentName(), departmentCode),
+              DEPARTMENTS_PATH + departmentCode));
     }
   }
 
