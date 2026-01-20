@@ -8,7 +8,6 @@ import com.uit.sociusmvcapp.employee.internal.converter.EmployeeConverter;
 import com.uit.sociusmvcapp.employee.internal.persistence.EmployeeMapper;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -125,10 +124,10 @@ public class EmployeeRepository {
   /**
    * Batch find employees by client IDs.
    *
-   * @param clientIds set of employee client IDs
+   * @param clientIds list of employee client IDs
    * @return list of EmployeeDtos matching the client IDs
    */
-  public List<EmployeeDto> findByClientIds(Set<String> clientIds) {
+  public List<EmployeeDto> findByClientIds(List<String> clientIds) {
     if (clientIds == null || clientIds.isEmpty()) {
       return List.of();
     }

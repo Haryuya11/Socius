@@ -1,9 +1,9 @@
 package com.uit.sociusmvcapp.team.internal.service;
 
 import com.uit.sociusmvcapp.iam.UserContentProvider;
-import com.uit.sociusmvcapp.notification.NotificationService;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.event.NotificationMultiSendRequest;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
@@ -32,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TeamServiceImpl implements TeamService {
 
+  private static final String TEAMS_PATH = "/teams/";
+
   private final TeamRepository teamRepository;
 
   private final List<TeamActionGuard> guards;
@@ -43,8 +45,6 @@ public class TeamServiceImpl implements TeamService {
   private final ApplicationEventPublisher eventPublisher;
 
   private final UserContentProvider userContentProvider;
-
-  private final NotificationService notificationService;
 
   // ========================= TEAM SERVICE MAIN METHODS =========================
 
@@ -78,7 +78,7 @@ public class TeamServiceImpl implements TeamService {
             String.format(
                 "Team '%s' (%s) has been successfully created.",
                 request.getTeamName(), request.getTeamCode()),
-            "/teams/" + request.getTeamCode()));
+            TEAMS_PATH + request.getTeamCode()));
   }
 
   /**
@@ -118,11 +118,13 @@ public class TeamServiceImpl implements TeamService {
     // Send batch notification to all team members about the update (avoid N+1)
     List<String> memberIds = getTeamMemberIds(teamCode);
     if (!memberIds.isEmpty()) {
-      notificationService.sendMultiNotification(
-          memberIds,
-          "Team Updated",
-          String.format("Team '%s' (%s) has been updated.", request.getTeamName(), teamCode),
-          "/teams/" + teamCode);
+      eventPublisher.publishEvent(
+          new NotificationMultiSendRequest(
+              this,
+              memberIds,
+              "Team Updated",
+              String.format("Team '%s' (%s) has been updated.", request.getTeamName(), teamCode),
+              TEAMS_PATH + teamCode));
     }
 
     return findByTeamCode(teamCode);

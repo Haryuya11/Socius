@@ -234,6 +234,20 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
   /**
+   * Find multiple employees by their client IDs in a single batch query.
+   *
+   * @param clientIds list of employee client IDs
+   * @return list of EmployeeDto matching the provided client IDs
+   */
+  @Override
+  public List<EmployeeDto> findByClientIds(List<String> clientIds) {
+    if (clientIds == null || clientIds.isEmpty()) {
+      return List.of();
+    }
+    return employeeRepository.findByClientIds(clientIds);
+  }
+
+  /**
    * Validate if an employee exists by client ID.
    *
    * @param clientId the employee client ID

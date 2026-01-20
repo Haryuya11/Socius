@@ -9,6 +9,7 @@ import com.uit.sociusmvcapp.employee.dto.request.SearchUserRequest;
 import com.uit.sociusmvcapp.iam.dto.UserPrincipal;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
+import java.util.List;
 import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -66,6 +67,14 @@ public interface EmployeeService {
    * @return the corresponding EmployeeDto
    */
   EmployeeDto findByClientId(String clientId);
+
+  /**
+   * Find multiple employees by their client IDs in a single batch query.
+   *
+   * @param clientIds list of employee client IDs
+   * @return list of EmployeeDto matching the provided client IDs
+   */
+  List<EmployeeDto> findByClientIds(List<String> clientIds);
 
   /**
    * Assert that an employee exists by client ID.

@@ -134,15 +134,18 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     String employeeName = employee.getFirstName() + " " + employee.getLastName();
 
     // Get all members in both departments BEFORE the transfer
+    String performerId = userContentProvider.getUserContent().getClientId();
     List<String> oldDeptMemberIds =
         departmentEmployeeRepository.getEmployeesByDepartmentCode(fromDept).stream()
             .map(de -> de.getEmployee().getClientId())
             .filter(id -> !id.equals(empId)) // Exclude the transferred employee
+            .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
             .toList();
 
     List<String> newDeptMemberIds =
         departmentEmployeeRepository.getEmployeesByDepartmentCode(toDept).stream()
             .map(de -> de.getEmployee().getClientId())
+            .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
             .toList();
 
     // 3. Execution (use repository directly to avoid duplicate notifications)
@@ -174,6 +177,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
   public DepartmentEmployeeBatchResultDto addEmployeesToDepartment(
       List<AssignEmployeeToDepartmentRequest> requests, String departmentCode) {
     departmentService.validateExists(departmentCode);
+    String performerId = userContentProvider.getUserContent().getClientId();
 
     if (requests == null || requests.isEmpty()) {
       return DepartmentEmployeeBatchResultDto.builder()
@@ -213,20 +217,23 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
           departmentEmployeeRepository.getEmployeesByDepartmentCode(departmentCode).stream()
               .map(de -> de.getEmployee().getClientId())
               .filter(id -> !newEmployeeIds.contains(id)) // Exclude newly added employees
+              .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
               .toList();
 
       if (!existingMemberIds.isEmpty()) {
-        String countText = newEmployeeIds.size() + " " + LOG_EMPLOYEE_UNIT;
+        // Get names of added employees
+        List<EmployeeDto> addedEmployees =
+            newEmployeeIds.stream().map(employeeService::findByClientId).toList();
+        String employeeNames = formatEmployeeNames(addedEmployees);
 
         publishMultiNotification(
             existingMemberIds,
             "New Department Members",
-            String.format("%s added to department (%s).", countText, departmentCode),
+            String.format("%s added to department (%s).", employeeNames, departmentCode),
             DEPARTMENTS_PATH + departmentCode);
       }
 
       // Notify performer about successful additions
-      String performerId = userContentProvider.getUserContent().getClientId();
       if (!newEmployeeIds.contains(performerId)) { // Don't notify if performer added themselves
         String countText = newEmployeeIds.size() + " " + LOG_EMPLOYEE_UNIT;
 
@@ -257,6 +264,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
   public DepartmentEmployeeBatchResultDto removeEmployeesFromDepartmentBatch(
       List<String> employeeIds, String departmentCode) {
     departmentService.validateExists(departmentCode);
+    String performerId = userContentProvider.getUserContent().getClientId();
 
     if (employeeIds == null || employeeIds.isEmpty()) {
       return DepartmentEmployeeBatchResultDto.builder()
@@ -295,20 +303,23 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
       List<String> remainingMemberIds =
           allCurrentMemberIds.stream()
               .filter(id -> !result.getSuccessfulIds().contains(id))
+              .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
               .toList();
 
       if (!remainingMemberIds.isEmpty()) {
-        String countText = result.getSuccessfulIds().size() + " " + LOG_EMPLOYEE_UNIT;
+        // Get names of removed employees
+        List<EmployeeDto> removedEmployees =
+            result.getSuccessfulIds().stream().map(employeeService::findByClientId).toList();
+        String employeeNames = formatEmployeeNames(removedEmployees);
 
         publishMultiNotification(
             remainingMemberIds,
             "Department Members Removed",
-            String.format("%s removed from department (%s).", countText, departmentCode),
+            String.format("%s removed from department (%s).", employeeNames, departmentCode),
             DEPARTMENTS_PATH + departmentCode);
       }
 
       // Notify performer about successful removals
-      String performerId = userContentProvider.getUserContent().getClientId();
       if (!result
           .getSuccessfulIds()
           .contains(performerId)) { // Don't notify if performer removed themselves
@@ -447,6 +458,51 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
   }
 
   // ========================= NOTIFICATION HELPER METHODS =========================
+
+  /**
+   * Format a list of employees into a readable string (e.g., "John Doe, Jane Smith and 2 others").
+   *
+   * @param employees list of EmployeeDto
+   * @return formatted string of employee names
+   */
+  private String formatEmployeeNames(List<EmployeeDto> employees) {
+    if (employees.isEmpty()) {
+      return "";
+    }
+
+    if (employees.size() == 1) {
+      EmployeeDto emp = employees.get(0);
+      return emp.getFirstName() + " " + emp.getLastName();
+    }
+
+    if (employees.size() == 2) {
+      EmployeeDto emp1 = employees.get(0);
+      EmployeeDto emp2 = employees.get(1);
+      return emp1.getFirstName()
+          + " "
+          + emp1.getLastName()
+          + " and "
+          + emp2.getFirstName()
+          + " "
+          + emp2.getLastName();
+    }
+
+    // For 3+ employees: show first 2 names + "and X others"
+    EmployeeDto emp1 = employees.get(0);
+    EmployeeDto emp2 = employees.get(1);
+    int remaining = employees.size() - 2;
+    return emp1.getFirstName()
+        + " "
+        + emp1.getLastName()
+        + ", "
+        + emp2.getFirstName()
+        + " "
+        + emp2.getLastName()
+        + " and "
+        + remaining
+        + " other"
+        + (remaining > 1 ? "s" : "");
+  }
 
   /**
    * Send all notifications for employee transfer.

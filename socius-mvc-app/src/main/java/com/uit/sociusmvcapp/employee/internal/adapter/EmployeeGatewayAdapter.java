@@ -62,7 +62,7 @@ public class EmployeeGatewayAdapter implements EmployeeGateway {
       return Map.of();
     }
 
-    return employeeRepository.findByClientIds(clientIds).stream()
+    return employeeRepository.findByClientIds(new java.util.ArrayList<>(clientIds)).stream()
         .collect(
             Collectors.toMap(
                 EmployeeDto::getClientId, emp -> emp.getFirstName() + " " + emp.getLastName()));
