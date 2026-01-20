@@ -153,7 +153,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             userContentProvider.getUserContent().getClientId(),
             "Account Updated",
             "Your account information has been updated.",
-            "/employees/profile"));
+            "/profile"));
   }
 
   /**
@@ -327,6 +327,20 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     // Check if user has employee.view.salary permission in any scope
     return permissionSecurityService.hasAnyPermission(EmployeeConstant.PERMISSION_VIEW_SALARY);
+  }
+
+  /**
+   * Find multiple employees by their client IDs in a single batch query.
+   *
+   * @param clientIds list of employee client IDs
+   * @return list of EmployeeDto matching the provided client IDs
+   */
+  @Override
+  public List<EmployeeDto> findByClientIds(List<String> clientIds) {
+    if (clientIds == null || clientIds.isEmpty()) {
+      return List.of();
+    }
+    return employeeRepository.findByClientIds(clientIds);
   }
 
   /**

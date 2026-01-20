@@ -200,4 +200,37 @@
         AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </update>
 
+    <select id="findRawEmployeeIdsInDepartment" resultType="string">
+        SELECT employee_id
+        FROM department_employees
+        WHERE department_code = #{departmentCode}
+        AND employee_id IN
+        <foreach item="id" collection="employeeIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <update id="reactivateEmployeesInDepartmentBatch">
+        UPDATE department_employees
+        SET
+        delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value},
+        deleted_at = NULL,
+        updated_at = CURRENT_TIMESTAMP,
+        created_at = CURRENT_TIMESTAMP,
+        role_code = CASE
+        <foreach collection="entities" item="item">
+            WHEN employee_id = #{item.employee.clientId} THEN #{item.roleCode}
+        </foreach>
+        END,
+        is_primary = CASE
+        <foreach collection="entities" item="item">
+            WHEN employee_id = #{item.employee.clientId} THEN #{item.isPrimary}
+        </foreach>
+        END
+        WHERE department_code = #{departmentCode}
+        AND employee_id IN
+        <foreach collection="entities" item="item" open="(" separator="," close=")">
+            #{item.employee.clientId}
+        </foreach>
+    </update>
 </mapper>

@@ -21,12 +21,12 @@ public class TaskScheduledJobs {
   /**
    * Mark tasks as overdue if their due date has passed.
    *
-   * <p>Runs every hour to check and update tasks that are past their due date but still in
-   * IN_PROGRESS or PENDING status.
+   * <p>Runs daily at midnight (00:00:00) to check and update tasks that are past their due date but
+   * still in IN_PROGRESS or PENDING status.
    *
-   * <p>Cron expression: "0 0 * * * *" = every hour at minute 0
+   * <p>Cron expression: "0 0 0 * * *" = daily at midnight (00:00:00)
    */
-  @Scheduled(cron = "0 0 * * * *")
+  @Scheduled(cron = "0 0 0 * * *")
   public void markOverdueTasks() {
     log.info("Starting scheduled task: Mark overdue tasks");
 

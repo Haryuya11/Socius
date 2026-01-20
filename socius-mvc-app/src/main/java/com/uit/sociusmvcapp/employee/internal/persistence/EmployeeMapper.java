@@ -5,7 +5,6 @@ import com.uit.sociusmvcapp.employee.dto.request.UpdateEmployeeRequest;
 import com.uit.sociusmvcapp.employee.internal.domain.Employee;
 import com.uit.sociusmvcapp.shared.request.SortRequest;
 import java.util.List;
-import java.util.Set;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -126,5 +125,5 @@ public interface EmployeeMapper {
    * @param clientIds set of employee client IDs
    * @return list of Employee entities
    */
-  List<Employee> findByClientIds(@Param("clientIds") Set<String> clientIds);
+  List<Employee> findByClientIds(@Param("clientIds") List<String> clientIds);
 }

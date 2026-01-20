@@ -2,7 +2,11 @@ package com.uit.sociusmvcapp.workforce.internal.service;
 
 import com.uit.sociusmvcapp.department.DepartmentService;
 import com.uit.sociusmvcapp.employee.EmployeeService;
+import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
+import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.event.NotificationMultiSendRequest;
+import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import com.uit.sociusmvcapp.shared.service.I18nService;
 import com.uit.sociusmvcapp.workforce.DepartmentEmployeeService;
@@ -23,13 +27,19 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Implementation of DepartmentEmployeeService for managing department-employee relationships. */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService {
+
+  private static final String LOG_EMPLOYEE_UNIT = "employee(s)";
+
+  private static final String DEPARTMENTS_PATH = "/departments/";
 
   private final DepartmentService departmentService;
 
@@ -40,6 +50,10 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
   private final DepartmentEmployeeConverter departmentEmployeeConverter;
 
   private final I18nService i18nService;
+
+  private final ApplicationEventPublisher eventPublisher;
+
+  private final UserContentProvider userContentProvider;
 
   /**
    * Get all employees in a department by department code.
@@ -60,12 +74,19 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @param departmentCode the code of the department
    */
   @Override
+  @Transactional
   public void addEmployeeToDepartment(
       AssignEmployeeToDepartmentRequest request, String departmentCode) {
     departmentService.validateExists(departmentCode);
 
     employeeService.validateExists(request.getEmployeeId());
     departmentEmployeeRepository.addEmployeeToDepartment(request, departmentCode);
+
+    publishSingleNotification(
+        request.getEmployeeId(),
+        "Added to Department",
+        String.format("You have been added to department (%s).", departmentCode),
+        DEPARTMENTS_PATH + departmentCode);
   }
 
   /**
@@ -75,10 +96,17 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @param employeeId the client ID of the employee to remove
    */
   @Override
+  @Transactional
   public void removeEmployeeFromDepartment(String departmentCode, String employeeId) {
     departmentService.validateExists(departmentCode);
     employeeService.validateExists(employeeId);
     departmentEmployeeRepository.removeEmployeeFromDepartment(departmentCode, employeeId);
+
+    publishSingleNotification(
+        employeeId,
+        "Removed from Department",
+        String.format("You have been removed from department (%s).", departmentCode),
+        "/departments");
   }
 
   /**
@@ -88,6 +116,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @return Map containing transfer details
    */
   @Override
+  @Transactional
   public Map<String, String> transferEmployee(TransferEmployeeRequest request) {
     String fromDept = request.getFromDepartmentCode();
     String toDept = request.getToDepartmentCode();
@@ -100,12 +129,35 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     // 2. Domain Logic Check
     validateTransferEligibility(fromDept, toDept, empId);
 
-    // 3. Execution
+    // Get employee information for notifications
+    EmployeeDto employee = employeeService.findByClientId(empId);
+    String employeeName = employee.getFirstName() + " " + employee.getLastName();
+
+    // Get all members in both departments BEFORE the transfer
+    String performerId = userContentProvider.getUserContent().getClientId();
+    List<String> oldDeptMemberIds =
+        departmentEmployeeRepository.getEmployeesByDepartmentCode(fromDept).stream()
+            .map(de -> de.getEmployee().getClientId())
+            .filter(id -> !id.equals(empId)) // Exclude the transferred employee
+            .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
+            .toList();
+
+    List<String> newDeptMemberIds =
+        departmentEmployeeRepository.getEmployeesByDepartmentCode(toDept).stream()
+            .map(de -> de.getEmployee().getClientId())
+            .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
+            .toList();
+
+    // 3. Execution (use repository directly to avoid duplicate notifications)
     AssignEmployeeToDepartmentRequest addRequest =
         departmentEmployeeConverter.toAssignEmployeeToDepartmentRequest(request);
 
     departmentEmployeeRepository.removeEmployeeFromDepartment(fromDept, empId);
     departmentEmployeeRepository.addEmployeeToDepartment(addRequest, toDept);
+
+    // Send notifications
+    sendTransferNotifications(
+        empId, employeeName, fromDept, toDept, oldDeptMemberIds, newDeptMemberIds);
 
     return Map.of(
         DepartmentEmployeeConstant.EMPLOYEE_ID, empId,
@@ -121,9 +173,11 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @return DepartmentEmployeeBatchResultDto containing batch operation results
    */
   @Override
+  @Transactional
   public DepartmentEmployeeBatchResultDto addEmployeesToDepartment(
       List<AssignEmployeeToDepartmentRequest> requests, String departmentCode) {
     departmentService.validateExists(departmentCode);
+    String performerId = userContentProvider.getUserContent().getClientId();
 
     if (requests == null || requests.isEmpty()) {
       return DepartmentEmployeeBatchResultDto.builder()
@@ -149,6 +203,46 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     if (!result.getToInsert().isEmpty()) {
       departmentEmployeeRepository.addEmployeesToDepartmentBatch(
           result.getToInsert(), departmentCode);
+
+      // Send batch notification to added employees
+      publishMultiNotification(
+          result.getSuccessfulIds(),
+          "Added to Department",
+          String.format("You have been added to department (%s).", departmentCode),
+          DEPARTMENTS_PATH + departmentCode);
+
+      // Notify all existing members in the department about new additions
+      List<String> newEmployeeIds = result.getSuccessfulIds();
+      List<String> existingMemberIds =
+          departmentEmployeeRepository.getEmployeesByDepartmentCode(departmentCode).stream()
+              .map(de -> de.getEmployee().getClientId())
+              .filter(id -> !newEmployeeIds.contains(id)) // Exclude newly added employees
+              .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
+              .toList();
+
+      if (!existingMemberIds.isEmpty()) {
+        // Get names of added employees
+        List<EmployeeDto> addedEmployees =
+            newEmployeeIds.stream().map(employeeService::findByClientId).toList();
+        String employeeNames = formatEmployeeNames(addedEmployees);
+
+        publishMultiNotification(
+            existingMemberIds,
+            "New Department Members",
+            String.format("%s added to department (%s).", employeeNames, departmentCode),
+            DEPARTMENTS_PATH + departmentCode);
+      }
+
+      // Notify performer about successful additions
+      if (!newEmployeeIds.contains(performerId)) { // Don't notify if performer added themselves
+        String countText = newEmployeeIds.size() + " " + LOG_EMPLOYEE_UNIT;
+
+        publishSingleNotification(
+            performerId,
+            "Employees Added to Department",
+            String.format("Successfully added %s to department (%s).", countText, departmentCode),
+            DEPARTMENTS_PATH + departmentCode);
+      }
     }
 
     // Lưu ý: Dùng .getSuccessfulIds() và .getErrors()
@@ -166,9 +260,11 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @return DepartmentEmployeeBatchResultDto containing batch operation results
    */
   @Override
+  @Transactional
   public DepartmentEmployeeBatchResultDto removeEmployeesFromDepartmentBatch(
       List<String> employeeIds, String departmentCode) {
     departmentService.validateExists(departmentCode);
+    String performerId = userContentProvider.getUserContent().getClientId();
 
     if (employeeIds == null || employeeIds.isEmpty()) {
       return DepartmentEmployeeBatchResultDto.builder()
@@ -187,8 +283,54 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
 
     // 3. Execute Valid Requests
     if (!result.getToInsert().isEmpty()) {
+      // Get all current members before removal for notification
+      List<String> allCurrentMemberIds =
+          departmentEmployeeRepository.getEmployeesByDepartmentCode(departmentCode).stream()
+              .map(de -> de.getEmployee().getClientId())
+              .toList();
+
       departmentEmployeeRepository.removeEmployeesFromDepartmentBatch(
           result.getToInsert(), departmentCode);
+
+      // Send batch notification to removed employees
+      publishMultiNotification(
+          result.getSuccessfulIds(),
+          "Removed from Department",
+          String.format("You have been removed from department (%s).", departmentCode),
+          DEPARTMENTS_PATH + departmentCode);
+
+      // Notify all remaining members about the removals
+      List<String> remainingMemberIds =
+          allCurrentMemberIds.stream()
+              .filter(id -> !result.getSuccessfulIds().contains(id))
+              .filter(id -> !id.equals(performerId)) // Exclude performer to avoid duplicate
+              .toList();
+
+      if (!remainingMemberIds.isEmpty()) {
+        // Get names of removed employees
+        List<EmployeeDto> removedEmployees =
+            result.getSuccessfulIds().stream().map(employeeService::findByClientId).toList();
+        String employeeNames = formatEmployeeNames(removedEmployees);
+
+        publishMultiNotification(
+            remainingMemberIds,
+            "Department Members Removed",
+            String.format("%s removed from department (%s).", employeeNames, departmentCode),
+            DEPARTMENTS_PATH + departmentCode);
+      }
+
+      // Notify performer about successful removals
+      if (!result
+          .getSuccessfulIds()
+          .contains(performerId)) { // Don't notify if performer removed themselves
+        String countText = result.getSuccessfulIds().size() + " " + LOG_EMPLOYEE_UNIT;
+        publishSingleNotification(
+            performerId,
+            "Employees Removed from Department",
+            String.format(
+                "Successfully removed %s from department(%s).", countText, departmentCode),
+            DEPARTMENTS_PATH + departmentCode);
+      }
     }
 
     return DepartmentEmployeeBatchResultDto.builder()
@@ -205,11 +347,33 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @return Map containing role change confirmation details
    */
   @Override
+  @Transactional
   public Map<String, String> changeEmployeeRoleInDepartment(
       String departmentCode, String employeeId, String roleCode) {
     departmentService.validateExists(departmentCode);
     employeeService.validateExists(employeeId);
     departmentEmployeeRepository.changeEmployeeRole(departmentCode, employeeId, roleCode);
+
+    // Send notifications
+    publishSingleNotification(
+        employeeId,
+        "Department Role Changed",
+        String.format(
+            "Your role in department '%s' has been changed to '%s'.", departmentCode, roleCode),
+        DEPARTMENTS_PATH + departmentCode);
+
+    // Notify the performer
+    String performedBy = userContentProvider.getUserContent().getClientId();
+    if (!performedBy.equals(employeeId)) {
+      publishSingleNotification(
+          performedBy,
+          "Department Role Changed",
+          String.format(
+              "Employee's role in department '%s' has been changed to '%s'.",
+              departmentCode, roleCode),
+          DEPARTMENTS_PATH + departmentCode);
+    }
+
     return Map.of(
         DepartmentEmployeeConstant.EMPLOYEE_ID,
         employeeId,
@@ -291,5 +455,138 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     }
 
     return new BatchProcessResultDto<>(toDelete, successfulIds, errors);
+  }
+
+  // ========================= NOTIFICATION HELPER METHODS =========================
+
+  /**
+   * Format a list of employees into a readable string (e.g., "John Doe, Jane Smith and 2 others").
+   *
+   * @param employees list of EmployeeDto
+   * @return formatted string of employee names
+   */
+  private String formatEmployeeNames(List<EmployeeDto> employees) {
+    if (employees.isEmpty()) {
+      return "";
+    }
+
+    if (employees.size() == 1) {
+      EmployeeDto emp = employees.get(0);
+      return emp.getFirstName() + " " + emp.getLastName();
+    }
+
+    if (employees.size() == 2) {
+      EmployeeDto emp1 = employees.get(0);
+      EmployeeDto emp2 = employees.get(1);
+      return emp1.getFirstName()
+          + " "
+          + emp1.getLastName()
+          + " and "
+          + emp2.getFirstName()
+          + " "
+          + emp2.getLastName();
+    }
+
+    // For 3+ employees: show first 2 names + "and X others"
+    EmployeeDto emp1 = employees.get(0);
+    EmployeeDto emp2 = employees.get(1);
+    int remaining = employees.size() - 2;
+    return emp1.getFirstName()
+        + " "
+        + emp1.getLastName()
+        + ", "
+        + emp2.getFirstName()
+        + " "
+        + emp2.getLastName()
+        + " and "
+        + remaining
+        + " other"
+        + (remaining > 1 ? "s" : "");
+  }
+
+  /**
+   * Send all notifications for employee transfer.
+   *
+   * @param employeeId transferred employee ID
+   * @param employeeName transferred employee name
+   * @param fromDepartment source department
+   * @param toDepartment destination department
+   * @param oldDeptMemberIds members in old department
+   * @param newDeptMemberIds members in new department
+   */
+  private void sendTransferNotifications(
+      String employeeId,
+      String employeeName,
+      String fromDepartment,
+      String toDepartment,
+      List<String> oldDeptMemberIds,
+      List<String> newDeptMemberIds) {
+
+    // Notify the transferred employee
+    publishSingleNotification(
+        employeeId,
+        "Department Transfer",
+        String.format(
+            "You have been transferred from department '%s'  to department '%s'. ",
+            fromDepartment, toDepartment),
+        DEPARTMENTS_PATH + toDepartment);
+
+    // Notify all members in both departments
+    List<String> allDeptMemberIds = new ArrayList<>(oldDeptMemberIds);
+    allDeptMemberIds.addAll(newDeptMemberIds);
+
+    List<String> uniqueMemberIds =
+        allDeptMemberIds.stream().distinct().filter(id -> !id.equals(employeeId)).toList();
+
+    if (!uniqueMemberIds.isEmpty()) {
+      publishMultiNotification(
+          uniqueMemberIds,
+          "Department Member Transfer",
+          String.format(
+              "%s has been transferred from department '%s' to department '%s'.",
+              employeeName, fromDepartment, toDepartment),
+          DEPARTMENTS_PATH + toDepartment);
+    }
+
+    // Notify the performer
+    String performedBy = userContentProvider.getUserContent().getClientId();
+    if (!performedBy.equals(employeeId)) {
+
+      publishSingleNotification(
+          performedBy,
+          "Department Transfer Completed",
+          String.format(
+              "%s has been successfully transferred from department '%s' to department '%s'.",
+              employeeName, fromDepartment, toDepartment),
+          DEPARTMENTS_PATH + toDepartment);
+    }
+  }
+
+  /**
+   * Helper to publish single notification event.
+   *
+   * @param receiverId the receiver's ID
+   * @param title title
+   * @param content content
+   * @param linkUrl link URL
+   */
+  private void publishSingleNotification(
+      String receiverId, String title, String content, String linkUrl) {
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(this, receiverId, title, content, linkUrl));
+  }
+
+  /**
+   * Helper to publish multi notification event.
+   *
+   * @param receiverIds list of receiver IDs
+   * @param title title
+   * @param content content
+   * @param linkUrl link URL
+   */
+  private void publishMultiNotification(
+      List<String> receiverIds, String title, String content, String linkUrl) {
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(this, receiverIds, title, content, linkUrl));
   }
 }

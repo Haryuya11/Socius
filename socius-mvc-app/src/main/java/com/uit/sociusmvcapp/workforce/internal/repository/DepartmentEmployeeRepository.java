@@ -5,6 +5,7 @@ import com.uit.sociusmvcapp.workforce.dto.request.AssignEmployeeToDepartmentRequ
 import com.uit.sociusmvcapp.workforce.internal.converter.DepartmentEmployeeConverter;
 import com.uit.sociusmvcapp.workforce.internal.domain.DepartmentEmployee;
 import com.uit.sociusmvcapp.workforce.internal.persistence.DepartmentEmployeeMapper;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -137,11 +138,41 @@ public class DepartmentEmployeeRepository {
     if (requests == null || requests.isEmpty()) {
       return;
     }
-    // Convert list request to list entity
-    List<DepartmentEmployee> entities =
-        requests.stream().map(req -> converter.toEntity(req, departmentCode)).toList();
+    // Get list of employee IDs from requests
+    List<String> requestIds =
+        requests.stream().map(AssignEmployeeToDepartmentRequest::getEmployeeId).toList();
 
-    mapper.addEmployeesToDepartmentBatch(entities);
+    // Find existing employee IDs in the department
+    List<String> rawExistingIds = mapper.findRawEmployeeIdsInDepartment(departmentCode, requestIds);
+
+    // Separate requests into those to insert and those to reactivate
+    List<AssignEmployeeToDepartmentRequest> toInsertRequests = new ArrayList<>();
+    List<AssignEmployeeToDepartmentRequest> toReactivateRequests = new ArrayList<>();
+
+    for (AssignEmployeeToDepartmentRequest req : requests) {
+      if (rawExistingIds.contains(req.getEmployeeId())) {
+        toReactivateRequests.add(req);
+      } else {
+        toInsertRequests.add(req);
+      }
+    }
+
+    // Batch insert new department-employee relationships
+    if (!toInsertRequests.isEmpty()) {
+      List<DepartmentEmployee> insertEntities =
+          toInsertRequests.stream().map(req -> converter.toEntity(req, departmentCode)).toList();
+      mapper.addEmployeesToDepartmentBatch(insertEntities);
+    }
+
+    // Batch reactivate existing department-employee relationships
+    if (!toReactivateRequests.isEmpty()) {
+      List<DepartmentEmployee> reactivateEntities =
+          toReactivateRequests.stream()
+              .map(req -> converter.toEntity(req, departmentCode))
+              .toList();
+      // Gọi hàm update batch mới viết trong mapper
+      mapper.reactivateEmployeesInDepartmentBatch(reactivateEntities, departmentCode);
+    }
   }
 
   /**

@@ -18,6 +18,13 @@ public interface NotificationMapper {
   void insert(Notification notification);
 
   /**
+   * Batch insert notification records.
+   *
+   * @param notifications the list of notifications to be created
+   */
+  void batchInsert(List<Notification> notifications);
+
+  /**
    * Count unread notifications by client ID.
    *
    * @param clientId the client ID

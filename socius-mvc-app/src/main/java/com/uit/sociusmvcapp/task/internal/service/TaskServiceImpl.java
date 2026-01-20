@@ -8,6 +8,8 @@ import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.shared.constants.AuthConstant;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
+import com.uit.sociusmvcapp.shared.event.NotificationMultiSendRequest;
+import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +51,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
+
+  private static final String TASKS_PATH = "/tasks?taskId=";
 
   /** Repository for accesing task data. */
   private final TaskRepository taskRepository;
@@ -66,6 +71,9 @@ public class TaskServiceImpl implements TaskService {
 
   /** Service for checking user permissions. */
   private final PermissionSecurityService permissionSecurityService;
+
+  /** Event publisher for notifications. */
+  private final ApplicationEventPublisher eventPublisher;
 
   /**
    * Create a new task.
@@ -92,6 +100,26 @@ public class TaskServiceImpl implements TaskService {
 
     String currentUserId = userContentProvider.getUserContent().getClientId();
     taskRepository.createTask(request, currentUserId);
+    Integer taskId = taskRepository.createTask(request, currentUserId);
+
+    // Send notifications after task creation
+    if (!request.getReceiverId().equals(currentUserId)) {
+      eventPublisher.publishEvent(
+          new NotificationSendEvent(
+              this,
+              request.getReceiverId(),
+              "Task Created",
+              String.format("Task #%d '%s' has been assigned to you.", taskId, request.getTitle()),
+              TASKS_PATH + taskId));
+    }
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            currentUserId,
+            "Task Created",
+            String.format("Task #%d '%s' has been created by you.", taskId, request.getTitle()),
+            TASKS_PATH + taskId));
   }
 
   /**
@@ -103,7 +131,7 @@ public class TaskServiceImpl implements TaskService {
   @Override
   @Transactional
   public void createSubTask(Integer parentId, CreateTaskRequest request) {
-    // Get parent task DTO (also validates view permission)
+    // Get parent task DTO
     TaskDto parent = getById(parentId);
 
     // Validate parent is not a sub-task
@@ -131,11 +159,32 @@ public class TaskServiceImpl implements TaskService {
     String currentUserId = userContentProvider.getUserContent().getClientId();
     ParentTaskContext parentContext =
         new ParentTaskContext(parentId, parent.getTeamCode(), parent.getDepartmentCode());
-    taskRepository.createSubTask(request, currentUserId, parentContext);
+    Integer subTaskId = taskRepository.createSubTask(request, currentUserId, parentContext);
+
+    // Send notifications after sub-task creation
+    if (!request.getReceiverId().equals(currentUserId)) {
+      eventPublisher.publishEvent(
+          new NotificationSendEvent(
+              this,
+              request.getReceiverId(),
+              "Sub-Task Created",
+              String.format(
+                  "Sub-task #%d '%s' has been assigned to you.", subTaskId, request.getTitle()),
+              TASKS_PATH + subTaskId));
+    }
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            currentUserId,
+            "Sub-Task Created",
+            String.format(
+                "Sub-task #%d '%s' has been created by you.", subTaskId, request.getTitle()),
+            TASKS_PATH + subTaskId));
   }
 
   /**
-   * Get task by ID with permission validation.
+   * Get task by ID.
    *
    * @param id task ID
    * @return task DTO
@@ -190,7 +239,36 @@ public class TaskServiceImpl implements TaskService {
 
     // Update via repository
     taskRepository.updateTask(id, request);
-    return getById(id);
+    TaskDto updatedTask = getById(id);
+
+    // Send notifications after task update
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(updatedTask.getSenderId());
+    recipients.add(updatedTask.getReceiverId());
+    recipients.remove(currentUserId);
+
+    if (!recipients.isEmpty()) {
+      eventPublisher.publishEvent(
+          new NotificationMultiSendRequest(
+              this,
+              new java.util.ArrayList<>(recipients),
+              "Task Updated",
+              String.format("Task #%d '%s' has been updated.", id, updatedTask.getTitle()),
+              TASKS_PATH + id));
+    }
+
+    if (currentUserId.equals(updatedTask.getSenderId())
+        || currentUserId.equals(updatedTask.getReceiverId())) {
+      eventPublisher.publishEvent(
+          new NotificationSendEvent(
+              this,
+              currentUserId,
+              "Task Updated",
+              String.format("Task #%d '%s' has been updated by you.", id, updatedTask.getTitle()),
+              TASKS_PATH + id));
+    }
+
+    return updatedTask;
   }
 
   /**
@@ -207,12 +285,26 @@ public class TaskServiceImpl implements TaskService {
     // Validate delete permission
     validateDeletePermission(task, currentUserId);
 
+
     // If parent task, cascade delete children
     if (taskRepository.hasChildren(id)) {
       taskRepository.cascadeDeleteChildren(id);
     }
 
     taskRepository.delete(id);
+
+    // Send notifications after task deletion
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Deleted",
+            String.format("Task #%d '%s' has been deleted.", id, task.getTitle()),
+            "/tasks"));
   }
 
   /**
@@ -426,6 +518,23 @@ public class TaskServiceImpl implements TaskService {
 
     taskRepository.updateStatus(id, TaskStatus.PENDING.getCode());
     saveTaskActivity(id, ActivityType.SUBMIT, currentUserId, request.getCompletionNote());
+
+    // Send notifications after submit
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            task.getSenderId(),
+            "Task Submitted",
+            String.format("Task #%d '%s' has been submitted for review.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
+
+    eventPublisher.publishEvent(
+        new NotificationSendEvent(
+            this,
+            task.getReceiverId(),
+            "Task Submitted",
+            String.format("Task #%d '%s' has been submitted.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -438,14 +547,27 @@ public class TaskServiceImpl implements TaskService {
   @Transactional
   public void approve(Integer id, ApproveTaskRequest request) {
     String currentUserId = userContentProvider.getUserContent().getClientId();
-    validateSenderCanReview(id, currentUserId);
 
     if (taskRepository.hasChildren(id) && !taskRepository.areAllChildrenApproved(id)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_TASK_011);
     }
 
+    TaskDto task = validateSenderCanReview(id, currentUserId);
     taskRepository.updateStatus(id, TaskStatus.APPROVED.getCode());
     saveTaskActivity(id, ActivityType.APPROVE, currentUserId, request.getReviewNote());
+
+    // Send notifications after approve
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Approved",
+            String.format("Task #%d '%s' has been approved.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -458,10 +580,23 @@ public class TaskServiceImpl implements TaskService {
   @Transactional
   public void reject(Integer id, RejectTaskRequest request) {
     String currentUserId = userContentProvider.getUserContent().getClientId();
-    validateSenderCanReview(id, currentUserId);
+    TaskDto task = validateSenderCanReview(id, currentUserId);
 
     taskRepository.updateStatus(id, TaskStatus.REJECTED.getCode());
     saveTaskActivity(id, ActivityType.REJECT, currentUserId, request.getRejectionReason());
+
+    // Send notifications after reject
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Rejected",
+            String.format("Task #%d '%s' has been rejected.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -489,6 +624,19 @@ public class TaskServiceImpl implements TaskService {
 
     taskRepository.updateStatus(id, TaskStatus.CANCELLED.getCode());
     saveTaskActivity(id, ActivityType.CANCEL, currentUserId, request.getCancellationReason());
+
+    // Send notifications after cancel
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Cancelled",
+            String.format("Task #%d '%s' has been cancelled.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -513,6 +661,19 @@ public class TaskServiceImpl implements TaskService {
 
     taskRepository.updateStatus(id, TaskStatus.IN_PROGRESS.getCode());
     saveTaskActivity(id, ActivityType.REOPEN, currentUserId, request.getReopenReason());
+
+    // Send notifications after reopen
+    Set<String> recipients = new java.util.HashSet<>();
+    recipients.add(task.getSenderId());
+    recipients.add(task.getReceiverId());
+
+    eventPublisher.publishEvent(
+        new NotificationMultiSendRequest(
+            this,
+            new java.util.ArrayList<>(recipients),
+            "Task Reopened",
+            String.format("Task #%d '%s' has been reopened.", id, task.getTitle()),
+            "/tasks?taskId=" + id));
   }
 
   // ========== Private Helper Methods ==========

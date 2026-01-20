@@ -26,7 +26,11 @@
       "iam :: enum",
       "iam :: dto",
       "shared",
-      "team :: enums"
+      "team :: enums",
+      "iam",
+      "department :: dto",
+      "team :: dto",
+      "employee :: dto"
     })
 package com.uit.sociusmvcapp.workforce;
 

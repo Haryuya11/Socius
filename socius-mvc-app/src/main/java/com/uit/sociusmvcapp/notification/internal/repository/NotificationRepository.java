@@ -29,6 +29,17 @@ public class NotificationRepository {
   }
 
   /**
+   * Batch insert notification records.
+   *
+   * @param notifications the list of notifications to be created
+   */
+  public void batchInsert(List<Notification> notifications) {
+    if (notifications != null && !notifications.isEmpty()) {
+      notificationMapper.batchInsert(notifications);
+    }
+  }
+
+  /**
    * Count unread notifications by client ID.
    *
    * @param clientId the client ID
