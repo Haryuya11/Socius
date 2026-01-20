@@ -6,6 +6,7 @@ import com.uit.sociusmvcapp.notification.NotificationService;
 import com.uit.sociusmvcapp.notification.dto.NotificationDto;
 import com.uit.sociusmvcapp.notification.dto.PayloadDto;
 import com.uit.sociusmvcapp.notification.dto.request.NotificationCreateRequest;
+import com.uit.sociusmvcapp.notification.internal.component.NotificationPayloadEncryptor;
 import com.uit.sociusmvcapp.notification.internal.converter.NotificationConverter;
 import com.uit.sociusmvcapp.notification.internal.domain.Notification;
 import com.uit.sociusmvcapp.notification.internal.repository.NotificationRepository;
@@ -35,6 +36,9 @@ public class NotificationServiceImpl implements NotificationService {
   /** Publisher for sending notifications. */
   private final NotificationPublisher notificationPublisher;
 
+  /** Encryptor for encrypting/decrypting notification payloads. */
+  private final NotificationPayloadEncryptor payloadEncryptor;
+
   /**
    * Count unread notifications for the current user.
    *
@@ -59,9 +63,10 @@ public class NotificationServiceImpl implements NotificationService {
     LocalDateTime dateTime = LocalDateTime.now();
     PayloadDto payloadDto = buildPayload(title, content, linkUrl);
     NotificationCreateRequest request = buildNotificationRequest(receiverId, payloadDto);
-    Notification notification = notificationConverter.fromCreateRequest(request, dateTime);
+    Notification notification =
+        notificationConverter.fromCreateRequest(request, dateTime, payloadEncryptor);
     notificationRepository.insert(notification);
-    NotificationDto dto = notificationConverter.entityToDto(notification);
+    NotificationDto dto = notificationConverter.entityToDto(notification, payloadEncryptor);
     notificationPublisher.publishNotification(dto);
   }
 
@@ -90,7 +95,8 @@ public class NotificationServiceImpl implements NotificationService {
                 receiverId -> {
                   NotificationCreateRequest request =
                       buildNotificationRequest(receiverId, payloadDto);
-                  return notificationConverter.fromCreateRequest(request, dateTime);
+                  return notificationConverter.fromCreateRequest(
+                      request, dateTime, payloadEncryptor);
                 })
             .toList();
 
@@ -98,7 +104,8 @@ public class NotificationServiceImpl implements NotificationService {
     notificationRepository.batchInsert(notifications);
 
     // Batch publish to RabbitMQ
-    List<NotificationDto> dtos = notificationConverter.entitiesToDtos(notifications);
+    List<NotificationDto> dtos =
+        notificationConverter.entitiesToDtos(notifications, payloadEncryptor);
     for (NotificationDto dto : dtos) {
       notificationPublisher.publishNotification(dto);
     }
