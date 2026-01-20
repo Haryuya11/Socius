@@ -140,7 +140,28 @@ TEAM:T01:task.create               # Scoped - chỉ tạo task trong T01
 | `task.assign` | Giao task cho người khác | TEAM_LEAD, DEPT_DIR, DEPT_MGR (scoped) |
 | `task.approve` | Approve/reject task | TEAM_LEAD, DEPT_DIR, DEPT_MGR (scoped) |
 
-### 3.6. System Permissions
+### 3.6. Message Permissions (Nhắn tin)
+
+| Permission Code | Mô tả | Roles có quyền |
+|-----------------|-------|----------------|
+| `message.view` | Xem tin nhắn trong cuộc hội thoại | ALL |
+| `message.send` | Gửi tin nhắn mới | ALL |
+| `message.update` | Sửa tin nhắn của mình | ALL |
+| `message.delete` | Xóa tin nhắn của mình | ALL |
+| `message.reaction` | Thêm/xóa reaction | ALL |
+
+### 3.7. Conversation Permissions (Cuộc hội thoại)
+
+| Permission Code | Mô tả | Roles có quyền |
+|-----------------|-------|----------------|
+| `conversation.view` | Xem cuộc hội thoại | ALL |
+| `conversation.create` | Tạo cuộc hội thoại (trực tiếp hoặc nhóm) | ALL |
+| `conversation.update` | Cập nhật settings, rời nhóm | ALL |
+| `conversation.delete` | Xóa cuộc hội thoại | ALL |
+| `conversation.participant.manage` | Thêm/xóa thành viên | ALL |
+| `conversation.file.manage` | Upload avatar, đính kèm file | ALL |
+
+### 3.8. System Permissions
 
 | Permission Code | Mô tả | Roles có quyền |
 |-----------------|-------|----------------|
@@ -291,6 +312,40 @@ Khi login hoặc gọi API `/employees/profile`, BE trả về:
 | `GET` | `/notifications` | `self.profile.view` | - |
 | `PUT` | `/notifications/{id}/read` | `self.profile.update` | - |
 | `PUT` | `/notifications/read-all` | `self.profile.update` | - |
+
+### 5.7. Message APIs (Nhắn tin)
+
+| Method | Endpoint | Permission | Scope |
+|--------|----------|------------|-------|
+| `POST` | `/messages` | `message.send` | - |
+| `GET` | `/messages/{messageId}` | `message.view` | - |
+| `PUT` | `/messages/{messageId}` | `message.update` | - |
+| `DELETE` | `/messages/{messageId}` | `message.delete` | - |
+| `POST` | `/messages/reactions` | `message.reaction` | - |
+| `DELETE` | `/messages/reactions` | `message.reaction` | - |
+| `GET` | `/messages/{messageId}/reactions` | `message.view` | - |
+
+### 5.8. Conversation APIs (Cuộc hội thoại)
+
+| Method | Endpoint | Permission | Scope |
+|--------|----------|------------|-------|
+| `POST` | `/conversations/direct/{targetEmployeeId}` | `conversation.create` | - |
+| `POST` | `/conversations/group` | `conversation.create` | - |
+| `GET` | `/conversations/{conversationId}` | `conversation.view` | - |
+| `PUT` | `/conversations/{conversationId}` | `conversation.update` | - |
+| `DELETE` | `/conversations/{conversationId}` | `conversation.delete` | - |
+| `GET` | `/conversations` | `conversation.view` | - |
+| `GET` | `/conversations/{conversationId}/participants` | `conversation.view` | - |
+| `POST` | `/conversations/{conversationId}/participants` | `conversation.participant.manage` | - |
+| `DELETE` | `/conversations/{conversationId}/participants` | `conversation.participant.manage` | - |
+| `POST` | `/conversations/{conversationId}/leave` | `conversation.update` | - |
+| `PUT` | `/conversations/{conversationId}/settings` | `conversation.update` | - |
+| `PUT` | `/conversations/{conversationId}/read/{messageId}` | `conversation.update` | - |
+| `GET` | `/conversations/{conversationId}/messages` | `message.view` | - |
+| `POST` | `/conversations/{conversationId}/avatar` | `conversation.file.manage` | - |
+| `POST` | `/conversations/{conversationId}/messages/attachments` | `conversation.file.manage` | - |
+| `POST` | `/conversations/{conversationId}/files/download` | `conversation.file.manage` | - |
+| `POST` | `/conversations/{conversationId}/files/download-zip` | `conversation.file.manage` | - |
 
 ---
 
@@ -741,18 +796,22 @@ const AccessDenied = ({ message }) => (
 | Tạo task trong team T01 | `hasTeamPermission('T01', 'task.create')` |
 | Approve task trong team T01 | `hasTeamPermission('T01', 'task.approve')` |
 | Xóa department (SYS_ADMIN only) | `isAdmin()` |
+| Gửi tin nhắn | `hasPermission('message.send')` |
+| Tạo cuộc hội thoại | `hasPermission('conversation.create')` |
+| Upload file trong chat | `hasPermission('conversation.file.manage')` |
+| Thêm thành viên vào nhóm chat | `hasPermission('conversation.participant.manage')` |
 
 ### Role Capabilities Summary
 
 | Role | Scope | Có thể làm gì |
 |------|-------|---------------|
 | SYS_ADMIN | Global | Tất cả |
-| USER | Global | Xem profile, employees, depts, teams, roles |
-| DEPT_DIR | Department | CRUD dept/team/employee/task trong dept của mình |
-| DEPT_MGR | Department | Manage team members, CRUD tasks |
-| TEAM_LEAD | Team | CRUD tasks, assign, approve trong team |
-| TEAM_MEM | Team | Xem tasks trong team |
-| DEPT_MEM | Department | Xem resources trong dept |
+| USER | Global | Xem profile, employees, depts, teams, roles + **Nhắn tin đầy đủ** |
+| DEPT_DIR | Department | CRUD dept/team/employee/task trong dept của mình + Nhắn tin |
+| DEPT_MGR | Department | Manage team members, CRUD tasks + Nhắn tin |
+| TEAM_LEAD | Team | CRUD tasks, assign, approve trong team + Nhắn tin |
+| TEAM_MEM | Team | Xem tasks trong team + Nhắn tin |
+| DEPT_MEM | Department | Xem resources trong dept + Nhắn tin |
 
 ---
 
@@ -761,3 +820,4 @@ const AccessDenied = ({ message }) => (
 | Version | Date | Description |
 |---------|------|-------------|
 | 1.0.0 | 2024-01-18 | Initial version |
+| 1.1.0 | 2024-01-20 | Added messaging and conversation permissions |
