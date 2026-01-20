@@ -112,7 +112,7 @@ class EncryptionServiceImplTest {
   @DisplayName("Should handle JSON payload")
   void testEncryptDecryptJson() {
     String jsonPayload =
-        "{\"title\":\"Test Notification\",\"content\":\"You have a new message\",\"linkUrl\":\"/messages/123\"}";
+        "{\"title\":\"Test\",\"content\":\"New message\",\"linkUrl\":\"/msg/123\"}";
 
     String encrypted = encryptionService.encrypt(jsonPayload);
     String decrypted = encryptionService.decrypt(encrypted);
@@ -143,9 +143,9 @@ class EncryptionServiceImplTest {
     encryptedBytes[encryptedBytes.length - 1] ^= 0xFF; // Flip last byte
     String tampered = Base64.getEncoder().encodeToString(encryptedBytes);
 
-    // Should throw exception due to authentication tag mismatch
+    // Should throw EncryptionException due to authentication tag mismatch
     assertThrows(
-        RuntimeException.class,
+        EncryptionServiceImpl.EncryptionException.class,
         () -> encryptionService.decrypt(tampered),
         "Should fail for tampered ciphertext");
   }

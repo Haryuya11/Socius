@@ -24,14 +24,22 @@ public class EncryptionServiceImpl implements EncryptionService {
   private static final int GCM_IV_LENGTH = 12;
   private static final int GCM_TAG_LENGTH = 128;
 
+  /** Thread-safe SecureRandom instance for IV generation. */
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
   private final SecretKey secretKey;
 
   /**
    * Constructor that initializes the encryption service with a secret key.
    *
    * @param encryptionKey Base64-encoded 256-bit AES key from environment configuration
+   * @throws IllegalArgumentException if the encryption key is invalid or not 256 bits
    */
   public EncryptionServiceImpl(@Value("${app.encryption.key}") String encryptionKey) {
+    if (encryptionKey == null || encryptionKey.isEmpty()) {
+      throw new IllegalArgumentException(
+          "Encryption key must be provided via ENCRYPTION_KEY environment variable");
+    }
     byte[] keyBytes = Base64.getDecoder().decode(encryptionKey);
     if (keyBytes.length != 32) {
       throw new IllegalArgumentException("Encryption key must be 256 bits (32 bytes)");
@@ -54,8 +62,7 @@ public class EncryptionServiceImpl implements EncryptionService {
 
     try {
       byte[] iv = new byte[GCM_IV_LENGTH];
-      SecureRandom secureRandom = new SecureRandom();
-      secureRandom.nextBytes(iv);
+      SECURE_RANDOM.nextBytes(iv);
 
       Cipher cipher = Cipher.getInstance(ALGORITHM);
       GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
@@ -71,8 +78,8 @@ public class EncryptionServiceImpl implements EncryptionService {
 
       return Base64.getEncoder().encodeToString(byteBuffer.array());
     } catch (Exception e) {
-      log.error("Error encrypting data: {}", e.getMessage(), e);
-      throw new RuntimeException("Encryption failed", e);
+      log.error("AES-256-GCM encryption failed: {}", e.getMessage(), e);
+      throw new EncryptionException("Failed to encrypt data using AES-256-GCM", e);
     }
   }
 
@@ -105,8 +112,21 @@ public class EncryptionServiceImpl implements EncryptionService {
       byte[] decryptedBytes = cipher.doFinal(encryptedData);
       return new String(decryptedBytes, StandardCharsets.UTF_8);
     } catch (Exception e) {
-      log.error("Error decrypting data: {}", e.getMessage(), e);
-      throw new RuntimeException("Decryption failed", e);
+      log.error("AES-256-GCM decryption failed: {}", e.getMessage(), e);
+      throw new EncryptionException("Failed to decrypt data using AES-256-GCM", e);
+    }
+  }
+
+  /** Custom exception for encryption/decryption failures. */
+  public static class EncryptionException extends RuntimeException {
+    /**
+     * Constructs an EncryptionException with a message and cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying cause of the failure
+     */
+    public EncryptionException(String message, Throwable cause) {
+      super(message, cause);
     }
   }
 }
