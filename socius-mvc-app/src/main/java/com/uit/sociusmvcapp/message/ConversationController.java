@@ -180,6 +180,29 @@ public class ConversationController {
   }
 
   /**
+   * Search conversations by keyword. For GROUP conversations, searches by conversation name. For
+   * DIRECT conversations, searches by the other participant's name.
+   *
+   * @param keyword the search keyword
+   * @param limit the maximum number of results
+   * @return ResponseEntity containing matching conversations
+   */
+  @GetMapping("/search")
+  public ResponseEntity<Response> searchConversations(
+      @RequestParam String keyword, @RequestParam(defaultValue = "20") int limit) {
+    List<ConversationDto> conversations = conversationService.searchConversations(keyword, limit);
+    Response response =
+        Response.builder()
+            .success(true)
+            .status(HttpStatus.OK.value())
+            .code(MessageConstant.S_MSG_022)
+            .message(i18nService.getMessage(MessageConstant.S_MSG_022))
+            .data(conversations)
+            .build();
+    return ResponseEntity.ok(response);
+  }
+
+  /**
    * Get all participants of a conversation.
    *
    * @param conversationId the conversation ID

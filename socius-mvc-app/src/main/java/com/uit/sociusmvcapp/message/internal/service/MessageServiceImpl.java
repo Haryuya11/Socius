@@ -83,6 +83,9 @@ public class MessageServiceImpl implements MessageService {
     // Verify user is a participant
     validateParticipant(message.getConversationId(), getCurrentClientId());
 
+    // Regenerate SAS tokens for file metadata
+    refreshFileUrls(message);
+
     return message;
   }
 
@@ -111,6 +114,9 @@ public class MessageServiceImpl implements MessageService {
 
     List<MessageDto> messages =
         messageRepository.findByConversationId(conversationId, lastCreatedAt, lastId, limit);
+
+    // Regenerate SAS tokens for file metadata
+    messages.forEach(this::refreshFileUrls);
 
     String nextCursor = null;
     if (!messages.isEmpty()) {
@@ -364,5 +370,24 @@ public class MessageServiceImpl implements MessageService {
    */
   private String getCurrentClientId() {
     return userContentProvider.getUserContent().getClientId();
+  }
+
+  /**
+   * Refresh file URLs in message metadata by regenerating SAS tokens. SAS tokens expire after a
+   * period, so we need to regenerate them when retrieving messages.
+   *
+   * @param message the message DTO to refresh file URLs for
+   */
+  private void refreshFileUrls(MessageDto message) {
+    if (message == null || message.getMetadata() == null || message.getMetadata().isEmpty()) {
+      return;
+    }
+
+    for (FileMetadataDto metadata : message.getMetadata()) {
+      if (metadata.getFilePath() != null && !metadata.getFilePath().isEmpty()) {
+        String freshUrl = messageBlobAdapter.generateSasToken(metadata.getFilePath());
+        metadata.setFileUrl(freshUrl);
+      }
+    }
   }
 }
