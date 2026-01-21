@@ -284,7 +284,7 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    */
   @Override
   @Transactional
-  @CacheEvict(value = "user-principal", allEntries = true)
+  @CacheEvict(value = "user-principal", key = "#request.employeeId")
   public void transferEmployee(TransferTeamEmployeeRequest request) {
     teamService.validateExists(request.getFromTeamCode());
     teamService.validateExists(request.getToTeamCode());

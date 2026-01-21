@@ -76,7 +76,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
-  @CacheEvict(value = "user-principal", allEntries = true)
+  @CacheEvict(value = "user-principal", key = "#request.employeeId")
   public void addEmployeeToDepartment(
       AssignEmployeeToDepartmentRequest request, String departmentCode) {
     departmentService.validateExists(departmentCode);
@@ -101,7 +101,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
-  @CacheEvict(value = "user-principal", allEntries = true)
+  @CacheEvict(value = "user-principal", key = "#employeeId")
   public void removeEmployeeFromDepartment(String departmentCode, String employeeId) {
     departmentService.validateExists(departmentCode);
     employeeService.validateExists(employeeId);
@@ -120,7 +120,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
-  @CacheEvict(value = "user-principal", allEntries = true)
+  @CacheEvict(value = "user-principal", key = "#request.employeeId")
   public Map<String, String> transferEmployee(TransferEmployeeRequest request) {
     String fromDept = request.getFromDepartmentCode();
     String toDept = request.getToDepartmentCode();
@@ -377,7 +377,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
-  @CacheEvict(value = "user-principal", allEntries = true)
+  @CacheEvict(value = "user-principal", key = "#employeeId")
   public Map<String, String> changeEmployeeRoleInDepartment(
       String departmentCode, String employeeId, String roleCode) {
     departmentService.validateExists(departmentCode);
