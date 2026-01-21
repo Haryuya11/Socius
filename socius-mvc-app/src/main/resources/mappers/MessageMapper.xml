@@ -46,7 +46,6 @@
                created_at, updated_at, deleted_at, delete_flag
         FROM messages
         WHERE conversation_id = #{conversationId}
-          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
         <if test="lastCreatedAt != null and lastId != null">
             <![CDATA[
             AND (

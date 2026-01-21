@@ -4,13 +4,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.uit.sociusmvcapp.message.dto.FileMetadataDto;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
+import com.uit.sociusmvcapp.message.enums.MessageType;
 import com.uit.sociusmvcapp.message.internal.component.MessageContentEncryptor;
 import com.uit.sociusmvcapp.message.internal.domain.Message;
+import com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums;
 import com.uit.sociusmvcapp.shared.utils.CommonUtils;
 import java.util.List;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 
@@ -128,5 +132,23 @@ public interface MessageConverter {
   @Named("metadataToJson")
   default String metadataToJson(List<FileMetadataDto> metadata) {
     return CommonUtils.serializeToJson(metadata);
+  }
+
+  /**
+   * Post-mapping hook to transform deleted messages into placeholder messages. For deleted
+   * messages, sets messageType to DELETED and clears content and metadata.
+   *
+   * @param entity the source message entity
+   * @param dto the target message DTO
+   */
+  @AfterMapping
+  default void handleDeletedMessage(Message entity, @MappingTarget MessageDto dto) {
+    if (entity != null
+        && entity.getDeleteFlag() != null
+        && entity.getDeleteFlag().equals(DeleteFlagEnums.DELETED.getValue().shortValue())) {
+      dto.setMessageType(MessageType.DELETED.getCode());
+      dto.setContent(null);
+      dto.setMetadata(null);
+    }
   }
 }
