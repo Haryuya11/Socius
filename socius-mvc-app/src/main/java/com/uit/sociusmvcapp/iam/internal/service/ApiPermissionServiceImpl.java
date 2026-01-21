@@ -9,7 +9,6 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.AntPathMatcher;
 
@@ -25,10 +24,6 @@ public class ApiPermissionServiceImpl implements ApiPermissionService {
   private final ApiPermissionRepository repository;
   private final ApiPermissionCache permissionCache;
   private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
-  /** API context path prefix (e.g., "/api"). */
-  @Value("${server.servlet.context-path:}")
-  private String contextPath;
 
   /** Initialize cache on startup. */
   @PostConstruct
@@ -46,20 +41,17 @@ public class ApiPermissionServiceImpl implements ApiPermissionService {
   public ApiPermissionDto matchRequest(String httpMethod, String requestUri) {
     List<ApiPermissionDto> permissions = findAll();
 
-    // Strip context path prefix from request URI for matching
-    String normalizedUri = normalizeUri(requestUri);
-
     // Use best-match algorithm: find the most specific pattern that matches
     // AntPathMatcher.getPatternComparator returns a comparator where more specific patterns
     // come first (have lower sort order)
-    Comparator<String> patternComparator = pathMatcher.getPatternComparator(normalizedUri);
+    Comparator<String> patternComparator = pathMatcher.getPatternComparator(requestUri);
 
     ApiPermissionDto bestMatch =
         permissions.stream()
             .filter(
                 p ->
                     isMethodMatch(httpMethod, p.getHttpMethod())
-                        && pathMatcher.match(p.getUrlPattern(), normalizedUri))
+                        && pathMatcher.match(p.getUrlPattern(), requestUri))
             .min((p1, p2) -> patternComparator.compare(p1.getUrlPattern(), p2.getUrlPattern()))
             .orElse(null);
 
@@ -67,11 +59,11 @@ public class ApiPermissionServiceImpl implements ApiPermissionService {
       log.debug(
           "Matched request [{} {}] to permission [{}] with pattern [{}]",
           httpMethod,
-          normalizedUri,
+          requestUri,
           bestMatch.getPermissionCode(),
           bestMatch.getUrlPattern());
     } else {
-      log.debug("No permission mapping found for [{} {}]", httpMethod, normalizedUri);
+      log.debug("No permission mapping found for [{} {}]", httpMethod, requestUri);
     }
 
     return bestMatch;
@@ -83,19 +75,6 @@ public class ApiPermissionServiceImpl implements ApiPermissionService {
     List<ApiPermissionDto> permissions = repository.findAll();
     permissionCache.put(permissions);
     log.info("Loaded {} API permissions into cache", permissions.size());
-  }
-
-  /**
-   * Normalize the request URI by removing the context path prefix.
-   *
-   * @param requestUri the full request URI
-   * @return the normalized URI without context path
-   */
-  private String normalizeUri(String requestUri) {
-    if (contextPath != null && !contextPath.isEmpty() && requestUri.startsWith(contextPath)) {
-      return requestUri.substring(contextPath.length());
-    }
-    return requestUri;
   }
 
   /**

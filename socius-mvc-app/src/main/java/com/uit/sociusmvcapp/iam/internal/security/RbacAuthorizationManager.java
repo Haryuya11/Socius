@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
@@ -39,9 +38,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
   private final TeamInfoGateway teamInfoGateway;
   private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-  @Value("${server.servlet.context-path:}")
-  private String contextPath;
-
   @Override
   public AuthorizationDecision check(
       Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext context) {
@@ -69,9 +65,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
       return new AuthorizationDecision(false);
     }
 
-    String normalizedUri = normalizeUri(requestUri);
-
-    boolean hasPermission = checkUserPermission(authentication, requiredPermission, normalizedUri);
+    boolean hasPermission = checkUserPermission(authentication, requiredPermission, requestUri);
 
     log.debug(
         "Access {}: User {} permission [{}] for [{} {}]",
@@ -79,7 +73,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
         hasPermission ? "has" : "lacks",
         requiredPermission.getPermissionCode(),
         httpMethod,
-        normalizedUri);
+        requestUri);
 
     return new AuthorizationDecision(hasPermission);
   }
@@ -384,18 +378,5 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
     return authentication.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .anyMatch(a -> a.startsWith(scopePrefix));
-  }
-
-  /**
-   * Normalize the request URI by removing the context path prefix.
-   *
-   * @param requestUri the full request URI
-   * @return the normalized URI without context path
-   */
-  private String normalizeUri(String requestUri) {
-    if (contextPath != null && !contextPath.isEmpty() && requestUri.startsWith(contextPath)) {
-      return requestUri.substring(contextPath.length());
-    }
-    return requestUri;
   }
 }
