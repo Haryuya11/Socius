@@ -47,6 +47,7 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
    *
    * @param request The user creation request DTO.
    * @param issuer the tenant's issuer domain.
+   * @param password The password for the new user account.
    * @return A fully formed Microsoft Graph User object ready for creation.
    */
   @BeanMapping(ignoreByDefault = true)
@@ -58,13 +59,13 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
       expression = "java(buildUserPrincipalName(request.getUserId(), issuer))")
   @Mapping(target = "mailNickname", expression = "java(extractMailNickname(request.getUserId()))")
   @Mapping(target = "accountEnabled", constant = "true")
-  @Mapping(target = "passwordProfile", expression = "java(createDefaultPasswordProfile())")
+  @Mapping(target = "passwordProfile", expression = "java(createPasswordProfile(password))")
   @Mapping(target = "passwordPolicies", constant = "DisablePasswordExpiration")
   @Mapping(
       target = "identities",
       expression = "java(createEmailIdentity(request.getUserId(), issuer))")
   @Mapping(target = "mail", expression = "java(request.getUserId())")
-  User toGraphUser(CreateEmployeeRequest request, String issuer);
+  User toGraphUser(CreateEmployeeRequest request, String issuer, String password);
 
   /**
    * Converts an EmployeeCreateRequest to a Microsoft Graph User object for an update operation.
@@ -80,6 +81,21 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
   @Mapping(target = "givenName", expression = "java(request.getFirstName())")
   @Mapping(target = "surname", expression = "java(request.getLastName())")
   User toGraphUserForUpdate(CreateEmployeeRequest request);
+
+  /**
+   * Converts an EmployeeCreateRequest to a Microsoft Graph User object for a reactivation
+   * operation. This includes updating the password profile with a new generated password.
+   *
+   * @param request The DTO containing the user details to update.
+   * @param password The password for the reactivated user account.
+   * @return A Microsoft Graph User object containing profile fields and password to be patched.
+   */
+  @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "displayName", expression = "java(buildDisplayName(request))")
+  @Mapping(target = "givenName", expression = "java(request.getFirstName())")
+  @Mapping(target = "surname", expression = "java(request.getLastName())")
+  @Mapping(target = "passwordProfile", expression = "java(createPasswordProfile(password))")
+  User toGraphUserForReactivation(CreateEmployeeRequest request, String password);
 
   /**
    * Converts an UpdateEmployeeRequest to a Microsoft Graph User object for a profile update
@@ -183,14 +199,15 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
   }
 
   /**
-   * Creates a default PasswordProfile with a preset password and force change on next sign-in.
+   * Creates a PasswordProfile with the provided password and force change on next sign-in.
    *
-   * @return A PasswordProfile object with default settings.
+   * @param password the password to set for the user
+   * @return A PasswordProfile object with the provided password
    */
-  @Named("createDefaultPasswordProfile")
-  default PasswordProfile createDefaultPasswordProfile() {
+  @Named("createPasswordProfile")
+  default PasswordProfile createPasswordProfile(String password) {
     PasswordProfile pp = new PasswordProfile();
-    pp.setPassword(EmployeeConstant.DEFAULT_PASSWORD);
+    pp.setPassword(password);
     pp.setForceChangePasswordNextSignIn(Boolean.TRUE);
     return pp;
   }

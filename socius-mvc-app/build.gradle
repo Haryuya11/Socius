@@ -32,6 +32,9 @@ dependencies {
     // Messaging
     implementation libs.spring.boot.starter.amqp
 
+    // Email
+    implementation libs.spring.boot.starter.mail
+
     // Test dependencies
     testImplementation libs.mybatis.spring.boot.starter.test
     testImplementation libs.spring.modulith.starter.test
