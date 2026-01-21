@@ -28,9 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class MessageBlobAdapter {
 
-  /** Number of bytes per megabyte. */
-  private static final long BYTES_PER_MB = 1024L * 1024L;
-
   /** Azure Blob Service for file operations. */
   private final AzureBlobService azureBlobService;
 
@@ -44,14 +41,6 @@ public class MessageBlobAdapter {
   /** Azure Blob Storage container name for message files. */
   @Value("${azure.blob.message.container-name}")
   private String containerName;
-
-  /** Maximum file size in MB (default: 5MB). */
-  @Value("${app.file-upload.max-file-size-mb:5}")
-  private long maxFileSizeMb;
-
-  /** Maximum total upload size in MB (default: 50MB). */
-  @Value("${app.file-upload.max-total-size-mb:50}")
-  private long maxTotalSizeMb;
 
   /**
    * Upload a file for a message and return file metadata.
@@ -80,8 +69,6 @@ public class MessageBlobAdapter {
    */
   public List<FileMetadataDto> uploadMessageFiles(
       List<MultipartFile> files, String conversationId) {
-    validateFileSizes(files);
-
     List<FileUploadContext> contexts = prepareUploadContexts(files, conversationId);
     List<UploadRequest> uploadRequests =
         contexts.stream().map(FileUploadContext::getUploadRequest).toList();
@@ -91,35 +78,6 @@ public class MessageBlobAdapter {
         azureBlobService.uploadFiles(properties, uploadRequests, conversationId);
 
     return buildMetadataList(properties, contexts, filePaths);
-  }
-
-  /**
-   * Validate file sizes before upload.
-   *
-   * @param files the list of files to validate
-   * @throws BadRequestException if any file exceeds max size or total size exceeds max
-   */
-  private void validateFileSizes(List<MultipartFile> files) {
-    long maxFileSizeBytes = maxFileSizeMb * BYTES_PER_MB;
-    long maxTotalSizeBytes = maxTotalSizeMb * BYTES_PER_MB;
-    long totalSize = 0;
-
-    for (MultipartFile file : files) {
-      if (file.getSize() > maxFileSizeBytes) {
-        log.warn(
-            "File {} exceeds max size: {} bytes (max: {} MB)",
-            file.getOriginalFilename(),
-            file.getSize(),
-            maxFileSizeMb);
-        throw ExceptionFactory.badRequest(MessageConstant.E_MSG_015);
-      }
-      totalSize += file.getSize();
-    }
-
-    if (totalSize > maxTotalSizeBytes) {
-      log.warn("Total upload size exceeds max: {} bytes (max: {} MB)", totalSize, maxTotalSizeMb);
-      throw ExceptionFactory.badRequest(MessageConstant.E_MSG_016);
-    }
   }
 
   /**
