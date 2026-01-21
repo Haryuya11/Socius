@@ -25,6 +25,19 @@ public interface MessageReactionMapper {
   List<MessageReaction> findByMessageId(String messageId);
 
   /**
+   * Find a specific reaction by messageId, employeeId, and reaction type.
+   *
+   * @param messageId the message ID
+   * @param employeeId the employee ID
+   * @param reaction the reaction type
+   * @return the reaction if found, null otherwise
+   */
+  MessageReaction findByMessageIdAndEmployeeIdAndReaction(
+      @Param("messageId") String messageId,
+      @Param("employeeId") String employeeId,
+      @Param("reaction") String reaction);
+
+  /**
    * Delete a specific reaction.
    *
    * @param messageId the message ID
