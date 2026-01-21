@@ -99,7 +99,6 @@ public class TaskServiceImpl implements TaskService {
     validateCreatePermission(request.getTeamCode(), request.getDepartmentCode());
 
     String currentUserId = userContentProvider.getUserContent().getClientId();
-    taskRepository.createTask(request, currentUserId);
     Integer taskId = taskRepository.createTask(request, currentUserId);
 
     Map<String, String> params =
