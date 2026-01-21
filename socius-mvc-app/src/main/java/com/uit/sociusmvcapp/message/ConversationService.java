@@ -121,4 +121,14 @@ public interface ConversationService {
    * @return metadata of the uploaded file
    */
   UploadFileDto uploadFile(String conversationId, MultipartFile file);
+
+  /**
+   * Search conversations by keyword. For GROUP conversations, searches by conversation name. For
+   * DIRECT conversations, searches by the other participant's name.
+   *
+   * @param keyword the search keyword
+   * @param limit the maximum number of results
+   * @return list of matching conversations
+   */
+  List<ConversationDto> searchConversations(String keyword, int limit);
 }

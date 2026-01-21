@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.notification.internal.repository;
 
 import com.uit.sociusmvcapp.notification.dto.NotificationDto;
+import com.uit.sociusmvcapp.notification.internal.component.NotificationPayloadEncryptor;
 import com.uit.sociusmvcapp.notification.internal.converter.NotificationConverter;
 import com.uit.sociusmvcapp.notification.internal.domain.Notification;
 import com.uit.sociusmvcapp.notification.internal.persistence.NotificationMapper;
@@ -18,6 +19,9 @@ public class NotificationRepository {
 
   /** Converter for transforming notification data. */
   private final NotificationConverter notificationConverter;
+
+  /** Encryptor for encrypting/decrypting notification payloads. */
+  private final NotificationPayloadEncryptor payloadEncryptor;
 
   /**
    * Create a new notification record.
@@ -62,7 +66,8 @@ public class NotificationRepository {
   public List<NotificationDto> getNotificationsByClientId(
       String clientId, LocalDateTime lastCreatedAt, Integer lastId, int limit) {
     return notificationConverter.entitiesToDtos(
-        notificationMapper.getNotificationsByClientId(clientId, lastCreatedAt, lastId, limit));
+        notificationMapper.getNotificationsByClientId(clientId, lastCreatedAt, lastId, limit),
+        payloadEncryptor);
   }
 
   /**

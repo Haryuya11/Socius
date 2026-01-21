@@ -278,4 +278,15 @@ public class MessageBlobAdapter {
         .containerName(containerName)
         .build();
   }
+
+  /**
+   * Generate a fresh SAS token URL for a file path.
+   *
+   * @param filePath the file path in blob storage
+   * @return the SAS token URL
+   */
+  public String generateSasToken(String filePath) {
+    AzureBlobProperties properties = buildBlobProperties();
+    return azureBlobService.generateSasToken(properties, filePath);
+  }
 }

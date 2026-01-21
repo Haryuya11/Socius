@@ -2,6 +2,7 @@ package com.uit.sociusmvcapp.message.internal.repository;
 
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.request.SendMessageRequest;
+import com.uit.sociusmvcapp.message.internal.component.MessageContentEncryptor;
 import com.uit.sociusmvcapp.message.internal.converter.MessageConverter;
 import com.uit.sociusmvcapp.message.internal.domain.Message;
 import com.uit.sociusmvcapp.message.internal.persistence.MessageMapper;
@@ -18,6 +19,7 @@ public class MessageRepository {
 
   private final MessageMapper messageMapper;
   private final MessageConverter messageConverter;
+  private final MessageContentEncryptor contentEncryptor;
 
   /**
    * Insert a new message.
@@ -27,7 +29,8 @@ public class MessageRepository {
    * @param senderId the sender ID
    */
   public void insert(SendMessageRequest request, String messageId, String senderId) {
-    messageMapper.insert(messageConverter.sendRequestToEntity(request, messageId, senderId));
+    messageMapper.insert(
+        messageConverter.sendRequestToEntity(request, messageId, senderId, contentEncryptor));
   }
 
   /**
@@ -50,7 +53,7 @@ public class MessageRepository {
    * @return the message DTO if found, null otherwise
    */
   public MessageDto findByMessageId(String messageId) {
-    return messageConverter.entityToDto(messageMapper.findByMessageId(messageId));
+    return messageConverter.entityToDto(messageMapper.findByMessageId(messageId), contentEncryptor);
   }
 
   /**
@@ -66,17 +69,18 @@ public class MessageRepository {
       String conversationId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
     List<Message> messages =
         messageMapper.findByConversationId(conversationId, lastCreatedAt, lastId, limit);
-    return messageConverter.entitiesToDtos(messages);
+    return messageConverter.entitiesToDtos(messages, contentEncryptor);
   }
 
   /**
    * Update message content.
    *
    * @param messageId the message ID
-   * @param content the new content
+   * @param content the new content (plaintext - will be encrypted)
    */
   public void updateContent(String messageId, String content) {
-    messageMapper.updateContent(messageId, content);
+    String encryptedContent = contentEncryptor.encryptContent(content);
+    messageMapper.updateContent(messageId, encryptedContent);
   }
 
   /**

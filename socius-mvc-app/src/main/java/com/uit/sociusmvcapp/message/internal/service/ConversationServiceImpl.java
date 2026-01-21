@@ -1,6 +1,8 @@
 package com.uit.sociusmvcapp.message.internal.service;
 
 import com.uit.sociusmvcapp.azure.blob.UploadFileDto;
+import com.uit.sociusmvcapp.employee.EmployeeService;
+import com.uit.sociusmvcapp.employee.dto.EmployeeDto;
 import com.uit.sociusmvcapp.iam.UserContentProvider;
 import com.uit.sociusmvcapp.message.ConversationService;
 import com.uit.sociusmvcapp.message.dto.ConversationDto;
@@ -44,10 +46,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ConversationServiceImpl implements ConversationService {
 
+  /** Maximum number of conversations to fetch for search. */
+  private static final int MAX_SEARCH_FETCH_LIMIT = 1000;
+
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository participantRepository;
   private final UserContentProvider userContentProvider;
   private final ConversationBlobAdapter conversationBlobAdapter;
+  private final EmployeeService employeeService;
 
   /**
    * Get or create a direct conversation between current user and target user. Implements lazy
@@ -70,6 +76,8 @@ public class ConversationServiceImpl implements ConversationService {
             currentClientId, targetEmployeeId);
 
     if (existingConversation != null) {
+      // Set the other participant's name and avatar for DIRECT conversations
+      enrichDirectConversation(existingConversation, currentClientId);
       return existingConversation;
     }
 
@@ -93,7 +101,10 @@ public class ConversationServiceImpl implements ConversationService {
 
     participantRepository.insertBatch(participants);
 
-    return conversationRepository.findByConversationId(conversationId);
+    ConversationDto result = conversationRepository.findByConversationId(conversationId);
+    // Set the other participant's name and avatar for the new DIRECT conversation
+    enrichDirectConversation(result, currentClientId);
+    return result;
   }
 
   /**
@@ -207,6 +218,7 @@ public class ConversationServiceImpl implements ConversationService {
   @Override
   public CursorResponse<ConversationDto> getConversations(String cursor, int limit) {
 
+    String currentClientId = getCurrentClientId();
     LocalDateTime lastMessageAt = null;
     Long lastId = null;
 
@@ -227,7 +239,10 @@ public class ConversationServiceImpl implements ConversationService {
 
     List<ConversationDto> conversations =
         conversationRepository.findByEmployeeIdWithCursor(
-            getCurrentClientId(), lastMessageAt, lastId, limit);
+            currentClientId, lastMessageAt, lastId, limit);
+
+    // Enrich DIRECT conversations with the other participant's name and avatar
+    enrichDirectConversations(conversations, currentClientId);
 
     // Prepare next cursor
     String nextCursor = null;
@@ -558,5 +573,126 @@ public class ConversationServiceImpl implements ConversationService {
    */
   private String getCurrentClientId() {
     return userContentProvider.getUserContent().getClientId();
+  }
+
+  /**
+   * Enrich a list of DIRECT conversations with the other participant's name and avatar.
+   *
+   * @param conversations the list of conversations to enrich
+   * @param currentClientId the current user's client ID
+   */
+  private void enrichDirectConversations(
+      List<ConversationDto> conversations, String currentClientId) {
+    if (conversations == null || conversations.isEmpty()) {
+      return;
+    }
+
+    // Filter DIRECT conversations that need enrichment
+    List<ConversationDto> directConversations =
+        conversations.stream()
+            .filter(c -> ConversationType.DIRECT.getCode().equals(c.getType()))
+            .toList();
+
+    if (directConversations.isEmpty()) {
+      return;
+    }
+
+    // Collect all conversation IDs to fetch participants
+    for (ConversationDto conversation : directConversations) {
+      enrichDirectConversation(conversation, currentClientId);
+    }
+  }
+
+  /**
+   * Enrich a single DIRECT conversation with the other participant's name and avatar.
+   *
+   * @param conversation the conversation to enrich
+   * @param currentClientId the current user's client ID
+   */
+  private void enrichDirectConversation(ConversationDto conversation, String currentClientId) {
+    if (conversation == null || !ConversationType.DIRECT.getCode().equals(conversation.getType())) {
+      return;
+    }
+
+    // Get participants and find the other participant
+    List<ConversationParticipantDto> participants =
+        participantRepository.findByConversationId(conversation.getConversationId());
+
+    String otherParticipantId =
+        participants.stream()
+            .map(ConversationParticipantDto::getEmployeeId)
+            .filter(id -> !id.equals(currentClientId))
+            .findFirst()
+            .orElse(null);
+
+    if (otherParticipantId != null) {
+      try {
+        EmployeeDto otherEmployee = employeeService.findByClientId(otherParticipantId);
+        if (otherEmployee != null) {
+          String displayName = buildDisplayName(otherEmployee);
+          conversation.setName(displayName);
+          conversation.setAvatarUrl(otherEmployee.getImageUrl());
+        }
+      } catch (RuntimeException e) {
+        log.warn(
+            "Failed to fetch employee info for DIRECT conversation enrichment: {}", e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Build display name from employee data.
+   *
+   * @param employee the employee DTO
+   * @return the display name (firstName + lastName)
+   */
+  private String buildDisplayName(EmployeeDto employee) {
+    StringBuilder name = new StringBuilder();
+    if (employee.getFirstName() != null) {
+      name.append(employee.getFirstName());
+    }
+    if (employee.getLastName() != null) {
+      if (name.length() > 0) {
+        name.append(" ");
+      }
+      name.append(employee.getLastName());
+    }
+    return name.toString();
+  }
+
+  /**
+   * Search conversations by keyword. For GROUP conversations, searches by conversation name. For
+   * DIRECT conversations, searches by the other participant's name.
+   *
+   * @param keyword the search keyword
+   * @param limit the maximum number of results
+   * @return list of matching conversations
+   */
+  @Override
+  public List<ConversationDto> searchConversations(String keyword, int limit) {
+    if (keyword == null || keyword.trim().isEmpty()) {
+      return List.of();
+    }
+
+    String currentClientId = getCurrentClientId();
+    String searchKeyword = keyword.trim().toLowerCase();
+
+    // Get all user's conversations (limited to avoid performance issues)
+    List<ConversationDto> allConversations =
+        conversationRepository.findByEmployeeIdWithCursor(
+            currentClientId, null, null, MAX_SEARCH_FETCH_LIMIT);
+
+    // Enrich DIRECT conversations with participant info
+    enrichDirectConversations(allConversations, currentClientId);
+
+    // Filter conversations matching the search keyword
+    return allConversations.stream()
+        .filter(
+            c -> {
+              String name = c.getName();
+              return name != null && name.toLowerCase().contains(searchKeyword);
+            })
+        .limit(limit)
+        .toList();
   }
 }

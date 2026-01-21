@@ -25,6 +25,7 @@ public class MessageDto {
   private String messageType;
   private String parentMessageId;
   private List<FileMetadataDto> metadata;
+  private List<MessageReactionDto> reactions;
   private Boolean isEdited;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")

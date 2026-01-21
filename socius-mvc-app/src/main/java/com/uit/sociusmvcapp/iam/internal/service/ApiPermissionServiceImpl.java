@@ -38,12 +38,12 @@ public class ApiPermissionServiceImpl implements ApiPermissionService {
 
   @Override
   public List<ApiPermissionDto> findAll() {
-    List<ApiPermissionDto> cached = permissionCache.get();
-    if (cached == null) {
+    // Check if cache is valid (not expired and not empty)
+    if (!permissionCache.isValid()) {
       refreshCache();
-      cached = permissionCache.get();
     }
-    return cached != null ? cached : List.of();
+    List<ApiPermissionDto> cached = permissionCache.get();
+    return cached != null && !cached.isEmpty() ? cached : List.of();
   }
 
   @Override

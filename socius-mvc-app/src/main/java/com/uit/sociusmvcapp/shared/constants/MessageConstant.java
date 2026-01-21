@@ -433,6 +433,15 @@ public final class MessageConstant {
   /** Access denied: User does not have permission to create task in this scope. */
   public static final String E_TASK_022 = "E_TASK_022";
 
+  /** File size exceeds maximum allowed size. */
+  public static final String E_MSG_015 = "E_MSG_015";
+
+  /** Total upload size exceeds maximum allowed size. */
+  public static final String E_MSG_016 = "E_MSG_016";
+
+  /** Conversation search completed successfully. */
+  public static final String S_MSG_022 = "S_MSG_022";
+
   /** Employee salary updated successfully. */
   public static final String S_EMP_010 = "S_EMP_010";
 
