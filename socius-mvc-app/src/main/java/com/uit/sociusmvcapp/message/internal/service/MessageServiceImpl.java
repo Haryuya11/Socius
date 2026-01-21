@@ -229,13 +229,24 @@ public class MessageServiceImpl implements MessageService {
     reactionRepository.insert(reaction);
 
     List<MessageReactionDto> reactions = reactionRepository.findByMessageId(request.getMessageId());
-    return reactions.stream()
-        .filter(
-            r ->
-                r.getEmployeeId().equals(currentClientId)
-                    && r.getReaction().equals(request.getReaction()))
-        .findFirst()
-        .orElse(null);
+    MessageReactionDto addedReaction =
+        reactions.stream()
+            .filter(
+                r ->
+                    r.getEmployeeId().equals(currentClientId)
+                        && r.getReaction().equals(request.getReaction()))
+            .findFirst()
+            .orElse(null);
+
+    // Publish real-time event for reaction added
+    if (addedReaction != null) {
+      List<String> targetUserIds =
+          participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
+      messagePublisher.publishReactionAdded(
+          message.getConversationId(), addedReaction, targetUserIds);
+    }
+
+    return addedReaction;
   }
 
   /**
@@ -246,13 +257,30 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public void removeReaction(MessageReactionRequest request) {
+    String currentClientId = getCurrentClientId();
+
+    // Get the message to find the conversation ID for the real-time event
+    MessageDto message = messageRepository.findByMessageId(request.getMessageId());
+    if (message == null) {
+      throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
+    }
 
     int rowsAffected =
         reactionRepository.softDelete(
-            request.getMessageId(), getCurrentClientId(), request.getReaction());
+            request.getMessageId(), currentClientId, request.getReaction());
     if (rowsAffected == CommonConstant.INIT_INDEX) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_014);
     }
+
+    // Publish real-time event for reaction removed
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
+    messagePublisher.publishReactionRemoved(
+        message.getConversationId(),
+        request.getMessageId(),
+        currentClientId,
+        request.getReaction(),
+        targetUserIds);
   }
 
   /**
