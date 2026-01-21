@@ -20,6 +20,7 @@ import com.uit.sociusmvcapp.team.dto.request.UpdateTeamRequest;
 import com.uit.sociusmvcapp.team.enums.TeamActionType;
 import com.uit.sociusmvcapp.team.internal.repository.TeamRepository;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -70,14 +71,17 @@ public class TeamServiceImpl implements TeamService {
       teamRepository.insert(request);
     }
 
+    Map<String, String> params =
+        Map.of(
+            "TEAM_NAME", request.getTeamName(),
+            "TEAM_CODE", request.getTeamCode());
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             userContentProvider.getUserContent().getClientId(),
-            "Team Created",
-            String.format(
-                "Team '%s' (%s) has been successfully created.",
-                request.getTeamName(), request.getTeamCode()),
+            "S_TEAM_TITLE_001",
+            "S_TEAM_CONTENT_001",
+            params,
             TEAMS_PATH + request.getTeamCode()));
   }
 
@@ -118,12 +122,15 @@ public class TeamServiceImpl implements TeamService {
     // Send batch notification to all team members about the update (avoid N+1)
     List<String> memberIds = getTeamMemberIds(teamCode);
     if (!memberIds.isEmpty()) {
+      Map<String, String> params =
+          Map.of("TEAM_NAME", request.getTeamName(), "TEAM_CODE", teamCode);
       eventPublisher.publishEvent(
           new NotificationMultiSendRequest(
               this,
               memberIds,
-              "Team Updated",
-              String.format("Team '%s' (%s) has been updated.", request.getTeamName(), teamCode),
+              "S_TEAM_TITLE_002",
+              "S_TEAM_CONTENT_002",
+              params,
               TEAMS_PATH + teamCode));
     }
 
@@ -148,12 +155,14 @@ public class TeamServiceImpl implements TeamService {
     teamRepository.softDelete(teamCode);
 
     // Send batch notification to all team members about the deletion (avoid N+1)
+    Map<String, String> params = Map.of("TEAM_NAME", team.getTeamName(), "TEAM_CODE", teamCode);
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             userContentProvider.getUserContent().getClientId(),
-            "Team Deleted",
-            String.format("Team '%s' (%s) has been deleted.", team.getTeamName(), teamCode),
+            "S_TEAM_TITLE_003",
+            "S_TEAM_CONTENT_003",
+            params,
             "/teams"));
   }
 

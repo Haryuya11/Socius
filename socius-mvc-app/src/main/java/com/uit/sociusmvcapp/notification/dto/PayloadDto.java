@@ -1,5 +1,6 @@
 package com.uit.sociusmvcapp.notification.dto;
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,5 +16,6 @@ import lombok.Setter;
 public class PayloadDto {
   private String title;
   private String content;
+  private Map<String, String> parameters;
   private String linkUrl;
 }

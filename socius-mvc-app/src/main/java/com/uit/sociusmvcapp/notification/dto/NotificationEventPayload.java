@@ -1,5 +1,6 @@
 package com.uit.sociusmvcapp.notification.dto;
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,6 +27,9 @@ public class NotificationEventPayload {
   /** The notification content. */
   private String content;
 
+  /** Additional parameters for the notification. */
+  private Map<String, String> parameters;
+
   /** The redirect URL for the notification. */
   private String redirectUrl;
 
@@ -41,6 +45,7 @@ public class NotificationEventPayload {
         .notificationId(notification.getId() != null ? notification.getId().toString() : null)
         .title(payload != null ? payload.getTitle() : null)
         .content(payload != null ? payload.getContent() : null)
+        .parameters(payload != null ? payload.getParameters() : null)
         .redirectUrl(payload != null ? payload.getLinkUrl() : null)
         .build();
   }
