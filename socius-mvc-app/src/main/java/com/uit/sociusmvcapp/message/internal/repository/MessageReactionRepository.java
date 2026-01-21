@@ -37,6 +37,21 @@ public class MessageReactionRepository {
   }
 
   /**
+   * Find a specific reaction by messageId, employeeId, and reaction type.
+   *
+   * @param messageId the message ID
+   * @param employeeId the employee ID
+   * @param reaction the reaction type
+   * @return the reaction DTO if found, null otherwise
+   */
+  public MessageReactionDto findByMessageIdAndEmployeeIdAndReaction(
+      String messageId, String employeeId, String reaction) {
+    MessageReaction entity =
+        reactionMapper.findByMessageIdAndEmployeeIdAndReaction(messageId, employeeId, reaction);
+    return entity != null ? reactionConverter.entityToDto(entity) : null;
+  }
+
+  /**
    * Delete a specific reaction.
    *
    * @param messageId the message ID

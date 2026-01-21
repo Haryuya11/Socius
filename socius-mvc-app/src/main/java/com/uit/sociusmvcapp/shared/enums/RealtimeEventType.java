@@ -19,6 +19,12 @@ public enum RealtimeEventType {
   /** User is typing indicator. */
   TYPING_INDICATOR("TYPING_INDICATOR", "Typing indicator event"),
 
+  /** A reaction was added to a message. */
+  REACTION_ADDED("REACTION_ADDED", "Reaction added event"),
+
+  /** A reaction was removed from a message. */
+  REACTION_REMOVED("REACTION_REMOVED", "Reaction removed event"),
+
   // Notification events
   /** A new notification was created. */
   NEW_NOTIFICATION("NEW_NOTIFICATION", "New notification event"),

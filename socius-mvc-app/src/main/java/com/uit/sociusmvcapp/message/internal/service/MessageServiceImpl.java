@@ -207,10 +207,7 @@ public class MessageServiceImpl implements MessageService {
   public MessageReactionDto addReaction(MessageReactionRequest request) {
     String currentClientId = getCurrentClientId();
 
-    MessageDto message = messageRepository.findByMessageId(request.getMessageId());
-    if (message == null) {
-      throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
-    }
+    MessageDto message = getMessageOrThrow(request.getMessageId());
     validateParticipant(message.getConversationId(), currentClientId);
 
     Boolean exists =
@@ -228,14 +225,18 @@ public class MessageServiceImpl implements MessageService {
 
     reactionRepository.insert(reaction);
 
-    List<MessageReactionDto> reactions = reactionRepository.findByMessageId(request.getMessageId());
-    return reactions.stream()
-        .filter(
-            r ->
-                r.getEmployeeId().equals(currentClientId)
-                    && r.getReaction().equals(request.getReaction()))
-        .findFirst()
-        .orElse(null);
+    // Directly fetch the inserted reaction instead of filtering from all reactions
+    MessageReactionDto addedReaction =
+        reactionRepository.findByMessageIdAndEmployeeIdAndReaction(
+            request.getMessageId(), currentClientId, request.getReaction());
+
+    // Publish real-time event for reaction added
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
+    messagePublisher.publishReactionAdded(
+        message.getConversationId(), addedReaction, targetUserIds);
+
+    return addedReaction;
   }
 
   /**
@@ -246,13 +247,29 @@ public class MessageServiceImpl implements MessageService {
   @Override
   @Transactional
   public void removeReaction(MessageReactionRequest request) {
+    String currentClientId = getCurrentClientId();
+
+    // Get the message to find the conversation ID for the real-time event
+    MessageDto message = getMessageOrThrow(request.getMessageId());
+
+    // Fetch target user IDs before deletion for consistent event publishing
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
 
     int rowsAffected =
         reactionRepository.softDelete(
-            request.getMessageId(), getCurrentClientId(), request.getReaction());
+            request.getMessageId(), currentClientId, request.getReaction());
     if (rowsAffected == CommonConstant.INIT_INDEX) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_014);
     }
+
+    // Publish real-time event for reaction removed
+    messagePublisher.publishReactionRemoved(
+        message.getConversationId(),
+        request.getMessageId(),
+        currentClientId,
+        request.getReaction(),
+        targetUserIds);
   }
 
   /**
@@ -263,10 +280,7 @@ public class MessageServiceImpl implements MessageService {
    */
   @Override
   public List<MessageReactionDto> getReactions(String messageId) {
-    MessageDto message = messageRepository.findByMessageId(messageId);
-    if (message == null) {
-      throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
-    }
+    MessageDto message = getMessageOrThrow(messageId);
 
     validateParticipant(message.getConversationId(), getCurrentClientId());
 
@@ -285,6 +299,21 @@ public class MessageServiceImpl implements MessageService {
     if (!Boolean.TRUE.equals(isParticipant)) {
       throw ExceptionFactory.badRequest(MessageConstant.E_MSG_007);
     }
+  }
+
+  /**
+   * Gets a message by ID and validates that it exists.
+   *
+   * @param messageId the message ID
+   * @return the message DTO
+   * @throws RuntimeException if message is not found
+   */
+  private MessageDto getMessageOrThrow(String messageId) {
+    MessageDto message = messageRepository.findByMessageId(messageId);
+    if (message == null) {
+      throw ExceptionFactory.notFound(MessageConstant.E_MSG_008);
+    }
+    return message;
   }
 
   /**

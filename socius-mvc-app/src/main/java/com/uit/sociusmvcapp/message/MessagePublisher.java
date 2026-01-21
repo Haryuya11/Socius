@@ -1,6 +1,7 @@
 package com.uit.sociusmvcapp.message;
 
 import com.uit.sociusmvcapp.message.dto.MessageDto;
+import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
 import java.util.List;
 
 /** Service interface for publishing messages to real-time consumers. */
@@ -41,4 +42,30 @@ public interface MessagePublisher {
    */
   void publishTypingIndicator(
       String conversationId, String employeeId, boolean isTyping, List<String> targetUserIds);
+
+  /**
+   * Publishes a reaction added event.
+   *
+   * @param conversationId the conversation ID
+   * @param reaction the reaction that was added
+   * @param targetUserIds the list of user IDs to receive this event (conversation participants)
+   */
+  void publishReactionAdded(
+      String conversationId, MessageReactionDto reaction, List<String> targetUserIds);
+
+  /**
+   * Publishes a reaction removed event.
+   *
+   * @param conversationId the conversation ID
+   * @param messageId the message ID
+   * @param employeeId the employee who removed the reaction
+   * @param reactionType the reaction type that was removed
+   * @param targetUserIds the list of user IDs to receive this event (conversation participants)
+   */
+  void publishReactionRemoved(
+      String conversationId,
+      String messageId,
+      String employeeId,
+      String reactionType,
+      List<String> targetUserIds);
 }

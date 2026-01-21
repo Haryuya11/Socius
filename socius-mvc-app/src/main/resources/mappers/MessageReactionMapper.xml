@@ -30,6 +30,15 @@
         ORDER BY created_at
     </select>
 
+    <select id="findByMessageIdAndEmployeeIdAndReaction" resultMap="reactionMap">
+        SELECT id, message_id, employee_id, reaction, created_at, delete_flag
+        FROM message_reactions
+        WHERE message_id = #{messageId}
+          AND employee_id = #{employeeId}
+          AND reaction = #{reaction}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
+    </select>
+
     <update id="softDelete">
         UPDATE message_reactions
         SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}

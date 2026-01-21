@@ -3,6 +3,8 @@ package com.uit.sociusmvcapp.message.internal.service;
 import com.uit.sociusmvcapp.message.MessagePublisher;
 import com.uit.sociusmvcapp.message.dto.MessageDto;
 import com.uit.sociusmvcapp.message.dto.MessageEventPayload;
+import com.uit.sociusmvcapp.message.dto.MessageReactionDto;
+import com.uit.sociusmvcapp.message.dto.ReactionEventPayload;
 import com.uit.sociusmvcapp.message.dto.TypingIndicatorPayload;
 import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.enums.RealtimeEventType;
@@ -61,6 +63,30 @@ public class MessagePublisherImpl implements MessagePublisher {
         TypingIndicatorPayload.of(conversationId, employeeId, isTyping);
     RealtimeEvent<TypingIndicatorPayload> event =
         RealtimeEvent.message(RealtimeEventType.TYPING_INDICATOR, payload, targetUserIds);
+    publish(event);
+  }
+
+  @Override
+  public void publishReactionAdded(
+      String conversationId, MessageReactionDto reaction, List<String> targetUserIds) {
+    ReactionEventPayload payload = ReactionEventPayload.forReactionAdded(conversationId, reaction);
+    RealtimeEvent<ReactionEventPayload> event =
+        RealtimeEvent.message(RealtimeEventType.REACTION_ADDED, payload, targetUserIds);
+    publish(event);
+  }
+
+  @Override
+  public void publishReactionRemoved(
+      String conversationId,
+      String messageId,
+      String employeeId,
+      String reactionType,
+      List<String> targetUserIds) {
+    ReactionEventPayload payload =
+        ReactionEventPayload.forReactionRemoved(
+            conversationId, messageId, employeeId, reactionType);
+    RealtimeEvent<ReactionEventPayload> event =
+        RealtimeEvent.message(RealtimeEventType.REACTION_REMOVED, payload, targetUserIds);
     publish(event);
   }
 
