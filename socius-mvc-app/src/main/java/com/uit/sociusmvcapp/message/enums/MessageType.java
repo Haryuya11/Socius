@@ -16,7 +16,10 @@ public enum MessageType {
   FILE("FILE", "File attachment"),
 
   /** System generated message. */
-  SYSTEM("SYSTEM", "System message");
+  SYSTEM("SYSTEM", "System message"),
+
+  /** Deleted message placeholder. */
+  DELETED("DELETED", "Deleted message");
 
   private final String code;
   private final String description;
