@@ -27,7 +27,9 @@ import com.uit.sociusmvcapp.shared.constants.MessageConstant;
 import com.uit.sociusmvcapp.shared.event.NotificationSendEvent;
 import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
+import com.uit.sociusmvcapp.shared.service.EmailService;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
+import com.uit.sociusmvcapp.shared.utils.PasswordGenerator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +68,9 @@ public class EmployeeServiceImpl implements EmployeeService {
   /** Service for checking user permissions. */
   private final PermissionSecurityService permissionSecurityService;
 
+  /** Service for sending email notifications. */
+  private final EmailService emailService;
+
   // ========================= EMPLOYEE SERVICE MAIN METHODS =========================
   /**
    * Get the profile of the currently logged-in employee.
@@ -92,9 +97,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     EmployeeDto deletedUser = employeeRepository.findDeletedByUserId(request.getUserId());
     String userClientId;
+    String generatedPassword = PasswordGenerator.generateSecurePassword();
+    String fullName = request.getLastName() + " " + request.getFirstName();
 
     if (deletedUser == null) {
-      User azureUser = employeeGraphAdapter.createUser(request);
+      User azureUser = employeeGraphAdapter.createUser(request, generatedPassword);
       if (azureUser == null || azureUser.getId() == null) {
         log.error("Failed to create user on Azure: Azure returned null");
         throw ExceptionFactory.internalError(MessageConstant.E_SYS_001);
@@ -117,8 +124,10 @@ public class EmployeeServiceImpl implements EmployeeService {
       employeeRepository.reactivate(request);
     }
 
-    Map<String, String> params =
-        Map.of("FULLNAME", request.getLastName() + " " + request.getFirstName());
+    // Send welcome email with generated password
+    emailService.sendWelcomeEmail(request.getUserId(), fullName, generatedPassword);
+
+    Map<String, String> params = Map.of("FULLNAME", fullName);
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,

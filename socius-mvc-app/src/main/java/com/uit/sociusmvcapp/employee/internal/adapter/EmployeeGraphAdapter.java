@@ -61,11 +61,13 @@ public class EmployeeGraphAdapter {
    * Create a new user in Azure Active Directory.
    *
    * @param request the request containing user creation details
+   * @param password the password for the new user account
    * @return the created User object
    */
-  public User createUser(CreateEmployeeRequest request) {
+  public User createUser(CreateEmployeeRequest request, String password) {
     AzureGraphProperties properties = buildProperties();
-    User userToCreate = employeeConverter.toGraphUser(request, properties.getDomainName());
+    User userToCreate =
+        employeeConverter.toGraphUser(request, properties.getDomainName(), password);
     return azureGraphService.createUser(properties, userToCreate);
   }
 
