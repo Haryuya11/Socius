@@ -231,12 +231,10 @@ public class MessageServiceImpl implements MessageService {
             request.getMessageId(), currentClientId, request.getReaction());
 
     // Publish real-time event for reaction added
-    if (addedReaction != null) {
-      List<String> targetUserIds =
-          participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
-      messagePublisher.publishReactionAdded(
-          message.getConversationId(), addedReaction, targetUserIds);
-    }
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
+    messagePublisher.publishReactionAdded(
+        message.getConversationId(), addedReaction, targetUserIds);
 
     return addedReaction;
   }
@@ -254,6 +252,10 @@ public class MessageServiceImpl implements MessageService {
     // Get the message to find the conversation ID for the real-time event
     MessageDto message = getMessageOrThrow(request.getMessageId());
 
+    // Fetch target user IDs before deletion for consistent event publishing
+    List<String> targetUserIds =
+        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
+
     int rowsAffected =
         reactionRepository.softDelete(
             request.getMessageId(), currentClientId, request.getReaction());
@@ -262,8 +264,6 @@ public class MessageServiceImpl implements MessageService {
     }
 
     // Publish real-time event for reaction removed
-    List<String> targetUserIds =
-        participantRepository.findEmployeeIdsByConversationId(message.getConversationId());
     messagePublisher.publishReactionRemoved(
         message.getConversationId(),
         request.getMessageId(),
