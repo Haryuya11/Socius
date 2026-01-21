@@ -10,11 +10,9 @@ import com.uit.sociusmvcapp.message.internal.domain.Message;
 import com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums;
 import com.uit.sociusmvcapp.shared.utils.CommonUtils;
 import java.util.List;
-import org.mapstruct.AfterMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.ReportingPolicy;
 
@@ -135,15 +133,15 @@ public interface MessageConverter {
   }
 
   /**
-   * Post-mapping hook to transform deleted messages into placeholder messages. For deleted
+   * Transforms a message DTO to a deleted placeholder if the source entity was deleted. For deleted
    * messages, sets messageType to DELETED and clears content and metadata.
    *
    * @param entity the source message entity
-   * @param dto the target message DTO
+   * @param dto the message DTO to transform
    */
-  @AfterMapping
-  default void handleDeletedMessage(Message entity, @MappingTarget MessageDto dto) {
+  default void transformIfDeleted(Message entity, MessageDto dto) {
     if (entity != null
+        && dto != null
         && entity.getDeleteFlag() != null
         && entity.getDeleteFlag().equals(DeleteFlagEnums.DELETED.getValue().shortValue())) {
       dto.setMessageType(MessageType.DELETED.getCode());

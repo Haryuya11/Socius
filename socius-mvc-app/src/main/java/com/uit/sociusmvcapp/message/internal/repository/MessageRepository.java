@@ -69,7 +69,14 @@ public class MessageRepository {
       String conversationId, LocalDateTime lastCreatedAt, Long lastId, int limit) {
     List<Message> messages =
         messageMapper.findByConversationId(conversationId, lastCreatedAt, lastId, limit);
-    return messageConverter.entitiesToDtos(messages, contentEncryptor);
+    List<MessageDto> dtos = messageConverter.entitiesToDtos(messages, contentEncryptor);
+
+    // Transform deleted messages to placeholder
+    for (int i = 0; i < messages.size(); i++) {
+      messageConverter.transformIfDeleted(messages.get(i), dtos.get(i));
+    }
+
+    return dtos;
   }
 
   /**
