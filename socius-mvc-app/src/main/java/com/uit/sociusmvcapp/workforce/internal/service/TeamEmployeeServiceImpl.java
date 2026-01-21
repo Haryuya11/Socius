@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,6 +72,7 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", allEntries = true)
   public TeamEmployeeBatchResultDto addEmployeesToTeam(
       String teamCode, AddEmployeesToTeamRequest request) {
     teamService.validateExists(teamCode);
@@ -129,6 +131,7 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", allEntries = true)
   public TeamEmployeeRemovalResultDto removeEmployeesFromTeam(
       String teamCode, RemoveEmployeesFromTeamRequest request) {
     teamService.validateExists(teamCode);
@@ -233,6 +236,7 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", allEntries = true)
   public TeamEmployeeDto changeTeamLead(String teamCode, String newLeadEmployeeId) {
     teamService.validateExists(teamCode);
     employeeService.validateExists(newLeadEmployeeId);
@@ -280,6 +284,7 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", key = "#request.employeeId")
   public void transferEmployee(TransferTeamEmployeeRequest request) {
     teamService.validateExists(request.getFromTeamCode());
     teamService.validateExists(request.getToTeamCode());

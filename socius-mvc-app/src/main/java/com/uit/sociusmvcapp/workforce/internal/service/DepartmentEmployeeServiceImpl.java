@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +76,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", key = "#request.employeeId")
   public void addEmployeeToDepartment(
       AssignEmployeeToDepartmentRequest request, String departmentCode) {
     departmentService.validateExists(departmentCode);
@@ -99,6 +101,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", key = "#employeeId")
   public void removeEmployeeFromDepartment(String departmentCode, String employeeId) {
     departmentService.validateExists(departmentCode);
     employeeService.validateExists(employeeId);
@@ -117,6 +120,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", key = "#request.employeeId")
   public Map<String, String> transferEmployee(TransferEmployeeRequest request) {
     String fromDept = request.getFromDepartmentCode();
     String toDept = request.getToDepartmentCode();
@@ -174,6 +178,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", allEntries = true)
   public DepartmentEmployeeBatchResultDto addEmployeesToDepartment(
       List<AssignEmployeeToDepartmentRequest> requests, String departmentCode) {
     departmentService.validateExists(departmentCode);
@@ -273,6 +278,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", allEntries = true)
   public DepartmentEmployeeBatchResultDto removeEmployeesFromDepartmentBatch(
       List<String> employeeIds, String departmentCode) {
     departmentService.validateExists(departmentCode);
@@ -371,6 +377,7 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    */
   @Override
   @Transactional
+  @CacheEvict(value = "user-principal", key = "#employeeId")
   public Map<String, String> changeEmployeeRoleInDepartment(
       String departmentCode, String employeeId, String roleCode) {
     departmentService.validateExists(departmentCode);
