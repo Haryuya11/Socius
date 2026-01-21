@@ -2,10 +2,11 @@ package com.uit.sociusmvcapp.shared.component;
 
 import com.uit.sociusmvcapp.shared.config.TtlCacheConfig;
 import com.uit.sociusmvcapp.shared.constants.CommonConstant;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,6 +27,9 @@ public abstract class TtlCache<T> {
 
   /** Timestamp when cache was last updated. */
   private final AtomicLong lastUpdatedAt = new AtomicLong(CommonConstant.UNINITIALIZED_TIMESTAMP);
+
+  /** Lock for thread-safe cache refresh operations. */
+  private final ReentrantLock refreshLock = new ReentrantLock();
 
   /**
    * Constructor for TtlCache.
@@ -53,9 +57,49 @@ public abstract class TtlCache<T> {
   public List<T> get() {
     if (isCacheExpired()) {
       log.debug("{} cache expired or empty", cacheName);
-      return Collections.emptyList();
+      return null;
     }
     return cache.get(getCacheKey());
+  }
+
+  /**
+   * Get cached items, or refresh from source if cache is invalid. This method is thread-safe and
+   * ensures only one refresh operation happens at a time.
+   *
+   * @param dataLoader supplier function to load data when cache is invalid
+   * @return list of cached items, never null (returns empty list if source returns null)
+   */
+  public List<T> getOrRefresh(Supplier<List<T>> dataLoader) {
+    // First, try to get from cache without locking
+    if (!isCacheExpired()) {
+      List<T> cached = cache.get(getCacheKey());
+      if (cached != null) {
+        return cached;
+      }
+    }
+
+    // Cache is invalid, need to refresh
+    refreshLock.lock();
+    try {
+      // Double-check after acquiring lock (another thread may have refreshed)
+      if (!isCacheExpired()) {
+        List<T> cached = cache.get(getCacheKey());
+        if (cached != null) {
+          return cached;
+        }
+      }
+
+      // Load data from source
+      log.debug("Refreshing {} cache", cacheName);
+      List<T> data = dataLoader.get();
+      if (data != null) {
+        put(data);
+        return data;
+      }
+      return List.of();
+    } finally {
+      refreshLock.unlock();
+    }
   }
 
   /**
