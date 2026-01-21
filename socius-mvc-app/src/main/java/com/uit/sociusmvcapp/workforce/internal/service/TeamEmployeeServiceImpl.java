@@ -25,6 +25,7 @@ import com.uit.sociusmvcapp.workforce.internal.converter.TeamEmployeeConverter;
 import com.uit.sociusmvcapp.workforce.internal.repository.TeamEmployeeRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -166,10 +167,12 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
       removedEmployeeIds.addAll(validEmployeeIds);
 
       // Send batch notification to removed employees
+      Map<String, String> removedParams = Map.of("TEAM_CODE", teamCode);
       publishMultiNotification(
           validEmployeeIds,
-          "Removed from Team",
-          String.format("You have been removed from team (%s).", teamCode),
+          "S_TEAM_EMP_TITLE_008",
+          "S_TEAM_EMP_CONTENT_008",
+          removedParams,
           "/teams");
 
       // Notify all remaining members about the removals
@@ -187,20 +190,30 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
         String employeeNames = formatEmployeeNames(removedEmployees);
 
         // Send notification to remaining members
+        Map<String, String> remainingParams =
+            Map.of(
+                "EMPLOYEE_NAMES", employeeNames,
+                "TEAM_CODE", teamCode);
         publishMultiNotification(
             remainingMemberIds,
-            "Team Members Removed",
-            String.format("%s removed from team (%s).", employeeNames, teamCode),
+            "S_TEAM_EMP_TITLE_009",
+            "S_TEAM_EMP_CONTENT_009",
+            remainingParams,
             TEAMS_PATH + teamCode);
       }
 
       // Notify performer about successful removals (only if they didn't remove themselves)
       if (!validEmployeeIds.contains(performerId)) {
         String countText = validEmployeeIds.size() + " " + LOG_EMPLOYEE_UNIT;
+        Map<String, String> performerParams =
+            Map.of(
+                "COUNT", countText,
+                "TEAM_CODE", teamCode);
         publishSingleNotification(
             performerId,
-            "Team Members Removed",
-            String.format("Successfully removed %s from team (%s).", countText, teamCode),
+            "S_TEAM_EMP_TITLE_010",
+            "S_TEAM_EMP_CONTENT_010",
+            performerParams,
             TEAMS_PATH + teamCode);
       }
     }
@@ -238,18 +251,22 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
         teamCode, newLeadEmployeeId, TeamRoleEnums.TEAM_LEAD.getRoleCode());
 
     // Send notification to new team lead
+    Map<String, String> newLeadParams = Map.of("TEAM_CODE", teamCode);
     publishSingleNotification(
         newLeadEmployeeId,
-        "Promoted to Team Lead",
-        String.format("You have been promoted to Team Lead of (%s).", teamCode),
+        "S_TEAM_EMP_TITLE_011",
+        "S_TEAM_EMP_CONTENT_011",
+        newLeadParams,
         TEAMS_PATH + teamCode);
 
     // Send notification to previous lead if exists and different
     if (currentLead != null && !currentLead.getEmployee().getClientId().equals(newLeadEmployeeId)) {
+      Map<String, String> oldLeadParams = Map.of("TEAM_CODE", teamCode);
       publishSingleNotification(
           currentLead.getEmployee().getClientId(),
-          "Team Lead Role Changed",
-          String.format("Your Team Lead role for (%s) has been transferred.", teamCode),
+          "S_TEAM_EMP_TITLE_012",
+          "S_TEAM_EMP_CONTENT_012",
+          oldLeadParams,
           TEAMS_PATH + teamCode);
     }
 
@@ -574,19 +591,23 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
 
     // Send notification to leader if exists
     if (leaderId != null) {
+      Map<String, String> leaderParams = Map.of("TEAM_CODE", teamCode);
       publishSingleNotification(
           leaderId,
-          "Added to Team",
-          String.format("You have been added to team (%s) as Team Lead.", teamCode),
+          "S_TEAM_EMP_TITLE_001",
+          "S_TEAM_EMP_CONTENT_001",
+          leaderParams,
           TEAMS_PATH + teamCode);
     }
 
     // Send batch notification to members
     if (!memberIds.isEmpty()) {
+      Map<String, String> memberParams = Map.of("TEAM_CODE", teamCode);
       publishMultiNotification(
           memberIds,
-          "Added to Team",
-          String.format("You have been added to team (%s) as Member.", teamCode),
+          "S_TEAM_EMP_TITLE_002",
+          "S_TEAM_EMP_CONTENT_002",
+          memberParams,
           TEAMS_PATH + teamCode);
     }
 
@@ -604,20 +625,30 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
       List<EmployeeDto> addedEmployees = employeeService.findByClientIds(newEmployeeIds);
       String employeeNames = formatEmployeeNames(addedEmployees);
 
+      Map<String, String> existingParams =
+          Map.of(
+              "EMPLOYEE_NAMES", employeeNames,
+              "TEAM_CODE", teamCode);
       publishMultiNotification(
           existingMemberIds,
-          "New Team Members",
-          String.format("%s joined team (%s).", employeeNames, teamCode),
+          "S_TEAM_EMP_TITLE_003",
+          "S_TEAM_EMP_CONTENT_003",
+          existingParams,
           TEAMS_PATH + teamCode);
     }
 
     // Notify performer about successful additions (only if they didn't add themselves)
     if (!newEmployeeIds.contains(performerId)) {
       String countText = results.size() + " " + LOG_EMPLOYEE_UNIT;
+      Map<String, String> performerParams =
+          Map.of(
+              "COUNT", countText,
+              "TEAM_CODE", teamCode);
       publishSingleNotification(
           performerId,
-          "New Team Members",
-          String.format("Successfully added %s to team (%s).", countText, teamCode),
+          "S_TEAM_EMP_TITLE_004",
+          "S_TEAM_EMP_CONTENT_004",
+          performerParams,
           TEAMS_PATH + teamCode);
     }
   }
@@ -654,12 +685,17 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    * @param receiverId the receiver's ID
    * @param title title
    * @param content content
+   * @param parameters parameters map
    * @param linkUrl link URL
    */
   private void publishSingleNotification(
-      String receiverId, String title, String content, String linkUrl) {
+      String receiverId,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl) {
     eventPublisher.publishEvent(
-        new NotificationSendEvent(this, receiverId, title, content, linkUrl));
+        new NotificationSendEvent(this, receiverId, title, content, parameters, linkUrl));
   }
 
   /**
@@ -668,12 +704,17 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
    * @param receiverIds list of receiver IDs
    * @param title title
    * @param content content
+   * @param parameters parameters map
    * @param linkUrl link URL
    */
   private void publishMultiNotification(
-      List<String> receiverIds, String title, String content, String linkUrl) {
+      List<String> receiverIds,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl) {
     eventPublisher.publishEvent(
-        new NotificationMultiSendRequest(this, receiverIds, title, content, linkUrl));
+        new NotificationMultiSendRequest(this, receiverIds, title, content, parameters, linkUrl));
   }
 
   // ========================= TRANSFER HELPER METHODS =========================
@@ -720,12 +761,16 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
     String roleText = Boolean.TRUE.equals(request.getIsLeader()) ? "Team Lead" : "Team Member";
 
     // Notify the transferred employee
+    Map<String, String> params =
+        Map.of(
+            "FROM_TEAM", request.getFromTeamCode(),
+            "TO_TEAM", request.getToTeamCode(),
+            "ROLE", roleText);
     publishSingleNotification(
         request.getEmployeeId(),
-        "Team Transfer",
-        String.format(
-            "You have been transferred from team (%s) to team (%s) as %s.",
-            request.getFromTeamCode(), request.getToTeamCode(), roleText),
+        "S_TEAM_EMP_TITLE_005",
+        "S_TEAM_EMP_CONTENT_005",
+        params,
         TEAMS_PATH + request.getToTeamCode());
 
     // Notify all members in both teams
@@ -739,24 +784,37 @@ public class TeamEmployeeServiceImpl implements TeamEmployeeService {
             .toList();
 
     if (!uniqueMemberIds.isEmpty()) {
+      Map<String, String> multiParams =
+          Map.of(
+              "EMPLOYEE_NAME",
+              employeeName,
+              "FROM_TEAM",
+              request.getFromTeamCode(),
+              "TO_TEAM",
+              request.getToTeamCode(),
+              "ROLE",
+              roleText);
       publishMultiNotification(
           uniqueMemberIds,
-          "Team Member Transfer",
-          String.format(
-              "%s has been transferred from team (%s) to team (%s) as %s.",
-              employeeName, request.getFromTeamCode(), request.getToTeamCode(), roleText),
+          "S_TEAM_EMP_TITLE_006",
+          "S_TEAM_EMP_CONTENT_006",
+          multiParams,
           TEAMS_PATH + request.getToTeamCode());
     }
 
     // Notify the performer
     String performedBy = userContentProvider.getUserContent().getClientId();
     if (!performedBy.equals(request.getEmployeeId())) {
+      Map<String, String> performerParams =
+          Map.of(
+              "EMPLOYEE_NAME", employeeName,
+              "FROM_TEAM", request.getFromTeamCode(),
+              "TO_TEAM", request.getToTeamCode());
       publishSingleNotification(
           performedBy,
-          "Team Transfer Completed",
-          String.format(
-              "%s has been successfully transferred from team (%s) to team (%s).",
-              employeeName, request.getFromTeamCode(), request.getToTeamCode()),
+          "S_TEAM_EMP_TITLE_007",
+          "S_TEAM_EMP_CONTENT_007",
+          performerParams,
           TEAMS_PATH + request.getToTeamCode());
     }
   }

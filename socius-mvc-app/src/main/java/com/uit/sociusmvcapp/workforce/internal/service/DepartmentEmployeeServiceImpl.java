@@ -82,10 +82,12 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     employeeService.validateExists(request.getEmployeeId());
     departmentEmployeeRepository.addEmployeeToDepartment(request, departmentCode);
 
+    Map<String, String> params = Map.of("DEPARTMENT_CODE", departmentCode);
     publishSingleNotification(
         request.getEmployeeId(),
-        "Added to Department",
-        String.format("You have been added to department (%s).", departmentCode),
+        "S_DEP_EMP_TITLE_004",
+        "S_DEP_EMP_CONTENT_004",
+        params,
         DEPARTMENTS_PATH + departmentCode);
   }
 
@@ -102,11 +104,9 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     employeeService.validateExists(employeeId);
     departmentEmployeeRepository.removeEmployeeFromDepartment(departmentCode, employeeId);
 
+    Map<String, String> params = Map.of("DEPARTMENT_CODE", departmentCode);
     publishSingleNotification(
-        employeeId,
-        "Removed from Department",
-        String.format("You have been removed from department (%s).", departmentCode),
-        "/departments");
+        employeeId, "S_DEP_EMP_TITLE_005", "S_DEP_EMP_CONTENT_005", params, "/departments");
   }
 
   /**
@@ -205,10 +205,12 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
           result.getToInsert(), departmentCode);
 
       // Send batch notification to added employees
+      Map<String, String> addedParams = Map.of("DEPARTMENT_CODE", departmentCode);
       publishMultiNotification(
           result.getSuccessfulIds(),
-          "Added to Department",
-          String.format("You have been added to department (%s).", departmentCode),
+          "S_DEP_EMP_TITLE_006",
+          "S_DEP_EMP_CONTENT_006",
+          addedParams,
           DEPARTMENTS_PATH + departmentCode);
 
       // Notify all existing members in the department about new additions
@@ -226,10 +228,15 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
             newEmployeeIds.stream().map(employeeService::findByClientId).toList();
         String employeeNames = formatEmployeeNames(addedEmployees);
 
+        Map<String, String> existingParams =
+            Map.of(
+                "EMPLOYEE_NAMES", employeeNames,
+                "DEPARTMENT_CODE", departmentCode);
         publishMultiNotification(
             existingMemberIds,
-            "New Department Members",
-            String.format("%s added to department (%s).", employeeNames, departmentCode),
+            "S_DEP_EMP_TITLE_007",
+            "S_DEP_EMP_CONTENT_007",
+            existingParams,
             DEPARTMENTS_PATH + departmentCode);
       }
 
@@ -237,10 +244,15 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
       if (!newEmployeeIds.contains(performerId)) { // Don't notify if performer added themselves
         String countText = newEmployeeIds.size() + " " + LOG_EMPLOYEE_UNIT;
 
+        Map<String, String> performerParams =
+            Map.of(
+                "COUNT", countText,
+                "DEPARTMENT_CODE", departmentCode);
         publishSingleNotification(
             performerId,
-            "Employees Added to Department",
-            String.format("Successfully added %s to department (%s).", countText, departmentCode),
+            "S_DEP_EMP_TITLE_008",
+            "S_DEP_EMP_CONTENT_008",
+            performerParams,
             DEPARTMENTS_PATH + departmentCode);
       }
     }
@@ -293,10 +305,12 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
           result.getToInsert(), departmentCode);
 
       // Send batch notification to removed employees
+      Map<String, String> removedParams = Map.of("DEPARTMENT_CODE", departmentCode);
       publishMultiNotification(
           result.getSuccessfulIds(),
-          "Removed from Department",
-          String.format("You have been removed from department (%s).", departmentCode),
+          "S_DEP_EMP_TITLE_009",
+          "S_DEP_EMP_CONTENT_009",
+          removedParams,
           DEPARTMENTS_PATH + departmentCode);
 
       // Notify all remaining members about the removals
@@ -312,10 +326,15 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
             result.getSuccessfulIds().stream().map(employeeService::findByClientId).toList();
         String employeeNames = formatEmployeeNames(removedEmployees);
 
+        Map<String, String> remainingParams =
+            Map.of(
+                "EMPLOYEE_NAMES", employeeNames,
+                "DEPARTMENT_CODE", departmentCode);
         publishMultiNotification(
             remainingMemberIds,
-            "Department Members Removed",
-            String.format("%s removed from department (%s).", employeeNames, departmentCode),
+            "S_DEP_EMP_TITLE_010",
+            "S_DEP_EMP_CONTENT_010",
+            remainingParams,
             DEPARTMENTS_PATH + departmentCode);
       }
 
@@ -324,11 +343,15 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
           .getSuccessfulIds()
           .contains(performerId)) { // Don't notify if performer removed themselves
         String countText = result.getSuccessfulIds().size() + " " + LOG_EMPLOYEE_UNIT;
+        Map<String, String> performerParams =
+            Map.of(
+                "COUNT", countText,
+                "DEPARTMENT_CODE", departmentCode);
         publishSingleNotification(
             performerId,
-            "Employees Removed from Department",
-            String.format(
-                "Successfully removed %s from department(%s).", countText, departmentCode),
+            "S_DEP_EMP_TITLE_011",
+            "S_DEP_EMP_CONTENT_011",
+            performerParams,
             DEPARTMENTS_PATH + departmentCode);
       }
     }
@@ -355,22 +378,29 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
     departmentEmployeeRepository.changeEmployeeRole(departmentCode, employeeId, roleCode);
 
     // Send notifications
+    Map<String, String> employeeParams =
+        Map.of(
+            "DEPARTMENT_CODE", departmentCode,
+            "ROLE_CODE", roleCode);
     publishSingleNotification(
         employeeId,
-        "Department Role Changed",
-        String.format(
-            "Your role in department '%s' has been changed to '%s'.", departmentCode, roleCode),
+        "S_DEP_EMP_TITLE_012",
+        "S_DEP_EMP_CONTENT_012",
+        employeeParams,
         DEPARTMENTS_PATH + departmentCode);
 
     // Notify the performer
     String performedBy = userContentProvider.getUserContent().getClientId();
     if (!performedBy.equals(employeeId)) {
+      Map<String, String> performerParams =
+          Map.of(
+              "DEPARTMENT_CODE", departmentCode,
+              "ROLE_CODE", roleCode);
       publishSingleNotification(
           performedBy,
-          "Department Role Changed",
-          String.format(
-              "Employee's role in department '%s' has been changed to '%s'.",
-              departmentCode, roleCode),
+          "S_DEP_EMP_TITLE_013",
+          "S_DEP_EMP_CONTENT_013",
+          performerParams,
           DEPARTMENTS_PATH + departmentCode);
     }
 
@@ -523,12 +553,15 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
       List<String> newDeptMemberIds) {
 
     // Notify the transferred employee
+    Map<String, String> params =
+        Map.of(
+            "FROM_DEPARTMENT", fromDepartment,
+            "TO_DEPARTMENT", toDepartment);
     publishSingleNotification(
         employeeId,
-        "Department Transfer",
-        String.format(
-            "You have been transferred from department '%s'  to department '%s'. ",
-            fromDepartment, toDepartment),
+        "S_DEP_EMP_TITLE_001",
+        "S_DEP_EMP_CONTENT_001",
+        params,
         DEPARTMENTS_PATH + toDepartment);
 
     // Notify all members in both departments
@@ -539,25 +572,32 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
         allDeptMemberIds.stream().distinct().filter(id -> !id.equals(employeeId)).toList();
 
     if (!uniqueMemberIds.isEmpty()) {
+      Map<String, String> multiParams =
+          Map.of(
+              "EMPLOYEE_NAME", employeeName,
+              "FROM_DEPARTMENT", fromDepartment,
+              "TO_DEPARTMENT", toDepartment);
       publishMultiNotification(
           uniqueMemberIds,
-          "Department Member Transfer",
-          String.format(
-              "%s has been transferred from department '%s' to department '%s'.",
-              employeeName, fromDepartment, toDepartment),
+          "S_DEP_EMP_TITLE_002",
+          "S_DEP_EMP_CONTENT_002",
+          multiParams,
           DEPARTMENTS_PATH + toDepartment);
     }
 
     // Notify the performer
     String performedBy = userContentProvider.getUserContent().getClientId();
     if (!performedBy.equals(employeeId)) {
-
+      Map<String, String> performerParams =
+          Map.of(
+              "EMPLOYEE_NAME", employeeName,
+              "FROM_DEPARTMENT", fromDepartment,
+              "TO_DEPARTMENT", toDepartment);
       publishSingleNotification(
           performedBy,
-          "Department Transfer Completed",
-          String.format(
-              "%s has been successfully transferred from department '%s' to department '%s'.",
-              employeeName, fromDepartment, toDepartment),
+          "S_DEP_EMP_TITLE_003",
+          "S_DEP_EMP_CONTENT_003",
+          performerParams,
           DEPARTMENTS_PATH + toDepartment);
     }
   }
@@ -568,12 +608,17 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @param receiverId the receiver's ID
    * @param title title
    * @param content content
+   * @param parameters parameters map
    * @param linkUrl link URL
    */
   private void publishSingleNotification(
-      String receiverId, String title, String content, String linkUrl) {
+      String receiverId,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl) {
     eventPublisher.publishEvent(
-        new NotificationSendEvent(this, receiverId, title, content, linkUrl));
+        new NotificationSendEvent(this, receiverId, title, content, parameters, linkUrl));
   }
 
   /**
@@ -582,11 +627,16 @@ public class DepartmentEmployeeServiceImpl implements DepartmentEmployeeService 
    * @param receiverIds list of receiver IDs
    * @param title title
    * @param content content
+   * @param parameters parameters map
    * @param linkUrl link URL
    */
   private void publishMultiNotification(
-      List<String> receiverIds, String title, String content, String linkUrl) {
+      List<String> receiverIds,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl) {
     eventPublisher.publishEvent(
-        new NotificationMultiSendRequest(this, receiverIds, title, content, linkUrl));
+        new NotificationMultiSendRequest(this, receiverIds, title, content, parameters, linkUrl));
   }
 }

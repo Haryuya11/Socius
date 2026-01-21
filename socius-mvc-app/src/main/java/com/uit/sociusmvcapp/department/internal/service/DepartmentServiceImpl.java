@@ -19,6 +19,7 @@ import com.uit.sociusmvcapp.shared.request.PaginationSearchRequest;
 import com.uit.sociusmvcapp.shared.response.PageResponse;
 import com.uit.sociusmvcapp.shared.service.ExceptionFactory;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -84,14 +85,17 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     // Send notification to the user who created the department
+    Map<String, String> params =
+        Map.of(
+            "DEPARTMENT_NAME", request.getDepartmentName(),
+            "DEPARTMENT_CODE", request.getDepartmentCode());
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             userContentProvider.getUserContent().getClientId(),
-            "Department Created",
-            String.format(
-                "Department '%s' (%s) has been successfully created.",
-                request.getDepartmentName(), request.getDepartmentCode()),
+            "S_DEP_TITLE_001",
+            "S_DEP_CONTENT_001",
+            params,
             DEPARTMENTS_PATH + request.getDepartmentCode()));
   }
 
@@ -116,14 +120,15 @@ public class DepartmentServiceImpl implements DepartmentService {
     // Send batch notification to all department members about the update
     List<String> memberIds = departmentEmployeeGateway.getActiveMemberIds(departmentCode);
     if (!memberIds.isEmpty()) {
+      Map<String, String> params =
+          Map.of("DEPARTMENT_NAME", request.getDepartmentName(), "DEPARTMENT_CODE", departmentCode);
       eventPublisher.publishEvent(
           new NotificationMultiSendRequest(
               this,
               memberIds,
-              "Department Updated",
-              String.format(
-                  "Department '%s' (%s) has been updated.",
-                  request.getDepartmentName(), departmentCode),
+              "S_DEP_TITLE_002",
+              "S_DEP_CONTENT_002",
+              params,
               DEPARTMENTS_PATH + departmentCode));
     }
   }
@@ -144,14 +149,16 @@ public class DepartmentServiceImpl implements DepartmentService {
     departmentRepository.deactivate(departmentCode);
 
     // Send notification to the user who deleted the department
+    Map<String, String> params =
+        Map.of(
+            "DEPARTMENT_NAME", department.getDepartmentName(), "DEPARTMENT_CODE", departmentCode);
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             userContentProvider.getUserContent().getClientId(),
-            "Department Deleted",
-            String.format(
-                "Department '%s' (%s) has been deleted.",
-                department.getDepartmentName(), departmentCode),
+            "S_DEP_TITLE_003",
+            "S_DEP_CONTENT_003",
+            params,
             "/departments"));
   }
 

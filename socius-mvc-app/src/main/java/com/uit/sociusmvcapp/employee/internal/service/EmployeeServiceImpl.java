@@ -116,14 +116,15 @@ public class EmployeeServiceImpl implements EmployeeService {
       employeeRepository.reactivate(request);
     }
 
+    Map<String, String> params =
+        Map.of("FULLNAME", request.getLastName() + " " + request.getFirstName());
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
-            userContentProvider.getUserContent().getClientId(),
-            "Account Created",
-            String.format(
-                "Account for %s %s has been created.",
-                request.getLastName(), request.getFirstName()),
+            userClientId,
+            "S_ACC_TITLE_001",
+            "S_ACC_CONTENT_001",
+            params,
             "/employees/" + userClientId));
 
     return Map.of(EmployeeConstant.CLIENT_ID, userClientId);
@@ -147,13 +148,17 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
     employeeGraphAdapter.updateUser(clientId, request);
     employeeRepository.updateProfile(request, clientId);
+
+    Map<String, String> params =
+        Map.of("FULLNAME", request.getLastName() + " " + request.getFirstName());
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
-            userContentProvider.getUserContent().getClientId(),
-            "Account Updated",
-            "Your account information has been updated.",
-            "/profile"));
+            clientId,
+            "S_ACC_TITLE_002",
+            "S_ACC_CONTENT_002",
+            params,
+            "/employees/" + clientId));
   }
 
   /**
@@ -214,14 +219,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     eventPublisher.publishEvent(new EmployeeDeletedEvent(clientId));
 
+    Map<String, String> params = Map.of("FULLNAME", user.getLastName() + " " + user.getFirstName());
     eventPublisher.publishEvent(
         new NotificationSendEvent(
-            this,
-            userContentProvider.getUserContent().getClientId(),
-            "Account Deactivated",
-            String.format(
-                "Account for %s %s has been deactivated.", user.getLastName(), user.getFirstName()),
-            "/employees"));
+            this, clientId, "S_ACC_TITLE_003", "S_ACC_CONTENT_003", params, "/employees"));
   }
 
   /**

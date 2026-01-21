@@ -14,6 +14,7 @@ import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,12 +53,18 @@ public class NotificationServiceImpl implements NotificationService {
    * @param receiverId the ID of the notification receiver
    * @param title the title of the notification
    * @param content the content of the notification
+   * @param parameters the parameters for i18n interpolation
    * @param linkUrl the link URL of the notification
    */
   @Override
-  public void sendNotification(String receiverId, String title, String content, String linkUrl) {
+  public void sendNotification(
+      String receiverId,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl) {
     LocalDateTime dateTime = LocalDateTime.now();
-    PayloadDto payloadDto = buildPayload(title, content, linkUrl);
+    PayloadDto payloadDto = buildPayload(title, content, parameters, linkUrl);
     NotificationCreateRequest request = buildNotificationRequest(receiverId, payloadDto);
     Notification notification = notificationConverter.fromCreateRequest(request, dateTime);
     notificationRepository.insert(notification);
@@ -71,17 +78,22 @@ public class NotificationServiceImpl implements NotificationService {
    * @param receiverIds the list of receiver IDs
    * @param title the title of the notification
    * @param content the content of the notification
+   * @param parameters the parameters for i18n interpolation
    * @param linkUrl the link URL of the notification
    */
   @Override
   public void sendMultiNotification(
-      List<String> receiverIds, String title, String content, String linkUrl) {
+      List<String> receiverIds,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl) {
     if (receiverIds == null || receiverIds.isEmpty()) {
       return;
     }
 
     LocalDateTime dateTime = LocalDateTime.now();
-    PayloadDto payloadDto = buildPayload(title, content, linkUrl);
+    PayloadDto payloadDto = buildPayload(title, content, parameters, linkUrl);
 
     // Build all notifications
     List<Notification> notifications =
@@ -172,11 +184,18 @@ public class NotificationServiceImpl implements NotificationService {
    *
    * @param title the title of the payload
    * @param content the content of the payload
+   * @param parameters the parameters for i18n interpolation
    * @param linkUrl the link URL of the payload
    * @return the constructed Payload object
    */
-  private PayloadDto buildPayload(String title, String content, String linkUrl) {
-    return PayloadDto.builder().title(title).content(content).linkUrl(linkUrl).build();
+  private PayloadDto buildPayload(
+      String title, String content, Map<String, String> parameters, String linkUrl) {
+    return PayloadDto.builder()
+        .title(title)
+        .content(content)
+        .parameters(parameters)
+        .linkUrl(linkUrl)
+        .build();
   }
 
   /**

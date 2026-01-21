@@ -3,6 +3,7 @@ package com.uit.sociusmvcapp.notification;
 import com.uit.sociusmvcapp.notification.dto.NotificationDto;
 import com.uit.sociusmvcapp.shared.response.CursorResponse;
 import java.util.List;
+import java.util.Map;
 
 /** Service interface for Notification-related operations. */
 public interface NotificationService {
@@ -19,9 +20,15 @@ public interface NotificationService {
    * @param receiverId the ID of the notification receiver
    * @param title the title of the notification
    * @param content the content of the notification
+   * @param parameters the parameters for i18n interpolation
    * @param linkUrl the link URL of the notification
    */
-  void sendNotification(String receiverId, String title, String content, String linkUrl);
+  void sendNotification(
+      String receiverId,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl);
 
   /**
    * Send notifications to multiple users with the same message.
@@ -29,10 +36,15 @@ public interface NotificationService {
    * @param receiverIds the list of receiver IDs
    * @param title the title of the notification
    * @param content the content of the notification
+   * @param parameters the parameters for i18n interpolation
    * @param linkUrl the link URL of the notification
    */
   void sendMultiNotification(
-      List<String> receiverIds, String title, String content, String linkUrl);
+      List<String> receiverIds,
+      String title,
+      String content,
+      Map<String, String> parameters,
+      String linkUrl);
 
   /**
    * Retrieve notifications for the current user.

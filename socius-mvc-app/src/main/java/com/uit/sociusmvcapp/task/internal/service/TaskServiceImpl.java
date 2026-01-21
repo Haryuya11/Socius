@@ -102,23 +102,30 @@ public class TaskServiceImpl implements TaskService {
     taskRepository.createTask(request, currentUserId);
     Integer taskId = taskRepository.createTask(request, currentUserId);
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", taskId.toString(),
+            "TASK_TITLE", request.getTitle());
     // Send notifications after task creation
     if (!request.getReceiverId().equals(currentUserId)) {
       eventPublisher.publishEvent(
           new NotificationSendEvent(
               this,
               request.getReceiverId(),
-              "Task Created",
-              String.format("Task #%d '%s' has been assigned to you.", taskId, request.getTitle()),
+              "S_TASK_TITLE_001",
+              "S_TASK_CONTENT_001",
+              params,
               TASKS_PATH + taskId));
     }
 
+    // Notify sender (creator)
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             currentUserId,
-            "Task Created",
-            String.format("Task #%d '%s' has been created by you.", taskId, request.getTitle()),
+            "S_TASK_TITLE_002",
+            "S_TASK_CONTENT_002",
+            params,
             TASKS_PATH + taskId));
   }
 
@@ -161,25 +168,30 @@ public class TaskServiceImpl implements TaskService {
         new ParentTaskContext(parentId, parent.getTeamCode(), parent.getDepartmentCode());
     Integer subTaskId = taskRepository.createSubTask(request, currentUserId, parentContext);
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", subTaskId.toString(),
+            "TASK_TITLE", request.getTitle());
     // Send notifications after sub-task creation
     if (!request.getReceiverId().equals(currentUserId)) {
       eventPublisher.publishEvent(
           new NotificationSendEvent(
               this,
               request.getReceiverId(),
-              "Sub-Task Created",
-              String.format(
-                  "Sub-task #%d '%s' has been assigned to you.", subTaskId, request.getTitle()),
+              "S_TASK_TITLE_003",
+              "S_TASK_CONTENT_003",
+              params,
               TASKS_PATH + subTaskId));
     }
 
+    // Notify sender (creator)
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             currentUserId,
-            "Sub-Task Created",
-            String.format(
-                "Sub-task #%d '%s' has been created by you.", subTaskId, request.getTitle()),
+            "S_TASK_TITLE_004",
+            "S_TASK_CONTENT_004",
+            params,
             TASKS_PATH + subTaskId));
   }
 
@@ -247,13 +259,19 @@ public class TaskServiceImpl implements TaskService {
     recipients.add(updatedTask.getReceiverId());
     recipients.remove(currentUserId);
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", updatedTask.getTitle());
+
     if (!recipients.isEmpty()) {
       eventPublisher.publishEvent(
           new NotificationMultiSendRequest(
               this,
               new java.util.ArrayList<>(recipients),
-              "Task Updated",
-              String.format("Task #%d '%s' has been updated.", id, updatedTask.getTitle()),
+              "S_TASK_TITLE_005",
+              "S_TASK_CONTENT_005",
+              params,
               TASKS_PATH + id));
     }
 
@@ -263,8 +281,9 @@ public class TaskServiceImpl implements TaskService {
           new NotificationSendEvent(
               this,
               currentUserId,
-              "Task Updated",
-              String.format("Task #%d '%s' has been updated by you.", id, updatedTask.getTitle()),
+              "S_TASK_TITLE_006",
+              "S_TASK_CONTENT_006",
+              params,
               TASKS_PATH + id));
     }
 
@@ -297,12 +316,17 @@ public class TaskServiceImpl implements TaskService {
     recipients.add(task.getSenderId());
     recipients.add(task.getReceiverId());
 
+    Map<String, String> deleteParams =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", task.getTitle());
     eventPublisher.publishEvent(
         new NotificationMultiSendRequest(
             this,
             new java.util.ArrayList<>(recipients),
-            "Task Deleted",
-            String.format("Task #%d '%s' has been deleted.", id, task.getTitle()),
+            "S_TASK_TITLE_007",
+            "S_TASK_CONTENT_007",
+            deleteParams,
             "/tasks"));
   }
 
@@ -519,21 +543,30 @@ public class TaskServiceImpl implements TaskService {
     saveTaskActivity(id, ActivityType.SUBMIT, currentUserId, request.getCompletionNote());
 
     // Send notifications after submit
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", task.getTitle());
+
+    // Notify sender (reviewer) - task needs review
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             task.getSenderId(),
-            "Task Submitted",
-            String.format("Task #%d '%s' has been submitted for review.", id, task.getTitle()),
-            TASKS_PATH + id));
+            "S_TASK_TITLE_008",
+            "S_TASK_CONTENT_008",
+            params,
+            "/tasks?taskId=" + id));
 
+    // Notify receiver (submitter) - submission confirmation
     eventPublisher.publishEvent(
         new NotificationSendEvent(
             this,
             task.getReceiverId(),
-            "Task Submitted",
-            String.format("Task #%d '%s' has been submitted.", id, task.getTitle()),
-            TASKS_PATH + id));
+            "S_TASK_TITLE_009",
+            "S_TASK_CONTENT_009",
+            params,
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -560,13 +593,18 @@ public class TaskServiceImpl implements TaskService {
     recipients.add(task.getSenderId());
     recipients.add(task.getReceiverId());
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", task.getTitle());
     eventPublisher.publishEvent(
         new NotificationMultiSendRequest(
             this,
             new java.util.ArrayList<>(recipients),
-            "Task Approved",
-            String.format("Task #%d '%s' has been approved.", id, task.getTitle()),
-            TASKS_PATH + id));
+            "S_TASK_TITLE_010",
+            "S_TASK_CONTENT_010",
+            params,
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -589,13 +627,18 @@ public class TaskServiceImpl implements TaskService {
     recipients.add(task.getSenderId());
     recipients.add(task.getReceiverId());
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", task.getTitle());
     eventPublisher.publishEvent(
         new NotificationMultiSendRequest(
             this,
             new java.util.ArrayList<>(recipients),
-            "Task Rejected",
-            String.format("Task #%d '%s' has been rejected.", id, task.getTitle()),
-            TASKS_PATH + id));
+            "S_TASK_TITLE_011",
+            "S_TASK_CONTENT_011",
+            params,
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -629,13 +672,18 @@ public class TaskServiceImpl implements TaskService {
     recipients.add(task.getSenderId());
     recipients.add(task.getReceiverId());
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", task.getTitle());
     eventPublisher.publishEvent(
         new NotificationMultiSendRequest(
             this,
             new java.util.ArrayList<>(recipients),
-            "Task Cancelled",
-            String.format("Task #%d '%s' has been cancelled.", id, task.getTitle()),
-            TASKS_PATH + id));
+            "S_TASK_TITLE_012",
+            "S_TASK_CONTENT_012",
+            params,
+            "/tasks?taskId=" + id));
   }
 
   /**
@@ -666,13 +714,18 @@ public class TaskServiceImpl implements TaskService {
     recipients.add(task.getSenderId());
     recipients.add(task.getReceiverId());
 
+    Map<String, String> params =
+        Map.of(
+            "TASK_ID", id.toString(),
+            "TASK_TITLE", task.getTitle());
     eventPublisher.publishEvent(
         new NotificationMultiSendRequest(
             this,
             new java.util.ArrayList<>(recipients),
-            "Task Reopened",
-            String.format("Task #%d '%s' has been reopened.", id, task.getTitle()),
-            TASKS_PATH + id));
+            "S_TASK_TITLE_013",
+            "S_TASK_CONTENT_013",
+            params,
+            "/tasks?taskId=" + id));
   }
 
   // ========== Private Helper Methods ==========

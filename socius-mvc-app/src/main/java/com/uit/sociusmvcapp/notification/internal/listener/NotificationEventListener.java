@@ -43,7 +43,11 @@ public class NotificationEventListener {
         event.getTitle());
 
     notificationService.sendNotification(
-        event.getReceiverId(), event.getTitle(), event.getContent(), event.getLinkUrl());
+        event.getReceiverId(),
+        event.getTitle(),
+        event.getContent(),
+        event.getParameters(),
+        event.getLinkUrl());
   }
 
   /**
@@ -64,7 +68,11 @@ public class NotificationEventListener {
         event.getTitle());
 
     notificationService.sendMultiNotification(
-        event.getReceiverIds(), event.getTitle(), event.getContent(), event.getLinkUrl());
+        event.getReceiverIds(),
+        event.getTitle(),
+        event.getContent(),
+        event.getParameters(),
+        event.getLinkUrl());
   }
 
   /**
