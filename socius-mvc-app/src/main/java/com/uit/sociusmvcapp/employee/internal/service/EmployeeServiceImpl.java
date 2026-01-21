@@ -98,10 +98,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     EmployeeDto deletedUser = employeeRepository.findDeletedByUserId(request.getUserId());
     String userClientId;
     String fullName = request.getLastName() + " " + request.getFirstName();
-    boolean isNewUser = deletedUser == null;
+    String generatedPassword = PasswordGenerator.generateSecurePassword();
 
-    if (isNewUser) {
-      String generatedPassword = PasswordGenerator.generateSecurePassword();
+    if (deletedUser == null) {
       User azureUser = employeeGraphAdapter.createUser(request, generatedPassword);
       if (azureUser == null || azureUser.getId() == null) {
         log.error("Failed to create user on Azure: Azure returned null");
@@ -111,9 +110,6 @@ public class EmployeeServiceImpl implements EmployeeService {
       userClientId = azureUser.getId();
       request.setClientId(userClientId);
       employeeRepository.create(request);
-
-      // Send welcome email with generated password only for new users
-      emailService.sendWelcomeEmail(request.getUserId(), fullName, generatedPassword);
     } else {
       userClientId = deletedUser.getClientId();
 
@@ -124,9 +120,12 @@ public class EmployeeServiceImpl implements EmployeeService {
       }
 
       request.setClientId(userClientId);
-      employeeGraphAdapter.reactivateUser(userClientId, request);
+      employeeGraphAdapter.reactivateUser(userClientId, request, generatedPassword);
       employeeRepository.reactivate(request);
     }
+
+    // Send welcome email with generated password for both new and reactivated users
+    emailService.sendWelcomeEmail(request.getUserId(), fullName, generatedPassword);
 
     Map<String, String> params = Map.of("FULLNAME", fullName);
     eventPublisher.publishEvent(

@@ -83,6 +83,21 @@ public interface EmployeeConverter extends BaseConverter<Employee, EmployeeDto> 
   User toGraphUserForUpdate(CreateEmployeeRequest request);
 
   /**
+   * Converts an EmployeeCreateRequest to a Microsoft Graph User object for a reactivation
+   * operation. This includes updating the password profile with a new generated password.
+   *
+   * @param request The DTO containing the user details to update.
+   * @param password The password for the reactivated user account.
+   * @return A Microsoft Graph User object containing profile fields and password to be patched.
+   */
+  @BeanMapping(ignoreByDefault = true)
+  @Mapping(target = "displayName", expression = "java(buildDisplayName(request))")
+  @Mapping(target = "givenName", expression = "java(request.getFirstName())")
+  @Mapping(target = "surname", expression = "java(request.getLastName())")
+  @Mapping(target = "passwordProfile", expression = "java(createPasswordProfile(password))")
+  User toGraphUserForReactivation(CreateEmployeeRequest request, String password);
+
+  /**
    * Converts an UpdateEmployeeRequest to a Microsoft Graph User object for a profile update
    * operation. This mapping intentionally excludes salary fields to prevent mass assignment
    * vulnerabilities.
