@@ -17,6 +17,8 @@ import lombok.Setter;
 public class ConversationParticipantDto {
   private String conversationId;
   private String employeeId;
+  private String fullName;
+  private String imageUrl;
   private String role;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")

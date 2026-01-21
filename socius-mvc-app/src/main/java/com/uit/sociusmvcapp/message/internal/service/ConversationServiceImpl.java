@@ -270,14 +270,37 @@ public class ConversationServiceImpl implements ConversationService {
    * Get all participants of a conversation.
    *
    * @param conversationId the conversation ID
-   * @return list of participant DTOs
+   * @return list of participant DTOs enriched with employee information
    */
   @Override
   public List<ConversationParticipantDto> getParticipants(String conversationId) {
 
     validateParticipant(conversationId, getCurrentClientId());
 
-    return participantRepository.findByConversationId(conversationId);
+    List<ConversationParticipantDto> participants =
+        participantRepository.findByConversationId(conversationId);
+
+    // Enrich participants with employee full name and image URL
+    if (!CollectionUtils.isEmpty(participants)) {
+      List<String> employeeIds =
+          participants.stream()
+              .map(ConversationParticipantDto::getEmployeeId)
+              .collect(Collectors.toList());
+
+      Map<String, EmployeeDto> employeeMap =
+          employeeService.findByClientIds(employeeIds).stream()
+              .collect(Collectors.toMap(EmployeeDto::getClientId, Function.identity()));
+
+      for (ConversationParticipantDto participant : participants) {
+        EmployeeDto employee = employeeMap.get(participant.getEmployeeId());
+        if (employee != null) {
+          participant.setFullName(buildDisplayName(employee));
+          participant.setImageUrl(employee.getImageUrl());
+        }
+      }
+    }
+
+    return participants;
   }
 
   /**
