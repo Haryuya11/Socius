@@ -61,11 +61,13 @@ public class EmployeeGraphAdapter {
    * Create a new user in Azure Active Directory.
    *
    * @param request the request containing user creation details
+   * @param password the password for the new user account
    * @return the created User object
    */
-  public User createUser(CreateEmployeeRequest request) {
+  public User createUser(CreateEmployeeRequest request, String password) {
     AzureGraphProperties properties = buildProperties();
-    User userToCreate = employeeConverter.toGraphUser(request, properties.getDomainName());
+    User userToCreate =
+        employeeConverter.toGraphUser(request, properties.getDomainName(), password);
     return azureGraphService.createUser(properties, userToCreate);
   }
 
@@ -107,10 +109,11 @@ public class EmployeeGraphAdapter {
    *
    * @param clientId the client ID of the user to reactivate
    * @param request the user creation request containing updated information
+   * @param password the new password for the reactivated user account
    */
-  public void reactivateUser(String clientId, CreateEmployeeRequest request) {
+  public void reactivateUser(String clientId, CreateEmployeeRequest request, String password) {
     AzureGraphProperties properties = buildProperties();
-    User userToReactivate = employeeConverter.toGraphUserForUpdate(request);
+    User userToReactivate = employeeConverter.toGraphUserForReactivation(request, password);
     azureGraphService.reactivateUser(properties, clientId, userToReactivate);
   }
 

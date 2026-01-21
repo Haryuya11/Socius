@@ -41,6 +41,7 @@ spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools
 spring-boot-starter-log4j2 = { module = "org.springframework.boot:spring-boot-starter-log4j2" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop" }
+spring-boot-starter-mail = { module = "org.springframework.boot:spring-boot-starter-mail" }
 
 # Spring Security
 spring-security-core = { module = "org.springframework.security:spring-security-core" }
