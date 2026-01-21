@@ -83,8 +83,9 @@ public class MessageServiceImpl implements MessageService {
     // Verify user is a participant
     validateParticipant(message.getConversationId(), getCurrentClientId());
 
-    // Regenerate SAS tokens for file metadata
+    // Regenerate SAS tokens for file metadata and populate reactions
     refreshFileUrls(message);
+    populateReactions(message);
 
     return message;
   }
@@ -115,8 +116,12 @@ public class MessageServiceImpl implements MessageService {
     List<MessageDto> messages =
         messageRepository.findByConversationId(conversationId, lastCreatedAt, lastId, limit);
 
-    // Regenerate SAS tokens for file metadata
-    messages.forEach(this::refreshFileUrls);
+    // Regenerate SAS tokens for file metadata and populate reactions
+    messages.forEach(
+        message -> {
+          refreshFileUrls(message);
+          populateReactions(message);
+        });
 
     String nextCursor = null;
     if (!messages.isEmpty()) {
@@ -389,5 +394,18 @@ public class MessageServiceImpl implements MessageService {
         metadata.setFileUrl(freshUrl);
       }
     }
+  }
+
+  /**
+   * Populate reactions for a message by fetching from the repository.
+   *
+   * @param message the message DTO to populate reactions for
+   */
+  private void populateReactions(MessageDto message) {
+    if (message == null || message.getMessageId() == null) {
+      return;
+    }
+    List<MessageReactionDto> reactions = reactionRepository.findByMessageId(message.getMessageId());
+    message.setReactions(reactions);
   }
 }
