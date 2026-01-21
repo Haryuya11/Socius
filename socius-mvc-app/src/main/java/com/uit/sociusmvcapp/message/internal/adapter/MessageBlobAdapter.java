@@ -28,6 +28,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class MessageBlobAdapter {
 
+  /** Number of bytes per megabyte. */
+  private static final long BYTES_PER_MB = 1024L * 1024L;
+
   /** Azure Blob Service for file operations. */
   private final AzureBlobService azureBlobService;
 
@@ -97,8 +100,8 @@ public class MessageBlobAdapter {
    * @throws BadRequestException if any file exceeds max size or total size exceeds max
    */
   private void validateFileSizes(List<MultipartFile> files) {
-    long maxFileSizeBytes = maxFileSizeMb * 1024 * 1024;
-    long maxTotalSizeBytes = maxTotalSizeMb * 1024 * 1024;
+    long maxFileSizeBytes = maxFileSizeMb * BYTES_PER_MB;
+    long maxTotalSizeBytes = maxTotalSizeMb * BYTES_PER_MB;
     long totalSize = 0;
 
     for (MultipartFile file : files) {

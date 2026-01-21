@@ -46,6 +46,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ConversationServiceImpl implements ConversationService {
 
+  /** Maximum number of conversations to fetch for search. */
+  private static final int MAX_SEARCH_FETCH_LIMIT = 1000;
+
   private final ConversationRepository conversationRepository;
   private final ConversationParticipantRepository participantRepository;
   private final UserContentProvider userContentProvider;
@@ -630,7 +633,7 @@ public class ConversationServiceImpl implements ConversationService {
           conversation.setName(displayName);
           conversation.setAvatarUrl(otherEmployee.getImageUrl());
         }
-      } catch (Exception e) {
+      } catch (RuntimeException e) {
         log.warn(
             "Failed to fetch employee info for DIRECT conversation enrichment: {}", e.getMessage());
       }
@@ -674,9 +677,10 @@ public class ConversationServiceImpl implements ConversationService {
     String currentClientId = getCurrentClientId();
     String searchKeyword = keyword.trim().toLowerCase();
 
-    // Get all user's conversations
+    // Get all user's conversations (limited to avoid performance issues)
     List<ConversationDto> allConversations =
-        conversationRepository.findByEmployeeIdWithCursor(currentClientId, null, null, 1000);
+        conversationRepository.findByEmployeeIdWithCursor(
+            currentClientId, null, null, MAX_SEARCH_FETCH_LIMIT);
 
     // Enrich DIRECT conversations with participant info
     enrichDirectConversations(allConversations, currentClientId);
