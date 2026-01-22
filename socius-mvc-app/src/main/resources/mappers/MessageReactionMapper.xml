@@ -39,14 +39,13 @@
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </select>
 
-    <update id="softDelete">
-        UPDATE message_reactions
-        SET delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@DELETED.value}
+    <delete id="softDelete">
+        DELETE FROM message_reactions
         WHERE message_id = #{messageId}
           AND employee_id = #{employeeId}
           AND reaction = #{reaction}
           AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
-    </update>
+    </delete>
 
     <select id="exists" resultType="java.lang.Boolean">
         SELECT EXISTS(
