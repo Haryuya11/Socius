@@ -44,6 +44,7 @@
         WHERE message_id = #{messageId}
           AND employee_id = #{employeeId}
           AND reaction = #{reaction}
+          AND delete_flag = ${@com.uit.sociusmvcapp.shared.enums.DeleteFlagEnums@NOT_DELETED.value}
     </delete>
 
     <select id="exists" resultType="java.lang.Boolean">
